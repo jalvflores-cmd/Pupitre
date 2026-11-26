@@ -144,3 +144,24 @@ class FuncionarioForm(BootstrapMixin, forms.ModelForm):
         if Funcionario.objects.filter(rut=rut).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("Ya existe un funcionario con este RUT.")
         return rut
+
+
+class TallerForm(BootstrapMixin, forms.Form):
+    nombre = forms.CharField(label="Nombre del taller", max_length=100,
+                             help_text="Ej.: Taller de Robótica. Si ya existe, se reutiliza.")
+    cursos = forms.ModelMultipleChoiceField(label="Cursos", queryset=None,
+                                            widget=forms.SelectMultiple(attrs={"size": 8}),
+                                            help_text="Mantenga Ctrl (o Cmd) para elegir varios.")
+    profesor = forms.ModelChoiceField(label="Profesor(a)", queryset=None, required=False)
+    horas_semanales = forms.DecimalField(label="Horas semanales", max_digits=4, decimal_places=1, min_value=0,
+                                         required=False)
+    incide_en_promedio = forms.BooleanField(
+        label="La nota incide en el promedio", required=False,
+        help_text="Por defecto los talleres se informan con concepto y no inciden en el promedio ni en la promoción.")
+
+    def __init__(self, *args, cursos=None, profesores=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["cursos"].queryset = cursos
+        self.fields["profesor"].queryset = profesores
+        self.fields["profesor"].label_from_instance = lambda u: u.get_full_name() or u.username
+        self.fields["cursos"].widget.attrs["class"] = "form-select"

@@ -101,16 +101,17 @@ class CursoAdmin(SoloGestion, admin.ModelAdmin):
 
 @admin.register(Asignatura)
 class AsignaturaAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("nombre", "codigo", "orden")
-    list_editable = ("orden",)
+    list_display = ("nombre", "tipo", "incide_en_promedio", "orden")
+    list_editable = ("orden", "incide_en_promedio")
+    list_filter = ("tipo",)
     search_fields = ("nombre", "codigo")
 
 
 @admin.register(AsignaturaCurso)
 class AsignaturaCursoAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("asignatura", "curso", "profesor")
-    list_filter = ("curso__anio", "curso__nivel", "asignatura", "profesor")
-    list_editable = ("profesor",)
+    list_display = ("asignatura", "curso", "profesor", "horas_semanales")
+    list_filter = ("curso__anio", "curso__nivel", "asignatura__tipo", "asignatura", "profesor")
+    list_editable = ("profesor", "horas_semanales")
 
 
 @admin.register(Estudiante)

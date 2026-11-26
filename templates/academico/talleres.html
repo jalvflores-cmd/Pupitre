@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block titulo %}Talleres JEC{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Talleres JEC</h3><div class="sub">Talleres de la Jornada Escolar Completa: curso, profesor(a), horas semanales y libro de notas.</div></div>
+</div>
+<div class="row g-4">
+  <div class="{% if form %}col-xl-8{% else %}col-12{% endif %}">
+    <div class="card p-2 p-lg-3">
+      <table class="table table-hover align-middle">
+        <thead><tr><th style="width:1rem"></th><th>Curso</th><th>Profesor(a)</th><th class="text-center">Horas/sem.</th><th></th><th></th></tr></thead>
+        {% for t in talleres %}
+        {% ifchanged t.asignatura_id %}<tr><td colspan="6" class="pt-3 border-0"><span class="fw-semibold">{{ t.asignatura }}</span>
+          <span class="badge {% if t.asignatura.incide_en_promedio %}bg-warning{% else %}bg-secondary{% endif %} ms-1">{% if t.asignatura.incide_en_promedio %}Incide en promedio{% else %}Se evalúa con concepto{% endif %}</span></td></tr>{% endifchanged %}
+        <tr><td></td><td class="text-nowrap">{{ t.curso.nombre_corto }}</td>
+          <td>{{ t.profesor.get_full_name|default:"Sin asignar" }}</td>
+          <td class="text-center">{{ t.horas_semanales|floatformat:"-1"|default:"—" }}</td>
+          <td></td>
+          <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{% url 'libro_notas' t.pk %}"><i class="bi bi-journal-check"></i> Notas</a>
+            {% if es_gestion %}<form method="post" action="{% url 'taller_quitar' t.pk %}" class="d-inline" onsubmit="return confirm('¿Quitar este taller del curso?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger"><i class="bi bi-x-lg"></i></button></form>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="6" class="text-muted p-3">No hay talleres registrados este año.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+  {% if form %}
+  <div class="col-xl-4">
+    <div class="card p-3 p-lg-4">
+      <h5>Agregar taller</h5>
+      <form method="post">{% csrf_token %}
+        {% for f in form %}
+        <div class="mb-3">
+          {% if f.field.widget.input_type == "checkbox" %}
+            <div class="form-check">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
+          {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% endif %}
+          {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+          {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Agregar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

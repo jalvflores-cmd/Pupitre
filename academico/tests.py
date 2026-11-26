@@ -478,3 +478,33 @@ class SigeYFormatosTests(BaseDatos):
         self.client.force_login(self.director)
         for nombre in ("informe_final_pdf", "acta_final_pdf", "informe_notas_pdf"):
             self.assertEqual(self.client.get(reverse(nombre, args=[self.curso.pk])).status_code, 200)
+
+
+class TalleresYConceptosTests(BaseDatos):
+    def test_religion_no_incide_en_promedio(self):
+        from .calculos import resumen_curso
+        rel = AsignaturaCurso.objects.create(curso=self.curso, profesor=self.profe_mat,
+                                             asignatura=Asignatura.objects.create(nombre="Religión", incide_en_promedio=False))
+        ev = Evaluacion.objects.create(asignatura_curso=rel, nombre="R1")
+        Calificacion.objects.create(evaluacion=ev, estudiante=self.est, nota=Decimal("2.0"))
+        _, _, resumenes = resumen_curso(self.curso)
+        r = resumenes[0]
+        self.assertEqual(r.promedio_general, Decimal("6.0"))  # solo Matemática
+        self.assertEqual(r.situacion, "Promovido(a)")
+        self.assertEqual([p.concepto for p in r.asignaturas if not p.incide], ["I"])
+
+    def test_crear_taller_jec(self):
+        self.client.force_login(self.utp)
+        self.client.post(reverse("talleres"), {"nombre": "Taller de Ajedrez", "cursos": [self.curso.pk, self.otro_curso.pk],
+                                               "profesor": self.profe_mat.pk, "horas_semanales": "2"})
+        talleres = AsignaturaCurso.objects.filter(asignatura__nombre="Taller de Ajedrez")
+        self.assertEqual(talleres.count(), 2)
+        self.assertEqual(talleres.first().asignatura.tipo, "TALLER")
+        self.assertFalse(talleres.first().asignatura.incide_en_promedio)
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("talleres"))
+        self.assertContains(r, "Taller de Ajedrez")
+        self.assertEqual(self.client.post(reverse("talleres"), {"nombre": "x"}).status_code, 403)
+        self.client.force_login(self.director)
+        self.assertEqual(self.client.get(reverse("informe_final_pdf", args=[self.curso.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("acta_final_pdf", args=[self.curso.pk])).status_code, 200)

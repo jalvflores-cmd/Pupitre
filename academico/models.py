@@ -134,9 +134,17 @@ class Curso(models.Model):
 
 
 class Asignatura(models.Model):
+    class Tipo(models.TextChoices):
+        ASIGNATURA = "ASIGNATURA", "Asignatura del plan de estudios"
+        TALLER = "TALLER", "Taller JEC"
+
     nombre = models.CharField(max_length=100, unique=True)
     codigo = models.CharField("código", max_length=20, blank=True)
     orden = models.PositiveSmallIntegerField(default=0)
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.ASIGNATURA)
+    incide_en_promedio = models.BooleanField(
+        "incide en el promedio y la promoción", default=True,
+        help_text="Desmarcar para Religión, Orientación o talleres evaluados con concepto (Decreto 67/2018).")
 
     class Meta:
         ordering = ["orden", "nombre"]
@@ -154,11 +162,12 @@ class AsignaturaCurso(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="asignaturas_curso", verbose_name="profesor(a)",
     )
+    horas_semanales = models.DecimalField("horas semanales", max_digits=4, decimal_places=1, null=True, blank=True)
 
     class Meta:
         verbose_name = "asignatura del curso (carga académica)"
         verbose_name_plural = "carga académica"
-        ordering = ["curso", "asignatura__orden", "asignatura__nombre"]
+        ordering = ["curso", "asignatura__tipo", "asignatura__orden", "asignatura__nombre"]
         constraints = [models.UniqueConstraint(fields=["curso", "asignatura"], name="asignatura_curso_unica")]
 
     def __str__(self):

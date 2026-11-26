@@ -11,7 +11,9 @@ from django.views.decorators.http import require_POST
 
 from . import exportacion, importacion
 from .calculos import resumen_curso
-from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm
+from .forms import (
+    AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm, TallerForm,
+)
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Establecimiento, Estudiante, Evaluacion,
     Funcionario, SolicitudCambio, anio_actual,
@@ -621,3 +623,52 @@ def prioritarios(request):
     messages.success(request, "Proporción actualizada: " + (
         "docentes de pre-kínder a 4° básico con 60/40." if est.alta_concentracion else "todos los docentes con 65/35."))
     return redirect("funcionarios")
+
+
+# --------------------------------------------------------------------------- Talleres JEC
+
+@login_required
+def talleres(request):
+    from django.contrib.auth.models import User
+
+    form = None
+    if es_gestion(request.user):
+        form = TallerForm(
+            request.POST or None,
+            cursos=Curso.objects.filter(anio=anio_actual()).select_related("nivel"),
+            profesores=User.objects.filter(is_active=True).order_by("first_name", "last_name"),
+        )
+        if request.method == "POST" and form.is_valid():
+            datos = form.cleaned_data
+            asignatura, _ = Asignatura.objects.get_or_create(
+                nombre=datos["nombre"].strip(),
+                defaults={"tipo": Asignatura.Tipo.TALLER, "incide_en_promedio": datos["incide_en_promedio"], "orden": 90})
+            if asignatura.tipo != Asignatura.Tipo.TALLER:
+                messages.error(request, f"«{asignatura}» ya existe como asignatura del plan de estudios. Use otro nombre.")
+                return redirect("talleres")
+            asignatura.incide_en_promedio = datos["incide_en_promedio"]
+            asignatura.save(update_fields=["incide_en_promedio"])
+            for curso in datos["cursos"]:
+                AsignaturaCurso.objects.update_or_create(curso=curso, asignatura=asignatura, defaults={
+                    "profesor": datos["profesor"], "horas_semanales": datos["horas_semanales"]})
+            messages.success(request, f"Taller «{asignatura}» asignado a {len(datos['cursos'])} curso(s).")
+            return redirect("talleres")
+    elif request.method == "POST":
+        exigir(False)
+    lista = asignaturas_curso_visibles(request.user).filter(
+        asignatura__tipo=Asignatura.Tipo.TALLER, curso__anio=anio_actual()).order_by(
+        "asignatura__nombre", "curso__nivel__orden", "curso__letra")
+    return render(request, "academico/talleres.html", {"talleres": lista, "form": form})
+
+
+@login_required
+@solo_gestion
+@require_POST
+def taller_quitar(request, pk):
+    ac = get_object_or_404(AsignaturaCurso, pk=pk, asignatura__tipo=Asignatura.Tipo.TALLER)
+    if ac.evaluaciones.exists():
+        messages.error(request, "El taller ya tiene evaluaciones en este curso: elimínelas primero desde su libro de notas.")
+    else:
+        ac.delete()
+        messages.success(request, "Taller quitado del curso.")
+    return redirect("talleres")

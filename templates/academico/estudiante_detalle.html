@@ -43,7 +43,7 @@
         {% for p in resumen.asignaturas %}
           <tr><td><a href="{% url 'libro_notas' p.asignatura_curso.pk %}">{{ p.asignatura_curso.asignatura }}</a></td>
             <td class="text-center {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td><td class="text-center {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>
-            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}</td></tr>
+            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}{% if not p.incide %} <span class="badge bg-secondary">{{ p.concepto }}</span>{% endif %}</td></tr>
         {% endfor %}
         </tbody>
         {% if informes %}<tfoot><tr class="fw-bold"><td>Promedio general</td><td class="text-center">{{ resumen.promedio_s1|nota }}</td><td class="text-center">{{ resumen.promedio_s2|nota }}</td><td class="text-center col-prom">{{ resumen.promedio_general|nota }}</td></tr>

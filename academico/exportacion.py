@@ -11,7 +11,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from .calculos import formato_nota, nota_en_palabras, resumen_curso
+from .calculos import concepto, formato_nota, nota_en_palabras, resumen_curso
 from .models import NOTA_APROBACION, Establecimiento
 
 AZUL = colors.HexColor("#1F4E79")
@@ -99,7 +99,8 @@ def excel_informe_final_curso(curso):
                    + ["Promedio general", "Situación final"])
     for i, r in enumerate(resumenes, start=1):
         hoja.append([i, r.estudiante.rut_formateado, r.estudiante.nombre_completo]
-                    + [_xl_nota(p.final) for p in r.asignaturas] + [_xl_nota(r.promedio_general), r.situacion])
+                    + [_xl_nota(p.final) if p.incide else concepto(p.final) for p in r.asignaturas]
+                    + [_xl_nota(r.promedio_general), r.situacion])
     _xl_pintar_notas(hoja, 6, 4)
     hoja.row_dimensions[5].height = 45
     hoja.column_dimensions["C"].width = 36
@@ -342,8 +343,10 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
                         txt = formato_nota(n)
                         partes.append(f'<font color="#C00000">{txt}</font>' if n < NOTA_APROBACION else txt)
                 notas_sem.append(Paragraph("&nbsp;&nbsp;".join(partes) or "", E_CELDA_C))
-            datos.append([Paragraph(str(pa.asignatura_curso.asignatura), E_CELDA), notas_sem[0], formato_nota(pa.s1),
-                          notas_sem[1], formato_nota(pa.s2), formato_nota(pa.final)])
+            final = formato_nota(pa.final) if pa.incide else (f"{concepto(pa.final)}" if pa.final is not None else "")
+            nombre = str(pa.asignatura_curso.asignatura) + ("" if pa.incide else " *")
+            datos.append([Paragraph(nombre, E_CELDA), notas_sem[0], formato_nota(pa.s1),
+                          notas_sem[1], formato_nota(pa.s2), final])
         datos.append(["Promedio general", "", formato_nota(r.promedio_s1), "", formato_nota(r.promedio_s2),
                       formato_nota(r.promedio_general)])
         t = Table(datos, colWidths=[4.2 * cm, 4.4 * cm, 1.4 * cm, 4.4 * cm, 1.4 * cm, 1.4 * cm], repeatRows=1)
@@ -351,6 +354,9 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
         historia += [t, Spacer(1, 8)]
         historia.append(_tabla_datos([("Asistencia", _asistencia_txt(e), "Escala", "1,0 a 7,0 · aprobación 4,0")],
                                      [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
+        if any(not pa.incide for pa in r.asignaturas):
+            historia.append(Paragraph("* No incide en el promedio ni en la promoción; se informa con concepto: "
+                                      "MB muy bueno, B bueno, S suficiente, I insuficiente.", E_MINI))
         historia.append(Spacer(1, 6))
         historia.append(Paragraph("Observaciones: ____________________________________________________________"
                                   "______________________________", E_NORMAL))
@@ -385,15 +391,25 @@ def pdf_informe_final(curso, estudiantes=None):
         )
         historia += [Paragraph(texto, E_JUSTO), Spacer(1, 10)]
         datos = [["Asignatura", "Calificación", "En palabras"]]
-        for pa in r.asignaturas:
+        for pa in [p for p in r.asignaturas if p.incide]:
             datos.append([str(pa.asignatura_curso.asignatura), formato_nota(pa.final), nota_en_palabras(pa.final)])
+        conceptuales = [p for p in r.asignaturas if not p.incide]
         datos.append(["PROMEDIO GENERAL", formato_nota(r.promedio_general), nota_en_palabras(r.promedio_general)])
         datos.append(["PORCENTAJE DE ASISTENCIA", _asistencia_txt(e), ""])
         t = Table(datos, colWidths=[8 * cm, 3 * cm, 6 * cm], repeatRows=1)
         estilo = _estilo_oficial(datos, 1, filas_pie=2)
         estilo.add("ALIGN", (2, 1), (2, -1), "LEFT")
         t.setStyle(estilo)
-        historia += [t, Spacer(1, 12)]
+        historia += [t, Spacer(1, 8)]
+        if conceptuales:
+            filas_c = [["Asignaturas y talleres sin incidencia en el promedio", "Concepto", ""]]
+            for pa in conceptuales:
+                filas_c.append([str(pa.asignatura_curso.asignatura), concepto(pa.final), concepto(pa.final, largo=True)])
+            tc = Table(filas_c, colWidths=[8 * cm, 3 * cm, 6 * cm])
+            estilo_c = _estilo_oficial(filas_c, 1)
+            estilo_c.add("ALIGN", (2, 1), (2, -1), "LEFT")
+            tc.setStyle(estilo_c)
+            historia += [tc, Spacer(1, 10)]
         if r.situacion.startswith("Promovido"):
             destino = f" a {_descripcion_nivel(siguiente)}" if siguiente else ""
             resultado = f"En consecuencia, el (la) estudiante es <b>PROMOVIDO(A){destino}</b>."
@@ -410,10 +426,23 @@ def pdf_informe_final(curso, estudiantes=None):
                           titulo="Certificado anual de estudios")
 
 
+ABREVIATURAS = {
+    "Lenguaje y Comunicación": "Lenguaje", "Lengua y Literatura": "Lengua y Lit.", "Matemática": "Matem.",
+    "Historia, Geografía y Cs. Sociales": "Historia", "Ciencias Naturales": "Ciencias", "Inglés": "Inglés",
+    "Artes Visuales": "Artes", "Música": "Música", "Educación Física y Salud": "Ed. Física",
+    "Tecnología": "Tecnol.", "Orientación": "Orient.", "Religión": "Religión",
+}
+
+
+def _abreviatura(asignatura):
+    return asignatura.codigo or ABREVIATURAS.get(asignatura.nombre, asignatura.nombre)
+
+
 def pdf_acta_final_curso(curso):
     """Acta de Calificaciones Finales y Promoción Escolar (incluye retirados)."""
     estudiantes = list(curso.estudiantes.all())
-    asigs, _, resumenes = resumen_curso(curso, None, estudiantes)
+    del_plan = [ac for ac in curso.asignaturas_curso.select_related("asignatura", "profesor") if ac.asignatura.tipo != "TALLER"]
+    asigs, _, resumenes = resumen_curso(curso, del_plan, estudiantes)
     est = Establecimiento.actual()
     nivel = curso.nivel
     jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
@@ -425,9 +454,9 @@ def pdf_acta_final_curso(curso):
         ("Profesor(a) jefe", jefe or "—", "Reconocimiento oficial", est.resolucion_reconocimiento or "—"),
     ], [3.2 * cm, 8.8 * cm, 3.8 * cm, 8 * cm]))
     historia.append(Spacer(1, 8))
+    estilo_h = ParagraphStyle("h", parent=E_CELDA_C, fontSize=6.5, leading=7.5, splitLongWords=0)
     encabezado = ["N°", "RUN", "Nombre del estudiante", "Sexo"] + [
-        Paragraph(f"<b>{a.asignatura}</b>", ParagraphStyle("h", parent=E_CELDA_C, fontSize=6.5, leading=7.5))
-        for a in asigs] + ["Prom.\ngral.", "%\nasist.", "Sit.\nfinal"]
+        Paragraph(f"<b>{_abreviatura(a.asignatura)}</b>", estilo_h) for a in asigs] + ["Prom.\ngral.", "%\nasist.", "Sit.\nfinal"]
     datos = [encabezado]
     codigo = {"Promovido(a)": "P", "Reprobado(a)": "R", "Retirado(a)": "Y"}
     conteo = {(c, g): 0 for c in "PRY" for g in "MF"}
@@ -438,7 +467,8 @@ def pdf_acta_final_curso(curso):
             conteo[(sit, e.genero)] += 1
         nombre = " ".join(p for p in [e.apellido_paterno, e.apellido_materno, e.nombres] if p).upper()
         datos.append([str(i), e.rut_formateado, Paragraph(nombre, E_CELDA), e.genero or ""]
-                     + ([formato_nota(p.final) for p in r.asignaturas] if sit != "Y" else [""] * len(asigs))
+                     + ([formato_nota(p.final) if p.incide else concepto(p.final) for p in r.asignaturas]
+                        if sit != "Y" else [""] * len(asigs))
                      + [formato_nota(r.promedio_general) if sit != "Y" else "", _asistencia_txt(e).replace(" %", ""), sit])
     ancho = landscape(letter)[0] - 4 * cm
     fijos = [0.7 * cm, 2.1 * cm, 5.6 * cm, 0.9 * cm]

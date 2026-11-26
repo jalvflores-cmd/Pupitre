@@ -65,6 +65,12 @@ class Command(BaseCommand):
         mate = usuario("profe.matematica", "Carla", "Núñez Pino", Perfil.Rol.PROFESOR)
         leng = usuario("profe.lenguaje", "Jorge", "Reyes Lagos", Perfil.Rol.PROFESOR)
         cien = usuario("profe.ciencias", "Daniela", "Vergara Toro", Perfil.Rol.PROFESOR)
+        ingl = usuario("profe.ingles", "Valentina", "Ortiz Fuentealba", Perfil.Rol.PROFESOR)
+        arte = usuario("profe.artes", "Sebastián", "Lagos Riquelme", Perfil.Rol.PROFESOR)
+        edfi = usuario("profe.edfisica", "Rodrigo", "Muñoz Sanhueza", Perfil.Rol.PROFESOR)
+        reli = usuario("profe.religion", "Patricia", "Cifuentes Jara", Perfil.Rol.PROFESOR)
+        bas1 = usuario("profe.basica1", "Paula", "Tapia Bustos", Perfil.Rol.PROFESOR)
+        bas2 = usuario("profe.basica2", "Marcelo", "Contreras Vega", Perfil.Rol.PROFESOR)
 
         fichas = [
             # usuario, rut, cargo, título, mención, contrato, horas, primer ciclo
@@ -91,18 +97,26 @@ class Command(BaseCommand):
                                     "Historia, Geografía y Cs. Sociales", "Inglés", "Educación Física y Salud"]):
             asignaturas[nombre], _ = Asignatura.objects.get_or_create(nombre=nombre, defaults={"orden": i})
         profes = {"Matemática": mate, "Lenguaje y Comunicación": leng, "Ciencias Naturales": cien,
-                  "Historia, Geografía y Cs. Sociales": hist, "Inglés": hist}
+                  "Historia, Geografía y Cs. Sociales": hist, "Inglés": ingl}
 
         jefes = [mate, leng, cien]
+        nuevos_jefes = [bas1, bas2, bas1, bas2, leng, mate, cien, ingl, arte, edfi, leng, mate, cien, ingl, arte, edfi]
         niveles = ["1° Básico", "2° Básico", "3° Básico", "4° Básico", "5° Básico", "6° Básico", "7° Básico", "8° Básico"]
         for orden, nombre_nivel in enumerate(niveles, start=1):
             nivel, _ = Nivel.objects.get_or_create(nombre=nombre_nivel, defaults={"orden": orden + 2})
             for letra in "AB":
                 jefe = jefes[(orden * 2 + ord(letra)) % 3]
+                jefe_nuevo = nuevos_jefes[(orden - 1) * 2 + (ord(letra) - ord("A"))]
                 curso, _ = Curso.objects.get_or_create(nivel=nivel, letra=letra, anio=anio,
-                                                       defaults={"profesor_jefe": jefe})
+                                                       defaults={"profesor_jefe": jefe_nuevo})
+                if curso.profesor_jefe_id == jefe.id and jefe.id != jefe_nuevo.id:
+                    curso.profesor_jefe = jefe_nuevo  # solo cambia la asignación original de la demo
+                    curso.save(update_fields=["profesor_jefe"])
                 acs = []
                 for nombre_asig, asig in asignaturas.items():
+                    if nombre_asig == "Lenguaje y Comunicación" and orden >= 7 and AsignaturaCurso.objects.filter(
+                            curso=curso, asignatura__nombre="Lengua y Literatura").exists():
+                        continue
                     ac, _ = AsignaturaCurso.objects.get_or_create(curso=curso, asignatura=asig,
                                                                   defaults={"profesor": profes.get(nombre_asig)})
                     acs.append(ac)
@@ -140,6 +154,11 @@ class Command(BaseCommand):
                         descripcion=("Destaca por su participación en clases." if tipo == "POSITIVA"
                                      else "No trae materiales de trabajo."),
                         fecha=date(anio, 5, random.randint(1, 28)), autor=jefe)
+        self.completar_plan(anio, {"Lenguaje y Comunicación": leng, "Lengua y Literatura": leng, "Matemática": mate,
+                                   "Ciencias Naturales": cien, "Tecnología": cien, "Historia, Geografía y Cs. Sociales": hist,
+                                   "Inglés": ingl, "Artes Visuales": arte, "Música": arte, "Educación Física y Salud": edfi,
+                                   "Religión": reli},
+                            {"Taller de Deportes": edfi, "Taller de Robótica": cien, "Taller de Arte y Folclor": arte})
         reordenar_niveles()
         for nivel in Nivel.objects.filter(decreto_plan_estudios=""):
             if nivel.ensenanza == "BASICA":
@@ -155,3 +174,72 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
             "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))
+
+
+    # Plan de estudios oficial de Enseñanza Básica (horas semanales referenciales con JEC)
+    PLAN = {
+        "1-4": [("Lenguaje y Comunicación", 8), ("Inglés", 2), ("Matemática", 6),
+                ("Historia, Geografía y Cs. Sociales", 3), ("Ciencias Naturales", 3), ("Artes Visuales", 2),
+                ("Música", 2), ("Educación Física y Salud", 4), ("Tecnología", 1), ("Orientación", 0.5), ("Religión", 2)],
+        "5-6": [("Lenguaje y Comunicación", 6), ("Inglés", 3), ("Matemática", 6),
+                ("Historia, Geografía y Cs. Sociales", 4), ("Ciencias Naturales", 4), ("Artes Visuales", 1.5),
+                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión", 2)],
+        "7-8": [("Lengua y Literatura", 6), ("Inglés", 3), ("Matemática", 6),
+                ("Historia, Geografía y Cs. Sociales", 4), ("Ciencias Naturales", 4), ("Artes Visuales", 1.5),
+                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión", 2)],
+    }
+    ORDEN = ["Lenguaje y Comunicación", "Lengua y Literatura", "Inglés", "Matemática",
+             "Historia, Geografía y Cs. Sociales", "Ciencias Naturales", "Artes Visuales", "Música",
+             "Educación Física y Salud", "Tecnología", "Orientación", "Religión"]
+
+    def completar_plan(self, anio, profes, talleres):
+        """Agrega las asignaturas del plan oficial y talleres JEC que falten (sin tocar lo existente)."""
+        asignaturas = {}
+        orden_demo_antiguo = {"Lenguaje y Comunicación": 0, "Matemática": 1, "Ciencias Naturales": 2,
+                              "Historia, Geografía y Cs. Sociales": 3, "Inglés": 4, "Educación Física y Salud": 5}
+        for i, nombre in enumerate(self.ORDEN):
+            asig, _ = Asignatura.objects.get_or_create(nombre=nombre, defaults={
+                "orden": i, "incide_en_promedio": nombre not in ("Orientación", "Religión")})
+            if orden_demo_antiguo.get(nombre) == asig.orden and asig.orden != i:
+                asig.orden = i
+                asig.save(update_fields=["orden"])
+            asignaturas[nombre] = asig
+        for nombre in talleres:
+            asignaturas[nombre], _ = Asignatura.objects.get_or_create(nombre=nombre, defaults={
+                "orden": 90, "tipo": Asignatura.Tipo.TALLER, "incide_en_promedio": False})
+        for curso in Curso.objects.filter(anio=anio, nivel__nombre__iregex=r"^[1-8]° básico$").select_related("nivel"):
+            grado = int(curso.nivel.nombre[0])
+            plan = self.PLAN["1-4" if grado <= 4 else "5-6" if grado <= 6 else "7-8"]
+            if grado >= 7:  # en 7° y 8° la asignatura se llama Lengua y Literatura
+                antigua = AsignaturaCurso.objects.filter(curso=curso, asignatura__nombre="Lenguaje y Comunicación").first()
+                if antigua and not AsignaturaCurso.objects.filter(curso=curso, asignatura__nombre="Lengua y Literatura").exists():
+                    antigua.asignatura = asignaturas["Lengua y Literatura"]
+                    antigua.save(update_fields=["asignatura"])
+                elif antigua and not antigua.evaluaciones.exists():
+                    antigua.delete()  # duplicado vacío
+            items = list(plan) + [(t, 2) for t in talleres
+                                  if (t == "Taller de Deportes" and grado <= 4) or (t == "Taller de Robótica" and grado >= 5)
+                                  or t == "Taller de Arte y Folclor"]
+            for nombre, horas in items:
+                profesor = profes.get(nombre) or talleres.get(nombre) or curso.profesor_jefe
+                ac, creado = AsignaturaCurso.objects.get_or_create(curso=curso, asignatura=asignaturas[nombre], defaults={
+                    "profesor": profesor, "horas_semanales": horas})
+                if not creado and ac.horas_semanales is None:
+                    ac.horas_semanales = horas
+                    ac.save(update_fields=["horas_semanales"])
+                if creado:
+                    self.poblar_notas(ac, anio)
+
+    def poblar_notas(self, ac, anio):
+        estudiantes = list(ac.curso.estudiantes.filter(activo=True))
+        if not estudiantes:
+            return
+        notas = []
+        for sem in (1, 2):
+            for n in range(1, 3):
+                ev = Evaluacion.objects.create(asignatura_curso=ac, nombre=f"Evaluación {n}", semestre=sem,
+                                               fecha=date(anio, 4 + n + (sem - 1) * 4, 20))
+                for est in estudiantes:
+                    nota = Decimal(str(round(min(7, max(2, random.gauss(5.7, 0.8))), 1)))
+                    notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
+        Calificacion.objects.bulk_create(notas, ignore_conflicts=True)

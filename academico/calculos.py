@@ -50,8 +50,16 @@ class PromedioAsignatura:
     final: Decimal | None = None
 
     @property
+    def incide(self):
+        return self.asignatura_curso.asignatura.incide_en_promedio
+
+    @property
     def aprobada(self):
         return self.final is None or self.final >= NOTA_APROBACION
+
+    @property
+    def concepto(self):
+        return concepto(self.final)
 
 
 def calcular_promedios(evaluaciones, notas_por_evaluacion):
@@ -126,14 +134,15 @@ def resumen_curso(curso, asignaturas_curso=None, estudiantes=None):
             notas_ac = notas[(est.id, ac.id)]
             s1, s2, final = calcular_promedios(evaluaciones[ac.id], notas_ac)
             filas.append(PromedioAsignatura(ac, notas_ac, s1, s2, final))
-        prom_general = promedio_simple([f.final for f in filas])
-        reprobadas = [f for f in filas if not f.aprobada]
+        inciden = [f for f in filas if f.incide]
+        prom_general = promedio_simple([f.final for f in inciden])
+        reprobadas = [f for f in inciden if not f.aprobada]
         resumenes.append(
             ResumenEstudiante(
                 estudiante=est,
                 asignaturas=filas,
-                promedio_s1=promedio_simple([f.s1 for f in filas]),
-                promedio_s2=promedio_simple([f.s2 for f in filas]),
+                promedio_s1=promedio_simple([f.s1 for f in inciden]),
+                promedio_s2=promedio_simple([f.s2 for f in inciden]),
                 promedio_general=prom_general,
                 reprobadas=reprobadas,
                 situacion=situacion_final(prom_general, reprobadas, est.porcentaje_asistencia, est.activo),
@@ -158,3 +167,17 @@ def nota_en_palabras(valor):
         return ""
     entero, decimal = f"{Decimal(valor):.1f}".split(".")
     return f"{_UNIDADES[int(entero)]} coma {_UNIDADES[int(decimal)]}"
+
+
+CONCEPTOS = [(Decimal("6.0"), "MB", "Muy bueno"), (Decimal("5.0"), "B", "Bueno"),
+             (Decimal("4.0"), "S", "Suficiente"), (Decimal("1.0"), "I", "Insuficiente")]
+
+
+def concepto(valor, largo=False):
+    """Concepto para asignaturas que no inciden en el promedio (Religión, Orientación, talleres)."""
+    if valor is None:
+        return ""
+    for minimo, sigla, nombre in CONCEPTOS:
+        if Decimal(valor) >= minimo:
+            return nombre if largo else sigla
+    return "Insuficiente" if largo else "I"
