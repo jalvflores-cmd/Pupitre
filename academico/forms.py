@@ -76,3 +76,44 @@ class ArchivoExcelForm(BootstrapMixin, forms.Form):
         if not archivo.name.lower().endswith(".xlsx"):
             raise forms.ValidationError("El archivo debe estar en formato .xlsx (Excel 2007 o superior).")
         return archivo
+
+
+CAMPOS_SOLICITABLES = [
+    "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento",
+    "direccion", "comuna", "telefono", "email",
+    "apoderado_nombre", "apoderado_rut", "apoderado_telefono",
+    "contacto_emergencia", "telefono_emergencia",
+]
+
+
+class SolicitudCambioForm(EstudianteForm):
+    """Mismos datos del estudiante (sin curso ni estado) más el motivo del cambio."""
+
+    motivo = forms.CharField(label="Motivo de la solicitud", widget=forms.Textarea(attrs={"rows": 2}),
+                             required=True)
+
+    class Meta(EstudianteForm.Meta):
+        fields = CAMPOS_SOLICITABLES
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Al validar, Django copia los datos al estudiante en memoria: guardamos los originales antes.
+        self.originales = {c: getattr(self.instance, c) for c in CAMPOS_SOLICITABLES}
+
+    def cambios(self):
+        """Diferencias entre lo enviado y los datos actuales del estudiante."""
+        resultado = {}
+        for campo in CAMPOS_SOLICITABLES:
+            antes = self.originales[campo]
+            despues = self.cleaned_data.get(campo)
+            if (antes or "") != (despues or ""):
+                resultado[campo] = {"antes": _serializar(antes), "despues": _serializar(despues)}
+        return resultado
+
+
+def _serializar(valor):
+    if valor in (None, ""):
+        return ""
+    if hasattr(valor, "isoformat"):
+        return valor.isoformat()
+    return str(valor)

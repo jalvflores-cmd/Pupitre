@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Solicitudes{% endblock %}
+{% block contenido %}
+<h3 class="mb-1">Solicitudes de modificación de datos</h3>
+<p class="text-muted">{% if es_gestion %}Los profesores jefe solicitan cambios en los datos de sus estudiantes. Revise y apruebe o rechace: al aprobar, los cambios se aplican de inmediato.{% else %}Sus solicitudes de cambio de datos de estudiantes y su estado.{% endif %}</p>
+<ul class="nav nav-pills mb-3">
+  {% for v, t in estados %}<li class="nav-item"><a class="nav-link {% if v == estado %}active{% endif %}" href="?estado={{ v }}">{{ t }}s</a></li>{% endfor %}
+  <li class="nav-item"><a class="nav-link {% if estado == 'todas' %}active{% endif %}" href="?estado=todas">Todas</a></li>
+</ul>
+{% for s in solicitudes %}
+<div class="card p-3 mb-3">
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    <div><a href="{% url 'estudiante_detalle' s.estudiante_id %}" class="fw-bold">{{ s.estudiante }}</a> <span class="text-muted">· {{ s.estudiante.curso.nombre_corto }}</span>
+      <div class="small text-muted">Solicitada por {{ s.solicitante.get_full_name|default:s.solicitante.username }} el {{ s.creada|date:"d-m-Y H:i" }}</div></div>
+    <span class="badge align-self-start {% if s.estado == 'APROBADA' %}bg-success{% elif s.estado == 'RECHAZADA' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ s.get_estado_display }}</span>
+  </div>
+  <table class="table table-sm my-2">
+    <thead><tr><th>Dato</th><th>Actual</th><th>Nuevo</th></tr></thead>
+    {% for etiqueta, antes, despues in s.cambios_legibles %}<tr><td>{{ etiqueta }}</td><td class="text-muted">{{ antes }}</td><td class="fw-semibold">{{ despues }}</td></tr>{% endfor %}
+  </table>
+  {% if s.motivo %}<div class="small"><b>Motivo:</b> {{ s.motivo }}</div>{% endif %}
+  {% if s.estado == 'PENDIENTE' and es_gestion %}
+  <form method="post" action="{% url 'solicitud_resolver' s.pk %}" class="d-flex gap-2 mt-2">{% csrf_token %}
+    <input name="comentario" class="form-control form-control-sm" placeholder="Comentario (opcional; recomendado al rechazar)">
+    <button name="accion" value="aprobar" class="btn btn-success btn-sm text-nowrap"><i class="bi bi-check-lg"></i> Aprobar</button>
+    <button name="accion" value="rechazar" class="btn btn-outline-danger btn-sm text-nowrap"><i class="bi bi-x-lg"></i> Rechazar</button>
+  </form>
+  {% elif s.revisor %}
+  <div class="small text-muted mt-1">Revisada por {{ s.revisor.get_full_name|default:s.revisor.username }} el {{ s.revisada|date:"d-m-Y H:i" }}{% if s.comentario_revision %}: «{{ s.comentario_revision }}»{% endif %}</div>
+  {% endif %}
+</div>
+{% empty %}<p class="text-muted">No hay solicitudes en esta vista.</p>{% endfor %}
+{% endblock %}

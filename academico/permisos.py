@@ -65,6 +65,12 @@ def puede_ver_informe_curso(user, curso) -> bool:
     return es_gestion(user) or curso.profesor_jefe_id == user.id
 
 
+def puede_solicitar_cambio(user, estudiante) -> bool:
+    """Profesor(a) jefe del curso del estudiante (Dirección y UTP editan directamente)."""
+    return (not es_gestion(user) and estudiante.curso_id is not None
+            and estudiante.curso.profesor_jefe_id == user.id)
+
+
 def puede_ver_estudiante(user, estudiante) -> bool:
     return estudiantes_visibles(user).filter(pk=estudiante.pk).exists()
 

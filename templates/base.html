@@ -32,6 +32,7 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'convivencia' %}"><i class="bi bi-journal-text"></i> Convivencia</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'importar' %}"><i class="bi bi-file-earmark-arrow-up"></i> Importar Excel</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'informes' %}"><i class="bi bi-file-earmark-pdf"></i> Informes</a></li>
+        {% if es_gestion or es_profesor_jefe %}<li class="nav-item"><a class="nav-link" href="{% url 'solicitudes' %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %} <span class="badge bg-warning text-dark">{{ solicitudes_pendientes }}</span>{% endif %}</a></li>{% endif %}
         {% if es_gestion %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Configuración</a></li>{% endif %}
       </ul>
       <div class="dropdown">

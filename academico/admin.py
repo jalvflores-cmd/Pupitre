@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Nivel,
-    Perfil,
+    Perfil, SolicitudCambio,
 )
 from .permisos import es_gestion
 
@@ -138,3 +138,10 @@ class AnotacionAdmin(SoloGestion, admin.ModelAdmin):
     list_display = ("fecha", "estudiante", "tipo", "gravedad", "autor")
     list_filter = ("tipo", "gravedad", "estudiante__curso")
     search_fields = ("estudiante__rut", "estudiante__apellido_paterno", "descripcion")
+
+
+@admin.register(SolicitudCambio)
+class SolicitudCambioAdmin(SoloGestion, admin.ModelAdmin):
+    list_display = ("estudiante", "solicitante", "estado", "creada", "revisor")
+    list_filter = ("estado",)
+    readonly_fields = ("cambios", "creada", "revisada")

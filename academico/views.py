@@ -11,11 +11,13 @@ from django.views.decorators.http import require_POST
 
 from . import exportacion, importacion
 from .calculos import resumen_curso
-from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm
-from .models import Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Estudiante, Evaluacion, anio_actual
+from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, SolicitudCambioForm
+from .models import (
+    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Estudiante, Evaluacion, SolicitudCambio, anio_actual,
+)
 from .permisos import (
     asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
-    puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
+    puede_solicitar_cambio, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -200,6 +202,9 @@ def estudiante_detalle(request, pk):
     return render(request, "academico/estudiante_detalle.html", {
         "est": est, "resumen": resumen, "informes": informes,
         "anotaciones": est.anotaciones.select_related("asignatura", "autor"),
+        "puede_solicitar": puede_solicitar_cambio(request.user, est),
+        "solicitudes": (est.solicitudes.select_related("solicitante", "revisor")[:10]
+                        if es_gestion(request.user) or puede_solicitar_cambio(request.user, est) else []),
         "form_anotacion": AnotacionForm(asignaturas=_asignaturas_para_anotar(request.user, est)),
     })
 
@@ -218,6 +223,71 @@ def estudiante_form(request, pk=None):
         "form": form, "titulo": "Editar estudiante" if pk else "Nuevo estudiante",
         "volver": ("estudiante_detalle", pk) if pk else ("estudiantes", None),
     })
+
+
+# --------------------------------------------------------------------------- Solicitudes de modificación
+
+@login_required
+def solicitud_crear(request, est_pk):
+    est = get_object_or_404(Estudiante.objects.select_related("curso"), pk=est_pk)
+    exigir(puede_solicitar_cambio(request.user, est))
+    form = SolicitudCambioForm(request.POST or None, instance=est)
+    if request.method == "POST" and form.is_valid():
+        cambios = form.cambios()
+        if not cambios:
+            messages.warning(request, "No modificó ningún dato, así que no se envió la solicitud.")
+        else:
+            SolicitudCambio.objects.create(estudiante=est, solicitante=request.user, cambios=cambios,
+                                           motivo=form.cleaned_data["motivo"])
+            messages.success(request, "Solicitud enviada. Los cambios se aplicarán cuando UTP la apruebe.")
+            return redirect("estudiante_detalle", pk=est.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"Solicitar modificación de datos – {est}",
+        "ayuda": "Corrija los datos que necesite cambiar e indique el motivo. Los cambios no se aplican "
+                 "de inmediato: quedan pendientes hasta que Jefe(a) de UTP o Dirección los apruebe.",
+        "boton": "Enviar solicitud", "volver": ("estudiante_detalle", est.pk),
+    })
+
+
+@login_required
+def solicitudes(request):
+    qs = SolicitudCambio.objects.select_related("estudiante__curso__nivel", "solicitante", "revisor")
+    if not es_gestion(request.user):
+        qs = qs.filter(solicitante=request.user)
+    estado = request.GET.get("estado", SolicitudCambio.Estado.PENDIENTE)
+    if estado in SolicitudCambio.Estado.values:
+        qs = qs.filter(estado=estado)
+    return render(request, "academico/solicitudes.html", {
+        "solicitudes": qs[:200], "estado": estado, "estados": SolicitudCambio.Estado.choices,
+    })
+
+
+@login_required
+@solo_gestion
+@require_POST
+def solicitud_resolver(request, pk):
+    from django.core.exceptions import ValidationError
+    from django.utils import timezone
+
+    solicitud = get_object_or_404(SolicitudCambio, pk=pk, estado=SolicitudCambio.Estado.PENDIENTE)
+    accion = request.POST.get("accion")
+    solicitud.comentario_revision = request.POST.get("comentario", "").strip()
+    if accion == "aprobar":
+        try:
+            with transaction.atomic():
+                solicitud.aplicar()
+        except ValidationError as e:
+            messages.error(request, "No se pudo aplicar la solicitud: " + " ".join(e.messages))
+            return redirect("solicitudes")
+        solicitud.estado = SolicitudCambio.Estado.APROBADA
+    elif accion == "rechazar":
+        solicitud.estado = SolicitudCambio.Estado.RECHAZADA
+    else:
+        return redirect("solicitudes")
+    solicitud.revisor, solicitud.revisada = request.user, timezone.now()
+    solicitud.save()
+    messages.success(request, f"Solicitud {solicitud.get_estado_display().lower()}: {solicitud.estudiante}.")
+    return redirect("solicitudes")
 
 
 # --------------------------------------------------------------------------- Convivencia

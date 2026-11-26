@@ -225,3 +225,55 @@ class ExportacionTests(BaseDatos):
                          {"fecha": "2026-05-01", "tipo": "POSITIVA", "descripcion": "Excelente trabajo"})
         a = Anotacion.objects.get()
         self.assertEqual(a.autor, self.profe_mat)
+
+
+class SolicitudCambioTests(BaseDatos):
+    def datos(self, **cambios):
+        base = {"rut": "12.345.678-5", "nombres": "Ana", "apellido_paterno": "Pérez", "motivo": "Corrección"}
+        base.update(cambios)
+        return base
+
+    def test_profesor_jefe_solicita_y_no_se_aplica_hasta_aprobar(self):
+        from .models import SolicitudCambio
+        self.client.force_login(self.profe_len)  # jefe del 5° A
+        self.client.post(reverse("solicitud_crear", args=[self.est.pk]),
+                         self.datos(nombres="Ana María", direccion="Los Aromos 12"))
+        self.est.refresh_from_db()
+        self.assertEqual(self.est.nombres, "Ana")
+        s = SolicitudCambio.objects.get()
+        self.assertEqual(set(s.cambios), {"nombres", "direccion"})
+        self.assertEqual(s.cambios["nombres"], {"antes": "Ana", "despues": "Ana María"})
+        # El profesor jefe no puede aprobar su propia solicitud
+        self.assertEqual(self.client.post(reverse("solicitud_resolver", args=[s.pk]), {"accion": "aprobar"}).status_code, 403)
+        self.client.force_login(self.utp)
+        self.client.post(reverse("solicitud_resolver", args=[s.pk]), {"accion": "aprobar"})
+        self.est.refresh_from_db()
+        self.assertEqual((self.est.nombres, self.est.direccion), ("Ana María", "Los Aromos 12"))
+        s.refresh_from_db()
+        self.assertEqual((s.estado, s.revisor), ("APROBADA", self.utp))
+
+    def test_rechazo_no_cambia_datos(self):
+        from .models import SolicitudCambio
+        self.client.force_login(self.profe_len)
+        self.client.post(reverse("solicitud_crear", args=[self.est.pk]), self.datos(nombres="Otra"))
+        s = SolicitudCambio.objects.get()
+        self.client.force_login(self.director)
+        self.client.post(reverse("solicitud_resolver", args=[s.pk]), {"accion": "rechazar", "comentario": "No corresponde"})
+        self.est.refresh_from_db()
+        self.assertEqual(self.est.nombres, "Ana")
+        s.refresh_from_db()
+        self.assertEqual((s.estado, s.comentario_revision), ("RECHAZADA", "No corresponde"))
+
+    def test_solo_profesor_jefe_puede_solicitar(self):
+        self.client.force_login(self.profe_mat)  # no es jefe del curso
+        self.assertEqual(self.client.get(reverse("solicitud_crear", args=[self.est.pk])).status_code, 403)
+        self.client.force_login(self.profe_len)
+        self.assertEqual(self.client.get(reverse("estudiante_editar", args=[self.est.pk])).status_code, 403)
+        r = self.client.get(reverse("estudiante_detalle", args=[self.est.pk]))
+        self.assertContains(r, "Solicitar modificación")
+
+    def test_rut_invalido_no_genera_solicitud(self):
+        from .models import SolicitudCambio
+        self.client.force_login(self.profe_len)
+        self.client.post(reverse("solicitud_crear", args=[self.est.pk]), self.datos(rut="12.345.678-0"))
+        self.assertFalse(SolicitudCambio.objects.exists())

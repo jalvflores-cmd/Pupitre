@@ -11,6 +11,7 @@
       <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_final_pdf' est.curso.pk %}?estudiante={{ est.pk }}"><i class="bi bi-file-pdf"></i> Informe final</a>
     {% endif %}
     {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'estudiante_editar' est.pk %}"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
+    {% if puede_solicitar %}<a class="btn btn-primary btn-sm" href="{% url 'solicitud_crear' est.pk %}"><i class="bi bi-pencil-square"></i> Solicitar modificación</a>{% endif %}
   </div>
 </div>
 <div class="row g-4">
@@ -48,6 +49,20 @@
     </div>
   </div>
 </div>
+{% if solicitudes %}
+<div class="card p-3 mt-4">
+  <h5>Solicitudes de modificación de datos</h5>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Fecha</th><th>Solicitada por</th><th>Cambios</th><th>Estado</th></tr></thead>
+    {% for s in solicitudes %}
+    <tr><td class="small">{{ s.creada|date:"d-m-Y" }}</td><td class="small">{{ s.solicitante.get_full_name|default:s.solicitante.username }}</td>
+      <td class="small">{% for etiqueta, antes, despues in s.cambios_legibles %}{{ etiqueta }}: {{ antes }} → <b>{{ despues }}</b><br>{% endfor %}</td>
+      <td><span class="badge {% if s.estado == 'APROBADA' %}bg-success{% elif s.estado == 'RECHAZADA' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ s.get_estado_display }}</span>
+        {% if s.comentario_revision %}<div class="small text-muted">{{ s.comentario_revision }}</div>{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
 <div class="card p-3 mt-4">
   <div class="d-flex justify-content-between"><h5>Convivencia escolar (anotaciones)</h5>
     <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nueva"><i class="bi bi-plus-lg"></i> Nueva anotación</button></div>

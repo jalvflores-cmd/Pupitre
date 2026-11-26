@@ -249,3 +249,73 @@ class Anotacion(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} – {self.estudiante} ({self.fecha:%d-%m-%Y})"
+
+
+class SolicitudCambio(models.Model):
+    """Cambio de datos de un estudiante pedido por su profesor(a) jefe.
+
+    No se aplica hasta que Dirección o UTP lo aprueba.
+    """
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "PENDIENTE", "Pendiente"
+        APROBADA = "APROBADA", "Aprobada"
+        RECHAZADA = "RECHAZADA", "Rechazada"
+
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="solicitudes")
+    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+                                    related_name="solicitudes_cambio")
+    cambios = models.JSONField(help_text="{campo: {'antes': valor, 'despues': valor}}")
+    motivo = models.TextField(blank=True)
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.PENDIENTE)
+    creada = models.DateTimeField(auto_now_add=True)
+    revisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="solicitudes_revisadas")
+    revisada = models.DateTimeField(null=True, blank=True)
+    comentario_revision = models.TextField("comentario de la revisión", blank=True)
+
+    class Meta:
+        verbose_name = "solicitud de modificación"
+        verbose_name_plural = "solicitudes de modificación"
+        ordering = ["-creada"]
+
+    def __str__(self):
+        return f"Solicitud {self.get_estado_display().lower()} – {self.estudiante}"
+
+    def cambios_legibles(self):
+        """[(etiqueta, antes, después)] para mostrar en pantalla."""
+        filas = []
+        for campo, valores in self.cambios.items():
+            try:
+                etiqueta = Estudiante._meta.get_field(campo).verbose_name
+            except Exception:
+                etiqueta = campo
+            antes, despues = valores.get("antes"), valores.get("despues")
+            if campo == "fecha_nacimiento":
+                antes, despues = (_fecha_legible(antes), _fecha_legible(despues))
+            elif campo in ("rut", "apoderado_rut"):
+                antes, despues = formatear_rut(antes) if antes else "", formatear_rut(despues) if despues else ""
+            filas.append((str(etiqueta).capitalize(), antes or "—", despues or "—"))
+        return filas
+
+    def aplicar(self):
+        """Copia los cambios al estudiante y lo guarda. Lanza ValidationError si ya no son válidos."""
+        import datetime as dt
+
+        est = self.estudiante
+        for campo, valores in self.cambios.items():
+            valor = valores.get("despues") or ""
+            if campo == "fecha_nacimiento":
+                valor = dt.date.fromisoformat(valor) if valor else None
+            setattr(est, campo, valor)
+        if est.rut:
+            est.rut = normalizar_rut(est.rut)
+        est.full_clean()
+        est.save()
+
+
+def _fecha_legible(iso):
+    if not iso:
+        return ""
+    a, m, d = iso.split("-")
+    return f"{d}-{m}-{a}"

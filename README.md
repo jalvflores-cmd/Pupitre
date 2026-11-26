@@ -29,7 +29,7 @@ de un establecimiento educacional chileno, con carga desde Excel y emisión de i
 |---|---|
 | **Director(a)** y **Jefe(a) de UTP** | Todo: todos los niveles, cursos, asignaturas y estudiantes. Pueden editar notas, crear/editar estudiantes, importar, emitir todos los informes y entrar a **Configuración** (usuarios, cursos, asignaturas, carga académica). |
 | **Profesor(a)** | Solo las asignaturas que dicta: ve y edita sus notas, ve a los estudiantes de esos cursos y registra anotaciones. |
-| **Profesor(a) jefe** | Además, consulta (sin editar) todas las notas de su curso y emite los informes de su curso. |
+| **Profesor(a) jefe** | Además, consulta (sin editar) todas las notas de su curso y emite los informes de su curso. Puede **solicitar** cambios en el nombre y los datos de sus estudiantes; los cambios se aplican solo cuando Jefe(a) de UTP o Dirección los aprueba en **Solicitudes**. |
 
 ## Puesta en marcha
 
