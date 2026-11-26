@@ -31,11 +31,14 @@
       <div class="mt-4 demo-usuarios">
         <p class="fw-semibold mb-1 small">Versión de prueba: elija un perfil para ingresar</p>
         <p class="text-muted small mb-2">Contraseña de todos: <code>demo1234</code>. Los datos son ficticios.</p>
+        {% for grupo, usuarios in usuarios_demo %}
+        <div class="small fw-semibold text-muted mt-3 mb-1">{{ grupo }}</div>
         <div class="row g-2">
-          {% for u, r in usuarios_demo %}
+          {% for u, r in usuarios %}
           <div class="col-6"><button type="button" onclick="document.getElementById('usuario').value='{{ u }}';document.getElementById('clave').value='demo1234';document.getElementById('clave').form.submit();"><code>{{ u }}</code><br><span class="text-muted">{{ r }}</span></button></div>
           {% endfor %}
         </div>
+        {% endfor %}
       </div>
       {% endif %}
     </div>

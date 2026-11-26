@@ -289,8 +289,9 @@ class PrimeraConfiguracionForm(BootstrapMixin, forms.Form):
     rol = forms.ChoiceField(label="Su cargo", choices=[("DIRECTOR", "Director(a)"), ("UTP", "Jefe(a) de UTP")])
     nombres = forms.CharField(label="Sus nombres", max_length=150)
     apellidos = forms.CharField(label="Sus apellidos", max_length=150)
-    usuario = forms.SlugField(label="Nombre de usuario para ingresar", max_length=150,
-                              help_text="Sin espacios ni tildes. Ej.: jsandoval")
+    usuario = forms.RegexField(label="Nombre de usuario para ingresar", max_length=150, regex=r"^[a-zA-Z0-9._-]+$",
+                               help_text="Sin espacios ni tildes. Ej.: jsandoval",
+                               error_messages={"invalid": "Use solo letras sin tilde, números, punto, guion o guion bajo."})
     clave1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
     clave2 = forms.CharField(label="Repita la contraseña", widget=forms.PasswordInput)
     plan_oficial = forms.BooleanField(label="Crear las asignaturas del plan oficial de Enseñanza Básica",

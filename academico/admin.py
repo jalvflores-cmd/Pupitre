@@ -8,7 +8,8 @@ from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Nivel,
     Comentario, Entrevista, Funcionario, Perfil, RedApoyo, SolicitudCambio,
 )
-from .permisos import es_gestion
+from .permisos import es_gestion, es_superadmin, usuarios_establecimiento
+from .tenencia import establecimiento_actual
 
 
 class SoloGestion:
@@ -29,6 +30,12 @@ class SoloGestion:
     def has_delete_permission(self, request, obj=None):
         return es_gestion(request.user)
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Solo usuarios del propio establecimiento (profesores, jefaturas, etc.)
+        if db_field.related_model is User:
+            kwargs["queryset"] = usuarios_establecimiento(activos=False)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 admin.site.has_permission = lambda request: request.user.is_active and es_gestion(request.user)
 admin.site.unregister(Group)
@@ -39,6 +46,14 @@ class PerfilInline(admin.StackedInline):
     model = Perfil
     can_delete = False
     verbose_name_plural = "Rol en la plataforma"
+
+    def get_exclude(self, request, obj=None):
+        return None if es_superadmin(request.user) else ("establecimiento",)
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "rol" and not es_superadmin(request.user):
+            kwargs["choices"] = [c for c in Perfil.Rol.choices if c[0] != Perfil.Rol.SUPERADMIN]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
 @admin.register(User)
@@ -64,6 +79,11 @@ class UsuarioAdmin(SoloGestion, UserAdmin):
         perfil = getattr(obj, "perfil", None)
         return perfil.get_rol_display() if perfil else "—"
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        est = establecimiento_actual()
+        return qs.filter(perfil__establecimiento=est) if est is not None else qs
+
     def get_inline_instances(self, request, obj=None):
         return super().get_inline_instances(request, obj) if obj else []
 
@@ -74,16 +94,40 @@ class UsuarioAdmin(SoloGestion, UserAdmin):
 
 @admin.register(Establecimiento)
 class EstablecimientoAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("nombre", "rbd", "comuna", "director")
+    list_display = ("nombre", "rbd", "oferta", "comuna", "director", "activo")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        est = establecimiento_actual()
+        return qs.filter(pk=est.pk) if est is not None and not es_superadmin(request.user) else qs
+
+    def get_exclude(self, request, obj=None):
+        return None if es_superadmin(request.user) else ("activo", "modulos")
 
     def has_add_permission(self, request, *args):
-        return es_gestion(request.user) and not Establecimiento.objects.exists()
+        return es_superadmin(request.user) or (es_gestion(request.user) and not Establecimiento.objects.exists())
+
+    def has_delete_permission(self, request, obj=None):
+        return es_superadmin(request.user)
 
 
 @admin.register(Nivel)
 class NivelAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("nombre", "orden")
-    list_editable = ("orden",)
+    """Los niveles son comunes a todos los establecimientos: solo los modifica el superadministrador
+    (o Dirección/UTP cuando la plataforma tiene un solo establecimiento)."""
+    list_display = ("nombre", "orden", "ensenanza", "decreto_plan_estudios")
+
+    def _puede(self, request):
+        return es_superadmin(request.user) or (es_gestion(request.user) and Establecimiento.objects.count() <= 1)
+
+    def has_add_permission(self, request, *args):
+        return self._puede(request)
+
+    def has_change_permission(self, request, obj=None):
+        return self._puede(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return self._puede(request)
 
 
 class AsignaturaCursoInline(admin.TabularInline):
@@ -94,7 +138,7 @@ class AsignaturaCursoInline(admin.TabularInline):
 
 @admin.register(Curso)
 class CursoAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("__str__", "nivel", "letra", "anio", "profesor_jefe")
+    list_display = ("__str__", "nivel", "letra", "anio", "modalidad", "especialidad", "profesor_jefe")
     list_filter = ("anio", "nivel")
     inlines = [AsignaturaCursoInline]
 
@@ -110,7 +154,7 @@ class AsignaturaAdmin(SoloGestion, admin.ModelAdmin):
 @admin.register(AsignaturaCurso)
 class AsignaturaCursoAdmin(SoloGestion, admin.ModelAdmin):
     list_display = ("asignatura", "curso", "profesor", "horas_semanales")
-    list_filter = ("curso__anio", "curso__nivel", "asignatura__tipo", "asignatura", "profesor")
+    list_filter = ("curso__anio", "curso__nivel", "asignatura__tipo")
     list_editable = ("profesor", "horas_semanales")
 
 

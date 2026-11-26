@@ -24,7 +24,7 @@ from .permisos import (
     asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
     es_solo_lectura, gestiona_convivencia, puede_anotar, puede_editar_contacto, puede_eliminar_anotacion,
     puede_solicitar_cambio, puede_ver_funcionarios, ve_todo, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
-    puede_editar_entrevista, puede_registrar_entrevista, ve_datos_sensibles,
+    puede_editar_entrevista, puede_registrar_entrevista, ve_datos_sensibles, usuarios_establecimiento, es_superadmin,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -82,12 +82,17 @@ def curso_detalle(request, pk):
                    if puede_ver_asignatura_curso(request.user, ac)]
     _, _, resumenes = resumen_curso(curso, asignaturas)
     gestion = es_gestion(request.user)
-    del_plan = [ac for ac in asignaturas if ac.asignatura.tipo != Asignatura.Tipo.TALLER]
+    del_plan = [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.ASIGNATURA]
+    diferenciado = [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.DIFERENCIADA]
+    modulos_tp = [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.MODULO_TP]
     talleres = [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.TALLER]
     return render(request, "academico/curso_detalle.html", {
         "curso": curso, "asignaturas": asignaturas, "resumenes": resumenes,
         "del_plan": del_plan, "talleres": talleres,
-        "grupos": [("Plan de estudios", del_plan), ("Talleres JEC (Jornada Escolar Completa)", talleres)],
+        "grupos": [("Formación general" if (diferenciado or modulos_tp) else "Plan de estudios", del_plan),
+                   ("Plan diferenciado Científico-Humanista (electivos)", diferenciado),
+                   (f"Módulos de la especialidad{': ' + curso.especialidad if curso.especialidad else ''}", modulos_tp),
+                   ("Talleres JEC (Jornada Escolar Completa)", talleres)],
         "horas_totales": sum((ac.horas_semanales or 0) for ac in asignaturas),
         "form_agregar": AgregarAsignaturaCursoForm(curso=curso, profesores=_profesores()) if gestion else None,
         "profesores": _profesores() if gestion else None,
@@ -730,7 +735,7 @@ def funcionario_form(request, pk=None):
 
     funcionario = get_object_or_404(Funcionario, pk=pk) if pk else Funcionario()
     form = FuncionarioForm(request.POST or None, instance=funcionario)
-    form.fields["usuario"].queryset = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+    form.fields["usuario"].queryset = usuarios_establecimiento()
     form.fields["usuario"].label_from_instance = lambda u: f"{u.get_full_name() or u.username} ({u.username})"
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -762,7 +767,7 @@ def prioritarios(request):
 
 def _profesores():
     from django.contrib.auth.models import User
-    return User.objects.filter(is_active=True).order_by("first_name", "last_name")
+    return usuarios_establecimiento()
 
 
 @login_required
@@ -855,7 +860,7 @@ def cargar_plan_oficial(request, pk=None):
         messages.success(request, f"Plan oficial cargado: {total} asignatura(s) agregada(s) en {aplicados} curso(s). "
                                   "Ahora asigne los profesores en cada curso.")
     if sin_plan:
-        messages.warning(request, "Sin plan automático (solo 1° a 8° básico por ahora): " + ", ".join(sin_plan)
+        messages.warning(request, "Sin plan automático (Parvularia, o 3°-4° medio HC sin electivos definidos): " + ", ".join(sin_plan)
                          + ". Agregue sus asignaturas desde la página de cada curso.")
     return redirect("curso_detalle", pk=pk) if pk else redirect("cursos")
 
@@ -881,7 +886,7 @@ def bienvenida(request):
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         with transaction.atomic():
-            est = Establecimiento.objects.first() or Establecimiento()
+            est = Establecimiento.objects.order_by("pk").first() or Establecimiento()
             for campo in ("nombre", "rbd", "comuna", "region", "director", "jefe_utp"):
                 setattr(est, campo, d[campo].strip())
             if not est.director and d["rol"] == "DIRECTOR":
@@ -891,7 +896,7 @@ def bienvenida(request):
             est.save()
             u = User.objects.create_user(d["usuario"], password=d["clave1"], first_name=d["nombres"].strip(),
                                          last_name=d["apellidos"].strip(), is_superuser=True, is_staff=True)
-            Perfil.objects.create(usuario=u, rol=d["rol"])
+            Perfil.objects.create(usuario=u, rol=d["rol"], establecimiento=est)
             if d["plan_oficial"]:
                 from .plan_oficial import asegurar_catalogo
                 asegurar_catalogo()
@@ -914,7 +919,7 @@ def respaldos_vista(request):
     if not respaldos.usa_sqlite():
         messages.info(request, "Los respaldos de esta versión en internet los hace el servicio de alojamiento.")
         return redirect("inicio")
-    est = Establecimiento.objects.first()
+    est = getattr(request, "establecimiento", None) or Establecimiento.objects.order_by("pk").first()
 
     class ConfigForm(dj_forms.ModelForm):
         class Meta:
@@ -960,7 +965,7 @@ def respaldo_descargar(request, nombre):
 # --------------------------------------------------------------------------- Configuración editable
 
 def logo(request):
-    est = Establecimiento.objects.first()
+    est = getattr(request, "establecimiento", None) or Establecimiento.objects.order_by("pk").first()
     if not est or not est.logo:
         from django.http import Http404
         raise Http404
@@ -976,7 +981,7 @@ def configuracion(request):
 
     from .models import OpcionCatalogo
 
-    est = Establecimiento.objects.first() or Establecimiento(nombre="Establecimiento educacional")
+    est = Establecimiento.actual()
     Listas = modelformset_factory(OpcionCatalogo, fields=["nombre", "activo"], extra=2)
     post = request.POST if request.method == "POST" else None
     seccion = request.POST.get("seccion") if post else None

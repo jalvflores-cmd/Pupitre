@@ -18,6 +18,7 @@
       <a href="{% url 'curso_detalle' c.pk %}" class="p-curso d-flex gap-3 align-items-center">
         <div class="letra">{{ c.letra }}</div>
         <div><div class="fw-semibold">{{ c.nombre_corto }}</div>
+          {% if c.modalidad %}<div class="small"><span class="badge {% if c.modalidad == 'TP' %}bg-warning-subtle text-warning-emphasis{% else %}bg-info-subtle text-info-emphasis{% endif %}">{% if c.modalidad == 'TP' %}TP · {{ c.especialidad }}{% else %}Científico-Humanista{% endif %}</span></div>{% endif %}
           <div class="small text-muted"><i class="bi bi-people"></i> {{ c.n_est }} estudiantes</div>
           <div class="small text-muted"><i class="bi bi-person-badge"></i> {{ c.profesor_jefe.get_full_name|default:"Sin profesor jefe" }}</div></div>
       </a>

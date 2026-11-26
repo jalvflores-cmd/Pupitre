@@ -22,19 +22,27 @@
     <span><span class="nombre d-block">Pupitre</span><span class="escuela d-block">{{ establecimiento.nombre }}</span></span>
   </a>
   <nav class="p-nav">
+    {% if es_superadmin %}
+    <div class="titulo">Plataforma</div>
+    <a href="{% url 'plataforma' %}" class="{% if '/plataforma/' in p %}activo{% endif %}"><i class="bi bi-buildings"></i> Establecimientos</a>
+    {% if establecimiento.pk %}<form method="post" action="{% url 'plataforma_salir' %}" class="px-2 small">{% csrf_token %}
+      <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · salir</button></form>{% endif %}
+    {% endif %}
+    {% if not es_superadmin or establecimiento.pk %}
     <a href="{% url 'inicio' %}" class="{% if p == '/' %}activo{% endif %}"><i class="bi bi-house"></i> Inicio</a>
     <div class="titulo">Académico</div>
     <a href="{% url 'cursos' %}" class="{% if '/cursos/' in p or '/notas/' in p or '/evaluaciones/' in p %}activo{% endif %}"><i class="bi bi-grid-1x2"></i> Cursos y notas</a>
     <a href="{% url 'estudiantes' %}" class="{% if '/estudiantes/' in p %}activo{% endif %}"><i class="bi bi-people"></i> Estudiantes</a>
-    <a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>
+    {% if mod_convivencia %}<a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>{% endif %}
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
-    {% if ve_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
+    {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
     {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}
     {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<a href="{% url 'solicitudes' %}" class="{% if '/solicitudes/' in p %}activo{% endif %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %}<span class="badge bg-warning">{{ solicitudes_pendientes }}</span>{% endif %}</a>{% endif %}
     {% if es_gestion %}<a href="{% url 'comentarios' %}" class="{% if '/comentarios/' in p %}activo{% endif %}"><i class="bi bi-chat-square-heart"></i> Comentarios</a>
     <a href="{% url 'configuracion' %}" class="{% if '/configuracion/' in p %}activo{% endif %}"><i class="bi bi-gear"></i> Configuración</a>{% endif %}
+    {% endif %}
   </nav>
   <div class="p-usuario">
     <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>

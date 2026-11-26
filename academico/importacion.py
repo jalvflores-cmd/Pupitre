@@ -250,6 +250,8 @@ def reordenar_niveles():
             orden, ensenanza = 2, Nivel.Ensenanza.PARVULARIA
         elif m := re.fullmatch(r"(\d)basico", clave):
             orden, ensenanza = int(m.group(1)) + 2, Nivel.Ensenanza.BASICA
+        elif m := re.fullmatch(r"([1-4])medio", clave):
+            orden, ensenanza = int(m.group(1)) + 10, Nivel.Ensenanza.MEDIA
         elif m := re.fullmatch(r"(i|ii|iii|iv)medio", clave):
             orden, ensenanza = {"i": 1, "ii": 2, "iii": 3, "iv": 4}[m.group(1)] + 10, Nivel.Ensenanza.MEDIA
         if orden is not None and (nivel.orden != orden or nivel.ensenanza != ensenanza):
@@ -299,7 +301,14 @@ def importar_nomina_sige(tabla, cursos_permitidos=None):
                     if orden is None:
                         orden = (Nivel.objects.aggregate(m=Max("orden"))["m"] or 0) + 1
                     nivel = Nivel.objects.create(nombre=nombre, orden=orden, ensenanza=ensenanza)
-                cursos[clave_curso], _ = Curso.objects.get_or_create(nivel=nivel, letra=clave_curso[3] or "A", anio=anio)
+                cursos[clave_curso], creado = Curso.objects.get_or_create(nivel=nivel, letra=clave_curso[3] or "A", anio=anio)
+                try:  # Media: código SIGE 310 = Científico-Humanista; 410 en adelante = Técnico-Profesional
+                    tipo_sige = _entero(clave_curso[0])
+                except ValueError:
+                    tipo_sige = 0
+                if ensenanza == Nivel.Ensenanza.MEDIA and not cursos[clave_curso].modalidad and tipo_sige >= 310:
+                    cursos[clave_curso].modalidad = "HC" if tipo_sige < 400 else "TP"
+                    cursos[clave_curso].save(update_fields=["modalidad"])
             asistencia = None
             try:
                 valor = Decimal(_texto(d.get("asistencia")).replace(",", ".") or "0")

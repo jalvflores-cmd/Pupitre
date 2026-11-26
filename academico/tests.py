@@ -392,13 +392,13 @@ class DemoYListadoTests(BaseDatos):
     def test_datos_demo_no_pisa_cambios(self):
         from django.core.management import call_command
         from .models import Establecimiento
-        Establecimiento.objects.create(nombre="Escuela Gabriela Mistral", director="Nombre editado")
+        Establecimiento.objects.order_by("pk").update(nombre="Escuela Gabriela Mistral", director="Nombre editado")
         call_command("datos_demo", stdout=StringIO())
         u = User.objects.get(username="director")
         u.perfil.rol = Perfil.Rol.UTP
         u.perfil.save()
         call_command("datos_demo", stdout=StringIO())
-        self.assertEqual(Establecimiento.actual().director, "Nombre editado")
+        self.assertEqual(Establecimiento.objects.order_by("pk").first().director, "Nombre editado")
         self.assertEqual(User.objects.get(username="director").perfil.rol, Perfil.Rol.UTP)
 
     def test_estudiantes_agrupados_por_curso(self):
@@ -446,7 +446,7 @@ class SigeYFormatosTests(BaseDatos):
 
     def test_rbd_de_otro_establecimiento(self):
         from .models import Establecimiento
-        Establecimiento.objects.create(nombre="Otra", rbd="9999")
+        Establecimiento.objects.update(rbd="9999")
         r = self.subir(SIGE_HTML.encode("latin-1"), "nomina.xls")
         self.assertContains(r, "no corresponde a este establecimiento")
         self.assertFalse(Estudiante.objects.filter(rut="22222222-2").exists())
@@ -682,13 +682,12 @@ class ConfiguracionEditableTests(BaseDatos):
 
     def test_logo_color_y_listas(self):
         from .models import Establecimiento, OpcionCatalogo
-        Establecimiento.objects.create(nombre="Escuela X")
         self.client.force_login(self.utp)
         r = self.client.post(reverse("configuracion"), {
             "seccion": "escuela", "nombre": "Escuela Los Aromos", "color_principal": "#7A1F3D",
             "pie_documentos": "Educar con cariño", "logo_archivo": self._logo()})
         self.assertRedirects(r, reverse("configuracion"), fetch_redirect_response=False)
-        est = Establecimiento.objects.get()
+        est = Establecimiento.objects.order_by("pk").first()
         self.assertTrue(est.logo)
         self.assertEqual(est.color_principal, "#7A1F3D")
         self.assertEqual(self.client.get(reverse("logo"))["Content-Type"], "image/png")
@@ -723,3 +722,97 @@ class ConfiguracionEditableTests(BaseDatos):
         # profesores no acceden a la configuración
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("configuracion")).status_code, 403)
+
+
+class VariosEstablecimientosTests(TestCase):
+    """Cada establecimiento ve solo sus datos; el superadministrador administra la plataforma."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from .models import Establecimiento
+        from .tenencia import en_establecimiento
+
+        cls.a = Establecimiento.objects.order_by("pk").first() or Establecimiento.objects.create(nombre="A")
+        cls.b = Establecimiento.objects.create(nombre="Liceo B", oferta="TP")
+
+        def poblar(est, sufijo, rut):
+            with en_establecimiento(est):
+                u = User.objects.create_user(f"utp.{sufijo}", password="x")
+                Perfil.objects.create(usuario=u, rol="UTP", establecimiento=est)
+                nivel, _ = Nivel.objects.get_or_create(nombre="I Medio", defaults={"orden": 11, "ensenanza": "MEDIA"})
+                curso = Curso.objects.create(nivel=nivel, letra="A", anio=2026)
+                ac = AsignaturaCurso.objects.create(curso=curso, asignatura=Asignatura.objects.create(nombre="Matemática"),
+                                                    profesor=u)
+                e = Estudiante.objects.create(rut=rut, nombres=f"Est {sufijo}", apellido_paterno="X", curso=curso)
+                return u, curso, ac, e
+
+        cls.ua, cls.ca, cls.aca, cls.ea = poblar(cls.a, "a", "12.345.678-5")
+        cls.ub, cls.cb, cls.acb, cls.eb = poblar(cls.b, "b", "12.345.678-5")  # mismo RUT en otro colegio: permitido
+        cls.sa = User.objects.create_user("superadmin", password="x")
+        Perfil.objects.create(usuario=cls.sa, rol="SUPERADMIN")
+
+    def test_no_se_ven_datos_de_otro_establecimiento(self):
+        self.client.force_login(self.ua)
+        r = self.client.get(reverse("estudiantes"))
+        self.assertContains(r, "Est a")
+        self.assertNotContains(r, "Est b")
+        for nombre, pk in (("estudiante_detalle", self.eb.pk), ("curso_detalle", self.cb.pk),
+                           ("libro_notas", self.acb.pk), ("acta_final_pdf", self.cb.pk)):
+            self.assertEqual(self.client.get(reverse(nombre, args=[pk])).status_code, 404, nombre)
+        self.assertEqual(self.client.post(reverse("curso_asignatura_quitar", args=[self.acb.pk])).status_code, 404)
+        self.assertTrue(AsignaturaCurso.todos.filter(pk=self.acb.pk).exists())
+        # el profesor de otro colegio no aparece para asignar
+        r = self.client.get(reverse("curso_detalle", args=[self.ca.pk]))
+        self.assertNotContains(r, f'value="{self.ub.pk}"')
+        # administración: solo usuarios del propio establecimiento
+        r = self.client.get("/admin/auth/user/")
+        self.assertContains(r, "utp.a")
+        self.assertNotContains(r, "utp.b")
+        self.assertEqual(self.client.get(reverse("plataforma")).status_code, 403)
+
+    def test_superadministrador(self):
+        self.client.force_login(self.sa)
+        self.assertRedirects(self.client.get("/cursos/"), reverse("plataforma"), fetch_redirect_response=False)
+        r = self.client.get(reverse("plataforma"))
+        self.assertContains(r, "Liceo B")
+        # crear un establecimiento nuevo con su primera cuenta
+        r = self.client.post(reverse("plataforma_nuevo"), {
+            "nombre": "Liceo Nuevo", "oferta": "HC", "activo": "on", "modulos": ["curricular"],
+            "rol": "DIRECTOR", "nombres": "Ana", "apellidos": "Soto", "usuario": "dir.nuevo", "clave": "clave-segura-1"})
+        self.assertRedirects(r, reverse("plataforma"), fetch_redirect_response=False)
+        from .models import Establecimiento, OpcionCatalogo
+        nuevo = Establecimiento.objects.get(nombre="Liceo Nuevo")
+        self.assertEqual(User.objects.get(username="dir.nuevo").perfil.establecimiento, nuevo)
+        self.assertTrue(OpcionCatalogo.todos.filter(establecimiento=nuevo, tipo="PROTOCOLO").exists())
+        # entrar a un establecimiento y trabajar en él
+        self.client.post(reverse("plataforma_entrar", args=[self.b.pk]))
+        r = self.client.get(reverse("estudiantes"))
+        self.assertContains(r, "Est b")
+        self.assertNotContains(r, "Est a")
+        # módulo desactivado: sin convivencia
+        self.client.force_login(User.objects.get(username="dir.nuevo"))
+        self.assertEqual(self.client.get(reverse("convivencia")).status_code, 403)
+        # establecimiento desactivado
+        nuevo.activo = False
+        nuevo.save()
+        self.assertEqual(self.client.get(reverse("inicio")).status_code, 403)
+
+    def test_plan_media_tp_y_hc(self):
+        from .plan_oficial import aplicar_plan_media, decreto_media
+        from .tenencia import en_establecimiento
+        with en_establecimiento(self.b):
+            nivel = Nivel.objects.create(nombre="III Medio", orden=13, ensenanza="MEDIA")
+            tp = Curso.objects.create(nivel=nivel, letra="B", anio=2026, modalidad="TP", especialidad="Administración")
+            aplicar_plan_media(tp)
+            tipos = set(tp.asignaturas_curso.values_list("asignatura__tipo", flat=True))
+            self.assertEqual(tipos, {"ASIGNATURA", "MODULO_TP"})
+            self.assertTrue(tp.asignaturas_curso.filter(asignatura__nombre="Filosofía").exists())
+            self.assertIn("954", decreto_media(tp))
+            hc = Curso.objects.create(nivel=nivel, letra="C", anio=2026, modalidad="HC")
+            aplicar_plan_media(hc, ["Física"])
+            self.assertTrue(hc.asignaturas_curso.filter(asignatura__tipo="DIFERENCIADA").exists())
+        self.client.force_login(self.ub)
+        r = self.client.get(reverse("curso_detalle", args=[tp.pk]))
+        self.assertContains(r, "Módulos de la especialidad: Administración")
+        for nombre in ("acta_final_pdf", "informe_final_pdf"):
+            self.assertEqual(self.client.get(reverse(nombre, args=[tp.pk])).status_code, 200)

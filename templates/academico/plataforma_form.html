@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}{% if est %}Editar establecimiento{% else %}Nuevo establecimiento{% endif %}{% endblock %}
+{% block contenido %}
+<div class="row justify-content-center"><div class="col-xl-9"><div class="card p-4">
+  <div class="miga mb-1"><a href="{% url 'plataforma' %}">Plataforma</a></div>
+  <h4 class="mb-3">{% if est %}{{ est }}{% else %}Nuevo establecimiento{% endif %}</h4>
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="row g-3">
+      {% for f in form %}
+      <div class="{% if f.name == 'modulos' %}col-12{% else %}col-md-6{% endif %}">
+        {% if f.name == "activo" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">Establecimiento activo (sus usuarios pueden ingresar)</label></div>
+        {% elif f.name == "modulos" %}<label class="form-label">{{ f.label }}</label>
+          <div class="d-flex flex-wrap gap-3">{% for c in f %}<div class="form-check">{{ c.tag }} <label class="form-check-label" for="{{ c.id_for_label }}">{{ c.choice_label }}</label></div>{% endfor %}</div>
+        {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}{% endif %}
+        {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if admin_form %}
+    <h5 class="mt-4 mb-1">Primera cuenta del establecimiento</h5>
+    <p class="small text-muted">Con esta cuenta el establecimiento crea sus demás usuarios y configura su logo y datos.</p>
+    <div class="row g-3">
+      {% for f in admin_form %}
+      <div class="col-md-6">{% if f.field.widget.input_type == "checkbox" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
+        {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }} *</label>{{ f }}{% endif %}
+        {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <button class="btn btn-primary mt-4"><i class="bi bi-check-lg"></i> Guardar</button>
+    <a class="btn btn-link mt-4" href="{% url 'plataforma' %}">Cancelar</a>
+  </form>
+</div></div></div>
+{% endblock %}

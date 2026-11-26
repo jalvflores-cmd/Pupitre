@@ -1,10 +1,15 @@
 from django.urls import path
 
-from . import views
+from . import plataforma, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
     path("bienvenida/", views.bienvenida, name="bienvenida"),
+    path("plataforma/", plataforma.plataforma, name="plataforma"),
+    path("plataforma/nuevo/", plataforma.establecimiento_form, name="plataforma_nuevo"),
+    path("plataforma/<int:pk>/", plataforma.establecimiento_form, name="plataforma_editar"),
+    path("plataforma/<int:pk>/entrar/", plataforma.entrar, name="plataforma_entrar"),
+    path("plataforma/salir/", plataforma.salir, name="plataforma_salir"),
     path("logo.png", views.logo, name="logo"),
     path("configuracion/", views.configuracion, name="configuracion"),
     path("respaldos/", views.respaldos_vista, name="respaldos"),

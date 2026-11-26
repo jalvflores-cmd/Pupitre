@@ -4,6 +4,7 @@
 {% block contenido %}
 <div class="p-encabezado">
   <div><div class="miga"><a href="{% url 'cursos' %}">Cursos</a> / {{ curso.nombre_corto }}</div><h3>{{ curso }}</h3>
+    {% if curso.modalidad %}<div class="mb-1"><span class="badge {% if curso.modalidad == 'TP' %}bg-warning-subtle text-warning-emphasis{% else %}bg-info-subtle text-info-emphasis{% endif %}">{{ curso.descripcion_modalidad }}</span></div>{% endif %}
     <div class="sub">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · {{ resumenes|length }} estudiantes · <a href="{% url 'convivencia' %}?curso={{ curso.pk }}">{{ n_anotaciones }} anotaciones</a></div></div>
   {% if informes %}
   <div class="btn-group">
@@ -17,7 +18,7 @@
 <div class="card p-3 p-lg-4 mb-4">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
     <h5 class="mb-0">Asignaturas y talleres JEC</h5>
-    <span class="small text-muted">{{ del_plan|length }} asignatura{{ del_plan|length|pluralize }} · {{ talleres|length }} taller{{ talleres|length|pluralize:"es" }} JEC{% if horas_totales %} · {{ horas_totales|floatformat:"-1" }} horas semanales{% endif %}</span>
+    <span class="small text-muted">{{ asignaturas|length }} asignaturas, módulos y talleres{% if horas_totales %} · {{ horas_totales|floatformat:"-1" }} horas semanales{% endif %}</span>
   </div>
   {% if form_agregar %}
   <form method="post" action="{% url 'curso_carga_guardar' curso.pk %}">{% csrf_token %}

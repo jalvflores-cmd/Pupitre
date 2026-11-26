@@ -243,13 +243,24 @@ def _descripcion_nivel(nivel):
     if nivel.ensenanza == "BASICA" and "básico" in nombre.lower():
         return nombre.lower().replace("básico", "").strip() + " año de Enseñanza Básica"
     if nivel.ensenanza == "MEDIA" and "medio" in nombre.lower():
-        return nombre.split()[0] + " año de Enseñanza Media"
+        primero = nombre.split()[0]
+        primero = {"I": "1°", "II": "2°", "III": "3°", "IV": "4°"}.get(primero.upper(), primero)
+        return primero + " año de Enseñanza Media"
     if nivel.ensenanza == "PARVULARIA":
         return f"{nombre} (Educación Parvularia)"
     return nombre
 
 
-def _tipo_ensenanza(nivel):
+def _tipo_ensenanza(nivel, curso=None):
+    if curso is not None and nivel.ensenanza == "MEDIA" and curso.modalidad:
+        if curso.modalidad == "TP":
+            texto = "Enseñanza Media Técnico-Profesional"
+            if curso.especialidad:
+                texto += f" · Especialidad {curso.especialidad}"
+                if curso.mencion:
+                    texto += f", mención {curso.mencion}"
+            return texto
+        return "Enseñanza Media Científico-Humanista"
     return nivel.get_ensenanza_display() if nivel.ensenanza else ""
 
 
@@ -375,7 +386,7 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
         historia += _membrete("Informe de calificaciones", f"Año escolar {curso.anio}")
         historia.append(_tabla_datos([
             ("Estudiante", _nombre_mayus(e), "RUN", e.rut_formateado),
-            ("Curso", f"{curso.nombre_corto} · {_tipo_ensenanza(curso.nivel)}", "Profesor(a) jefe", jefe or "—"),
+            ("Curso", f"{curso.nombre_corto} · {_tipo_ensenanza(curso.nivel, curso)}", "Profesor(a) jefe", jefe or "—"),
         ], [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
         historia.append(Spacer(1, 10))
         datos = [["Asignatura", "Calificaciones 1er semestre", "Prom.\n1er sem.", "Calificaciones 2do semestre",
@@ -424,10 +435,10 @@ def pdf_informe_final(curso, estudiantes=None):
         if i:
             historia.append(PageBreak())
         e = r.estudiante
-        historia += _membrete("Certificado anual de estudios", _tipo_ensenanza(nivel))
+        historia += _membrete("Certificado anual de estudios", _tipo_ensenanza(nivel, curso))
         reconocimiento = (f", reconocido oficialmente por el Ministerio de Educación según {est.resolucion_reconocimiento}"
                           if est.resolucion_reconocimiento else ", reconocido oficialmente por el Ministerio de Educación")
-        plan = f"Plan de Estudios aprobado por {nivel.decreto_plan_estudios}" if nivel.decreto_plan_estudios \
+        plan = f"Plan de Estudios aprobado por {curso.decreto_plan}" if curso.decreto_plan \
             else "Plan de Estudios vigente"
         region = f", Región de {est.region}" if est.region else ""
         texto = (
@@ -484,6 +495,7 @@ ABREVIATURAS = {
     "Artes Visuales": "Artes", "Música": "Música", "Educación Física y Salud": "Ed. Física",
     "Tecnología": "Tecnol.", "Orientación": "Orient.", "Religión": "Religión",
     "Religión Católica": "Rel. Católica", "Religión Evangélica": "Rel. Evang.",
+    "Educación Ciudadana": "Ed. Ciud.", "Ciencias para la Ciudadanía": "Cs. Ciud.", "Filosofía": "Filosofía",
     "Taller de Arte y Folclor": "T. Arte Folclor", "Taller de Robótica": "T. Robótica", "Taller de Deportes": "T. Deportes",
 }
 
@@ -496,9 +508,17 @@ def _celda_acta(p):
 
 def _abreviatura(asignatura):
     nombre = asignatura.nombre
-    if nombre not in ABREVIATURAS and nombre.lower().startswith("taller de "):
+    if asignatura.codigo:
+        return asignatura.codigo
+    if nombre in ABREVIATURAS:
+        return ABREVIATURAS[nombre]
+    if nombre.lower().startswith("taller de "):
         return "T. " + nombre[10:]
-    return asignatura.codigo or ABREVIATURAS.get(nombre, nombre)
+    if len(nombre) > 16:  # módulos TP y electivos: iniciales de las palabras importantes
+        menores = {"de", "del", "la", "las", "los", "el", "y", "e", "para", "en", "a", "con"}
+        palabras = [w for w in nombre.replace(",", "").split() if w.lower() not in menores]
+        return " ".join(w[:4] + ("." if len(w) > 4 else "") for w in palabras[:4])
+    return nombre
 
 
 def pdf_acta_final_curso(curso):
@@ -513,8 +533,8 @@ def pdf_acta_final_curso(curso):
     historia = _membrete("Acta de calificaciones finales y promoción escolar", f"Año escolar {curso.anio}")
     historia.append(_tabla_datos([
         ("Establecimiento", f"{est.nombre} · RBD {est.rbd or '—'}", "Comuna / Región", f"{est.comuna or '—'} / {est.region or '—'}"),
-        ("Curso", f"{_descripcion_nivel(nivel)} {curso.letra}", "Tipo de enseñanza", _tipo_ensenanza(nivel) or "—"),
-        ("Plan de estudios", nivel.decreto_plan_estudios or "—", "Evaluación y promoción", "Decreto N° 67 de 2018"),
+        ("Curso", f"{_descripcion_nivel(nivel)} {curso.letra}", "Tipo de enseñanza", _tipo_ensenanza(nivel, curso) or "—"),
+        ("Plan de estudios", curso.decreto_plan or "—", "Evaluación y promoción", "Decreto N° 67 de 2018"),
         ("Profesor(a) jefe", jefe or "—", "Reconocimiento oficial", est.resolucion_reconocimiento or "—"),
     ], [3.2 * cm, 8.8 * cm, 3.8 * cm, 8 * cm]))
     historia.append(Spacer(1, 8))
@@ -535,12 +555,13 @@ def pdf_acta_final_curso(curso):
                         if sit != "Y" else [""] * len(asigs))
                      + [formato_nota(r.promedio_general) if sit != "Y" else "", _asistencia_txt(e).replace(" %", ""), sit])
     ancho = landscape(letter)[0] - 4 * cm
-    fijos = [0.7 * cm, 2.1 * cm, 5.6 * cm, 0.9 * cm]
-    finales = [1.1 * cm, 1.1 * cm, 1 * cm]
-    ancho_asig = max(1 * cm, (ancho - sum(fijos) - sum(finales)) / max(len(asigs), 1))
+    muchas = len(asigs) > 12  # Media TP/HC: formación general + módulos o electivos
+    fijos = [0.6 * cm, 1.9 * cm, 4.2 * cm if muchas else 5.6 * cm, 0.8 * cm]
+    finales = [1 * cm, 1 * cm, 0.9 * cm]
+    ancho_asig = max(0.75 * cm, (ancho - sum(fijos) - sum(finales)) / max(len(asigs), 1))
     t = Table(datos, colWidths=fijos + [ancho_asig] * len(asigs) + finales, repeatRows=1)
     estilo = _estilo_oficial(datos, 3)
-    estilo.add("FONTSIZE", (0, 1), (-1, -1), 7.5)
+    estilo.add("FONTSIZE", (0, 1), (-1, -1), 6.8 if muchas else 7.5)
     t.setStyle(estilo)
     historia += [t, Spacer(1, 10)]
     resumen = [["Resumen", "Hombres", "Mujeres", "Total"]]

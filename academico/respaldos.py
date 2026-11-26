@@ -78,7 +78,7 @@ def _copiar_base(destino: Path):
 def _configuracion():
     from .models import Establecimiento
 
-    est = Establecimiento.objects.first()
+    est = Establecimiento.objects.order_by("pk").first()
     extra = (est.respaldo_carpeta_extra or "").strip() if est else ""
     conservar = est.respaldo_conservar if est and est.respaldo_conservar else 30
     return extra, conservar

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}Plataforma{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Establecimientos de la plataforma</h3><div class="sub">Cada establecimiento tiene sus propios usuarios, cursos, estudiantes, logo y configuración. Nadie ve datos de otro establecimiento.</div></div>
+  <a class="btn btn-primary" href="{% url 'plataforma_nuevo' %}"><i class="bi bi-plus-lg"></i> Nuevo establecimiento</a>
+</div>
+<div class="row g-3">
+  {% for e in establecimientos %}
+  <div class="col-md-6 col-xxl-4">
+    <div class="card p-3 h-100{% if not e.activo %} opacity-50{% endif %}">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><h6 class="mb-0">{{ e.nombre }}</h6>
+          <div class="small text-muted">{{ e.get_oferta_display }}{% if e.rbd %} · RBD {{ e.rbd }}{% endif %}{% if e.comuna %} · {{ e.comuna }}{% endif %}</div></div>
+        {% if not e.activo %}<span class="badge bg-secondary">Desactivado</span>{% elif e.pk == actual_id %}<span class="badge bg-success">Trabajando aquí</span>{% endif %}
+      </div>
+      <div class="d-flex gap-3 my-2 small"><span><b>{{ e.n_estudiantes }}</b> estudiantes</span><span><b>{{ e.n_cursos }}</b> cursos</span><span><b>{{ e.n_usuarios }}</b> usuarios</span></div>
+      <div class="mb-3">{% for m in e.nombres_modulos %}<span class="badge bg-primary-subtle text-primary-emphasis me-1 mb-1">{{ m }}</span>{% endfor %}</div>
+      <div class="mt-auto d-flex gap-2">
+        <form method="post" action="{% url 'plataforma_entrar' e.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary"><i class="bi bi-box-arrow-in-right"></i> Entrar</button></form>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'plataforma_editar' e.pk %}"><i class="bi bi-pencil"></i> Editar y módulos</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}<div class="col-12"><div class="card p-4 text-muted">Aún no hay establecimientos.</div></div>{% endfor %}
+</div>
+<div class="card p-3 p-lg-4 mt-4">
+  <h6 class="mb-1">Módulos de gestión administrativa · próximamente</h6>
+  <p class="small text-muted mb-2">La plataforma está preparada para sumar herramientas de gestión que se activan por establecimiento, con el mismo usuario y contraseña.</p>
+  <div class="d-flex flex-wrap gap-2">{% for m in proximos %}<span class="badge bg-light text-secondary border">{{ m }}</span>{% endfor %}</div>
+</div>
+{% endblock %}

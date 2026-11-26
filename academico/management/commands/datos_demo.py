@@ -18,6 +18,7 @@ from academico.models import (
     Perfil, Religion, anio_actual, Entrevista, RedApoyo,
 )
 from academico.importacion import reordenar_niveles
+from academico.tenencia import en_establecimiento
 from academico.rut import calcular_dv
 
 NOMBRES = ["Sofía", "Benjamín", "Isidora", "Agustín", "Florencia", "Vicente", "Emilia", "Matías", "Antonella",
@@ -37,10 +38,10 @@ class Command(BaseCommand):
         anio = anio_actual()
         datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán", "region": "Ñuble",
                          "director": "Jorge Sandoval Morales", "jefe_utp": "Pedro Castillo Mena"}
-        escuela = Establecimiento.objects.first()
+        escuela = Establecimiento.objects.order_by("pk").first()
         if escuela is None:
-            Establecimiento.objects.create(**datos_escuela)
-        elif escuela.nombre == "Colegio Demostración":  # solo reemplaza la demo antigua, nunca datos editados
+            escuela = Establecimiento.objects.create(**datos_escuela)
+        elif escuela.nombre in ("Colegio Demostración", "Establecimiento educacional"):  # solo reemplaza nombres provisorios, nunca datos editados
             for campo, valor in datos_escuela.items():
                 setattr(escuela, campo, valor)
             escuela.save()
@@ -48,6 +49,18 @@ class Command(BaseCommand):
             escuela.region = "Ñuble"
             escuela.save(update_fields=["region"])
 
+        if escuela.oferta != Establecimiento.Oferta.BASICA and escuela.nombre == "Escuela Gabriela Mistral":
+            escuela.oferta = Establecimiento.Oferta.BASICA
+            escuela.save(update_fields=["oferta"])
+        with en_establecimiento(escuela):
+            self.demo_escuela(anio)
+        self.demo_superadmin()
+        for datos in LICEOS:
+            self.demo_liceo(anio, datos)
+        self.stdout.write(self.style.SUCCESS(
+            "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
+
+    def demo_escuela(self, anio):
         def usuario(username, nombre, apellido, rol):
             u, creado = User.objects.get_or_create(username=username, defaults={"first_name": nombre, "last_name": apellido})
             if creado:
@@ -177,9 +190,6 @@ class Command(BaseCommand):
             est.save(update_fields=["genero", "porcentaje_asistencia"])
         self.corregir_director()
         self.demo_convivencia(anio)
-        self.stdout.write(self.style.SUCCESS(
-            "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
-            "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))
 
 
     def demo_convivencia(self, anio):
@@ -313,3 +323,124 @@ class Command(BaseCommand):
                     nota = Decimal(str(round(min(7, max(2, random.gauss(5.7, 0.8))), 1)))
                     notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
         Calificacion.objects.bulk_create(notas, ignore_conflicts=True)
+
+    # ------------------------------------------------------------------ Plataforma con varios establecimientos
+
+    def demo_superadmin(self):
+        u, creado = User.objects.get_or_create(username="superadmin", defaults={
+            "first_name": "Administración", "last_name": "Plataforma Pupitre"})
+        if creado:
+            u.set_password("demo1234")
+            u.save()
+        Perfil.objects.get_or_create(usuario=u, defaults={"rol": Perfil.Rol.SUPERADMIN, "establecimiento": None})
+
+    def demo_liceo(self, anio, datos):
+        """Crea un liceo ficticio de Enseñanza Media (solo si no existe: nunca modifica uno existente)."""
+        from academico.plan_oficial import aplicar_plan_media, decreto_media
+
+        if Establecimiento.objects.filter(nombre=datos["nombre"]).exists():
+            return
+        rnd = random.Random(datos["sufijo"])
+        est = Establecimiento.objects.create(
+            nombre=datos["nombre"], oferta=datos["oferta"], comuna="Chillán", region="Ñuble",
+            director=" ".join(datos["director"][:2]), jefe_utp=" ".join(datos["utp"][:2]),
+            color_principal=datos["color"], pie_documentos=datos["lema"])
+        with en_establecimiento(est):
+            def usuario(username, nombre, apellido, rol):
+                u, creado = User.objects.get_or_create(username=username, defaults={
+                    "first_name": nombre, "last_name": apellido})
+                if creado:
+                    u.set_password("demo1234")
+                    u.save()
+                Perfil.objects.get_or_create(usuario=u, defaults={"rol": rol, "establecimiento": est})
+                return u
+
+            sx = datos["sufijo"]
+            usuario(f"director.{sx}", *datos["director"], Perfil.Rol.DIRECTOR)
+            usuario(f"utp.{sx}", *datos["utp"], Perfil.Rol.UTP)
+            profes = [usuario(f"profe.{sx}" if i == 0 else f"profe{i + 1}.{sx}", n, a, Perfil.Rol.PROFESOR)
+                      for i, (n, a) in enumerate(datos["profesores"])]
+            niveles = {}
+            for g, romano in enumerate(["I", "II", "III", "IV"], start=1):
+                niveles[g], _ = Nivel.objects.get_or_create(nombre=f"{romano} Medio", defaults={
+                    "orden": g + 10, "ensenanza": Nivel.Ensenanza.MEDIA})
+            rut_base = 22_000_000 + datos["rut_base"]
+            for c, (grado, letra, modalidad, especialidad, electivos) in enumerate(datos["cursos"]):
+                curso = Curso.objects.create(nivel=niveles[grado], letra=letra, anio=anio, modalidad=modalidad,
+                                             especialidad=especialidad, profesor_jefe=profes[c % len(profes)])
+                curso.decreto_plan_estudios = decreto_media(curso)
+                curso.save(update_fields=["decreto_plan_estudios"])
+                aplicar_plan_media(curso, electivos)
+                for i, ac in enumerate(curso.asignaturas_curso.select_related("asignatura")):
+                    ac.profesor = profes[(i + c) % len(profes)]
+                    ac.save(update_fields=["profesor"])
+                ests = []
+                for n in range(10):
+                    rut_base += rnd.randint(1000, 3500)
+                    nombre = rnd.choice(NOMBRES)
+                    ests.append(Estudiante.objects.create(
+                        rut=f"{rut_base}-{calcular_dv(rut_base)}", nombres=nombre,
+                        apellido_paterno=rnd.choice(APELLIDOS), apellido_materno=rnd.choice(APELLIDOS), curso=curso,
+                        fecha_nacimiento=date(anio - grado - 14, rnd.randint(1, 12), rnd.randint(1, 28)),
+                        genero="F" if nombre in FEMENINOS else "M",
+                        direccion=f"{rnd.choice(CALLES)} {rnd.randint(100, 2500)}", comuna="Chillán",
+                        apoderado_nombre=f"{rnd.choice(NOMBRES)} {rnd.choice(APELLIDOS)}",
+                        apoderado_telefono=f"+56 9 {rnd.randint(1000, 9999)} {rnd.randint(1000, 9999)}",
+                        religion=rnd.choices([Religion.CATOLICA, Religion.EVANGELICA, Religion.NO_OPTA], [60, 25, 15])[0],
+                        porcentaje_asistencia=Decimal(str(round(rnd.uniform(80, 99), 1)))))
+                notas = []
+                for ac in curso.asignaturas_curso.select_related("asignatura"):
+                    cursan = [e for e in ests if e.cursa(ac.asignatura)]
+                    for sem in (1, 2):
+                        for k in (1, 2):
+                            ev = Evaluacion.objects.create(asignatura_curso=ac, nombre=f"Evaluación {k}", semestre=sem,
+                                                           fecha=date(anio, 3 + k + (sem - 1) * 5, 15))
+                            notas += [Calificacion(evaluacion=ev, estudiante=e, nota=Decimal(str(round(
+                                min(7, max(2, rnd.gauss(5.4, 0.9))), 1)))) for e in cursan]
+                Calificacion.objects.bulk_create(notas)
+                for e in rnd.sample(ests, 2):
+                    tipo = rnd.choice([Anotacion.Tipo.POSITIVA, Anotacion.Tipo.NEGATIVA])
+                    Anotacion.objects.create(
+                        estudiante=e, tipo=tipo, gravedad="LEVE" if tipo == "NEGATIVA" else "",
+                        descripcion=("Destaca por su compromiso en el trabajo práctico." if tipo == "POSITIVA"
+                                     else "Llega atrasado(a) reiteradamente a clases."),
+                        fecha=date(anio, 6, rnd.randint(1, 28)), autor=curso.profesor_jefe)
+        reordenar_niveles()
+
+
+FEMENINOS = {"Sofía", "Isidora", "Florencia", "Emilia", "Antonella", "Josefa", "Martina", "Catalina", "Trinidad"}
+
+# Liceos ficticios de demostración (nombres inventados, sin RBD real)
+LICEOS = [
+    {"nombre": "Liceo Los Coigües", "sufijo": "hc", "oferta": "HC", "color": "#1F5F4A", "rut_base": 100_000,
+     "lema": "Liceo Científico-Humanista · Datos ficticios de demostración",
+     "director": ("Marcela", "Riquelme Soto"), "utp": ("Andrés", "Vergara Lagos"),
+     "profesores": [("Paulina", "Cárdenas Ruiz"), ("Rodrigo", "Saavedra Pino"), ("Camila", "Ortega Vidal"),
+                    ("Felipe", "Navarro Bravo"), ("Javiera", "Gutiérrez Mena")],
+     "cursos": [(1, "A", "", "", None), (2, "A", "", "", None),
+                (3, "A", "HC", "", ["Biología de los Ecosistemas", "Física", "Límites, Derivadas e Integrales"]),
+                (3, "B", "HC", "", ["Comprensión Histórica del Presente", "Taller de Literatura",
+                                    "Lectura y Escritura Especializadas"]),
+                (4, "A", "HC", "", ["Biología de los Ecosistemas", "Física", "Límites, Derivadas e Integrales"]),
+                (4, "B", "HC", "", ["Comprensión Histórica del Presente", "Taller de Literatura",
+                                    "Lectura y Escritura Especializadas"])]},
+    {"nombre": "Liceo Industrial y Comercial Las Araucarias", "sufijo": "tp", "oferta": "TP", "color": "#8A4B08",
+     "rut_base": 300_000, "lema": "Liceo Técnico-Profesional · Datos ficticios de demostración",
+     "director": ("Héctor", "Valenzuela Campos"), "utp": ("Lorena", "Espinoza Fuentes"),
+     "profesores": [("Claudio", "Mardones Rivas"), ("Verónica", "Sandoval Arce"), ("Patricio", "Leiva Toro"),
+                    ("Daniela", "Carrasco Neira"), ("Gonzalo", "Pizarro Lillo")],
+     "cursos": [(1, "A", "", "", None), (2, "A", "", "", None),
+                (3, "A", "TP", "Administración", None), (3, "B", "TP", "Mecánica Automotriz", None),
+                (4, "A", "TP", "Administración", None), (4, "B", "TP", "Mecánica Automotriz", None)]},
+    {"nombre": "Liceo Polivalente Río Ñuble", "sufijo": "poli", "oferta": "POLIVALENTE", "color": "#5B2C83",
+     "rut_base": 500_000, "lema": "Liceo Polivalente HC y TP · Datos ficticios de demostración",
+     "director": ("Alejandra", "Muñoz Retamal"), "utp": ("Sergio", "Toledo Garrido"),
+     "profesores": [("Natalia", "Fierro Jara"), ("Mauricio", "Bustos Salinas"), ("Carolina", "Reyes Méndez"),
+                    ("Ignacio", "Parra Castillo"), ("Francisca", "Moya Alarcón")],
+     "cursos": [(1, "A", "", "", None), (2, "A", "", "", None),
+                (3, "A", "HC", "", ["Comprensión Histórica del Presente", "Taller de Literatura",
+                                    "Lectura y Escritura Especializadas"]),
+                (3, "B", "TP", "Gastronomía", None),
+                (4, "A", "HC", "", ["Biología de los Ecosistemas", "Física", "Límites, Derivadas e Integrales"]),
+                (4, "B", "TP", "Gastronomía", None)]},
+]

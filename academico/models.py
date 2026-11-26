@@ -3,9 +3,12 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from .rut import formatear_rut, normalizar_rut, validar_rut
+from .tenencia import DeEstablecimiento, PorEstablecimientoManager, establecimiento_actual
 
 NOTA_MINIMA = Decimal("1.0")
 NOTA_MAXIMA = Decimal("7.0")
@@ -16,10 +19,35 @@ def anio_actual():
     return timezone.localdate().year
 
 
+MODULOS = [
+    ("curricular", "Gestión curricular (cursos, notas, informes)", True),
+    ("convivencia", "Convivencia escolar", True),
+    ("funcionarios", "Funcionarios", True),
+    ("asistencia_personal", "Asistencia del personal", False),
+    ("inventario", "Inventario y recursos", False),
+    ("sep", "Rendición SEP / PME", False),
+]
+MODULOS_DISPONIBLES = [m for m in MODULOS if m[2]]
+
+
+def modulos_por_defecto():
+    return [m[0] for m in MODULOS_DISPONIBLES]
+
+
 class Establecimiento(models.Model):
-    """Datos del establecimiento que aparecen en los informes (se usa el primero)."""
+    """Un establecimiento de la plataforma, con sus datos, usuarios, cursos y estudiantes."""
+
+    class Oferta(models.TextChoices):
+        BASICA = "BASICA", "Escuela básica"
+        HC = "HC", "Liceo Científico-Humanista"
+        TP = "TP", "Liceo Técnico-Profesional"
+        POLIVALENTE = "POLIVALENTE", "Liceo Polivalente (HC y TP)"
+        COMPLETO = "COMPLETO", "Básica y Media"
 
     nombre = models.CharField(max_length=200)
+    oferta = models.CharField("tipo de establecimiento", max_length=20, choices=Oferta.choices, default=Oferta.BASICA)
+    activo = models.BooleanField(default=True)
+    modulos = models.JSONField("módulos activos", default=modulos_por_defecto, blank=True)
     rbd = models.CharField("RBD", max_length=20, blank=True)
     direccion = models.CharField("dirección", max_length=200, blank=True)
     comuna = models.CharField(max_length=100, blank=True)
@@ -48,18 +76,27 @@ class Establecimiento(models.Model):
 
     class Meta:
         verbose_name = "establecimiento"
-        verbose_name_plural = "establecimiento"
+        verbose_name_plural = "establecimientos"
+        ordering = ["nombre"]
 
     def __str__(self):
         return self.nombre
 
     @classmethod
     def actual(cls):
-        return cls.objects.first() or cls(nombre="Establecimiento educacional")
+        """El establecimiento con que se está trabajando (o el primero, en la instalación de un solo colegio)."""
+        est = establecimiento_actual()
+        if est is not None:
+            return est
+        return cls.objects.order_by("pk").first() or cls(nombre="Establecimiento educacional")
+
+    def tiene_modulo(self, codigo):
+        return codigo in (self.modulos or [])
 
 
 class Perfil(models.Model):
     class Rol(models.TextChoices):
+        SUPERADMIN = "SUPERADMIN", "Superadministrador(a) de la plataforma"
         SOSTENEDOR = "SOSTENEDOR", "Sostenedor(a)"
         DIRECTOR = "DIRECTOR", "Director(a)"
         UTP = "UTP", "Jefe(a) de UTP"
@@ -70,6 +107,9 @@ class Perfil(models.Model):
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="perfil")
     rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.PROFESOR)
     rut = models.CharField("RUT", max_length=15, blank=True, validators=[validar_rut])
+    establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
+                                        related_name="perfiles",
+                                        help_text="Vacío solo para el superadministrador de la plataforma.")
 
     class Meta:
         verbose_name = "perfil"
@@ -81,7 +121,11 @@ class Perfil(models.Model):
     @property
     def es_gestion(self):
         """Dirección y UTP: editan todo y configuran la plataforma."""
-        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP)
+        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.SUPERADMIN)
+
+    @property
+    def es_superadmin(self):
+        return self.rol == self.Rol.SUPERADMIN
 
     @property
     def ve_todo(self):
@@ -90,11 +134,15 @@ class Perfil(models.Model):
 
     @property
     def gestiona_convivencia(self):
-        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.INSPECTOR, self.Rol.CONVIVENCIA)
+        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.INSPECTOR, self.Rol.CONVIVENCIA,
+                            self.Rol.SUPERADMIN)
 
     def save(self, *args, **kwargs):
         if self.rut:
             self.rut = normalizar_rut(self.rut)
+        if not self.establecimiento_id and self.rol != self.Rol.SUPERADMIN:
+            from .tenencia import establecimiento_por_defecto
+            self.establecimiento = establecimiento_por_defecto()
         super().save(*args, **kwargs)
         # Director(a) y Jefe(a) de UTP pueden entrar al panel de administración.
         debe_ser_staff = self.es_gestion or self.usuario.is_superuser
@@ -124,7 +172,11 @@ class Nivel(models.Model):
         return self.nombre
 
 
-class Curso(models.Model):
+class Curso(DeEstablecimiento):
+    class Modalidad(models.TextChoices):
+        HC = "HC", "Científico-Humanista"
+        TP = "TP", "Técnico-Profesional"
+
     nivel = models.ForeignKey(Nivel, on_delete=models.PROTECT, related_name="cursos")
     letra = models.CharField(max_length=5, help_text="Ej.: A, B")
     anio = models.PositiveSmallIntegerField("año", default=anio_actual)
@@ -132,10 +184,18 @@ class Curso(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="jefaturas", verbose_name="profesor(a) jefe",
     )
+    modalidad = models.CharField(max_length=2, choices=Modalidad.choices, blank=True,
+                                 help_text="Solo Enseñanza Media.")
+    especialidad = models.CharField(max_length=120, blank=True, help_text="Solo TP. Ej.: Administración")
+    mencion = models.CharField("mención", max_length=120, blank=True, help_text="Solo TP. Ej.: Recursos Humanos")
+    decreto_plan_estudios = models.CharField(
+        "decreto del plan de estudios", max_length=200, blank=True,
+        help_text="Si se deja vacío se usa el del nivel. Útil en Media TP (cada especialidad tiene el suyo).")
 
     class Meta:
         ordering = ["-anio", "nivel__orden", "letra"]
-        constraints = [models.UniqueConstraint(fields=["nivel", "letra", "anio"], name="curso_unico")]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "nivel", "letra", "anio"],
+                                               name="curso_unico_por_establecimiento")]
 
     def __str__(self):
         return f"{self.nivel} {self.letra} ({self.anio})"
@@ -144,6 +204,16 @@ class Curso(models.Model):
     def nombre_corto(self):
         return f"{self.nivel} {self.letra}"
 
+    @property
+    def decreto_plan(self):
+        return self.decreto_plan_estudios or self.nivel.decreto_plan_estudios
+
+    @property
+    def descripcion_modalidad(self):
+        if self.modalidad == self.Modalidad.TP and self.especialidad:
+            return f"TP · {self.especialidad}" + (f" (mención {self.mencion})" if self.mencion else "")
+        return self.get_modalidad_display()
+
 
 class Religion(models.TextChoices):
     CATOLICA = "CATOLICA", "Católica"
@@ -151,12 +221,14 @@ class Religion(models.TextChoices):
     NO_OPTA = "NO_OPTA", "No opta (eximido de Religión)"
 
 
-class Asignatura(models.Model):
+class Asignatura(DeEstablecimiento):
     class Tipo(models.TextChoices):
         ASIGNATURA = "ASIGNATURA", "Asignatura del plan de estudios"
+        DIFERENCIADA = "DIFERENCIADA", "Plan diferenciado HC (electivo)"
+        MODULO_TP = "MODULO_TP", "Módulo de especialidad TP"
         TALLER = "TALLER", "Taller JEC"
 
-    nombre = models.CharField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100)
     codigo = models.CharField("código", max_length=20, blank=True)
     orden = models.PositiveSmallIntegerField(default=0)
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.ASIGNATURA)
@@ -172,6 +244,8 @@ class Asignatura(models.Model):
 
     class Meta:
         ordering = ["orden", "nombre"]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "nombre"],
+                                               name="asignatura_unica_por_establecimiento")]
 
     def __str__(self):
         return self.nombre
@@ -179,6 +253,9 @@ class Asignatura(models.Model):
 
 class AsignaturaCurso(models.Model):
     """Carga académica: qué asignatura se dicta en qué curso y quién la dicta."""
+    objects = PorEstablecimientoManager.por("curso__establecimiento")
+    todos = models.Manager()
+
 
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name="asignaturas_curso")
     asignatura = models.ForeignKey(Asignatura, on_delete=models.PROTECT, related_name="cursos")
@@ -198,8 +275,8 @@ class AsignaturaCurso(models.Model):
         return f"{self.asignatura} – {self.curso.nombre_corto}"
 
 
-class Estudiante(models.Model):
-    rut = models.CharField("RUT", max_length=15, unique=True, validators=[validar_rut])
+class Estudiante(DeEstablecimiento):
+    rut = models.CharField("RUT", max_length=15, validators=[validar_rut])
     nombres = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)
@@ -236,6 +313,8 @@ class Estudiante(models.Model):
 
     class Meta:
         ordering = ["apellido_paterno", "apellido_materno", "nombres"]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "rut"],
+                                               name="estudiante_rut_unico_por_establecimiento")]
 
     def __str__(self):
         return self.nombre_completo
@@ -260,6 +339,9 @@ class Estudiante(models.Model):
 
 
 class Evaluacion(models.Model):
+    objects = PorEstablecimientoManager.por("asignatura_curso__curso__establecimiento")
+    todos = models.Manager()
+
     class Semestre(models.IntegerChoices):
         PRIMERO = 1, "1er semestre"
         SEGUNDO = 2, "2do semestre"
@@ -284,6 +366,9 @@ class Evaluacion(models.Model):
 
 
 class Calificacion(models.Model):
+    objects = PorEstablecimientoManager.por("estudiante__establecimiento")
+    todos = models.Manager()
+
     evaluacion = models.ForeignKey(Evaluacion, on_delete=models.CASCADE, related_name="calificaciones")
     estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="calificaciones")
     nota = models.DecimalField(
@@ -300,7 +385,7 @@ class Calificacion(models.Model):
         return f"{self.estudiante} – {self.evaluacion}: {self.nota}"
 
 
-class OpcionCatalogo(models.Model):
+class OpcionCatalogo(DeEstablecimiento):
     """Listas editables por el establecimiento (protocolos de convivencia, redes de apoyo externas)."""
 
     class Tipo(models.TextChoices):
@@ -317,7 +402,7 @@ class OpcionCatalogo(models.Model):
         verbose_name = "opción de lista"
         verbose_name_plural = "listas editables"
         ordering = ["tipo", "orden", "nombre"]
-        unique_together = [("tipo", "codigo")]
+        unique_together = [("establecimiento", "tipo", "codigo")]
 
     def __str__(self):
         return self.nombre
@@ -355,6 +440,9 @@ class EstadoDerivacion(models.TextChoices):
 
 
 class Anotacion(models.Model):
+    objects = PorEstablecimientoManager.por("estudiante__establecimiento")
+    todos = models.Manager()
+
     class Tipo(models.TextChoices):
         POSITIVA = "POSITIVA", "Positiva"
         NEGATIVA = "NEGATIVA", "Negativa"
@@ -404,6 +492,9 @@ class SolicitudCambio(models.Model):
 
     No se aplica hasta que Dirección o UTP lo aprueba.
     """
+    objects = PorEstablecimientoManager.por("estudiante__establecimiento")
+    todos = models.Manager()
+
 
     class Estado(models.TextChoices):
         PENDIENTE = "PENDIENTE", "Pendiente"
@@ -469,7 +560,7 @@ def _fecha_legible(iso):
     return f"{d}-{m}-{a}"
 
 
-class Comentario(models.Model):
+class Comentario(DeEstablecimiento):
     """Retroalimentación que los usuarios envían desde cualquier pantalla."""
 
     class Tipo(models.TextChoices):
@@ -493,7 +584,7 @@ class Comentario(models.Model):
         return f"{self.get_tipo_display()} – {self.usuario} ({self.creado:%d-%m-%Y})"
 
 
-class Funcionario(models.Model):
+class Funcionario(DeEstablecimiento):
     """Ficha de docentes y demás funcionarios del establecimiento."""
 
     class Cargo(models.TextChoices):
@@ -515,7 +606,7 @@ class Funcionario(models.Model):
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="funcionario", verbose_name="usuario de la plataforma",
                                    help_text="Opcional: vincula la ficha con su cuenta de acceso.")
-    rut = models.CharField("RUT", max_length=15, unique=True, validators=[validar_rut])
+    rut = models.CharField("RUT", max_length=15, validators=[validar_rut])
     nombres = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)
@@ -540,6 +631,8 @@ class Funcionario(models.Model):
         ordering = ["apellido_paterno", "apellido_materno", "nombres"]
         verbose_name = "funcionario(a)"
         verbose_name_plural = "funcionarios"
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "rut"],
+                                               name="funcionario_rut_unico_por_establecimiento")]
 
     def __str__(self):
         return self.nombre_completo
@@ -580,6 +673,9 @@ class Funcionario(models.Model):
 
 class RedApoyo(models.Model):
     """Programa o institución externa que atiende al estudiante (dato sensible)."""
+    objects = PorEstablecimientoManager.por("estudiante__establecimiento")
+    todos = models.Manager()
+
 
     estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="redes_apoyo")
     institucion = models.CharField("institución", max_length=30)
@@ -608,6 +704,9 @@ class RedApoyo(models.Model):
 
 class Entrevista(models.Model):
     """Registro de entrevista (apoderado/a, estudiante o activación de protocolo)."""
+    objects = PorEstablecimientoManager.por("estudiante__establecimiento")
+    todos = models.Manager()
+
 
     class Tipo(models.TextChoices):
         APODERADO = "APODERADO", "Entrevista con apoderado(a)"
@@ -650,3 +749,11 @@ class Entrevista(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} – {self.estudiante} ({self.fecha:%d-%m-%Y})"
+
+
+@receiver(post_save, sender=Establecimiento)
+def _nuevo_establecimiento(sender, instance, created, raw=False, **kwargs):
+    """Cada establecimiento nuevo parte con las listas de protocolos y redes por defecto."""
+    if created and not raw:
+        from .catalogos import sembrar_catalogos
+        sembrar_catalogos(instance)

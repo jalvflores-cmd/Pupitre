@@ -133,3 +133,22 @@ actualizar con `windows\actualizar.bat`.
 Menú **Configuración** (Dirección y UTP): datos del establecimiento, logo institucional (menú, ingreso, planillas
 Excel y entrevistas; no en los documentos oficiales Mineduc), color institucional, texto al pie de documentos
 internos, y las listas de protocolos de convivencia y redes de apoyo externas.
+
+
+## Plataforma con varios establecimientos
+
+Pupitre puede alojar varios establecimientos en un mismo servidor. Cada uno tiene sus propios usuarios, cursos,
+estudiantes, notas, logo, color y listas, y **nadie ve datos de otro establecimiento** (el filtro se aplica en
+todas las consultas: ver `academico/tenencia.py` y `academico/middleware.py`).
+
+- **Superadministrador(a)** (`/plataforma/`): crea y edita establecimientos, los activa o desactiva, elige sus
+  módulos (gestión curricular, convivencia, funcionarios; próximamente módulos de gestión administrativa) y puede
+  «entrar» a cualquiera para dar soporte.
+- **Enseñanza Media**: 1° y 2° medio (Decreto 1264/2016); 3° y 4° medio con formación general (Decreto 193/2019)
+  más plan diferenciado Científico-Humanista (electivos) o módulos de la especialidad Técnico-Profesional.
+  Cada curso indica su modalidad (HC/TP), especialidad, mención y decreto del plan.
+- Demostración: Escuela Gabriela Mistral (básica), Liceo Los Coigües (HC), Liceo Industrial y Comercial
+  Las Araucarias (TP: Administración y Mecánica Automotriz) y Liceo Polivalente Río Ñuble (HC + TP Gastronomía).
+  Usuarios: `superadmin`, `director.hc`, `utp.tp`, `profe.poli`, etc. (contraseña `demo1234`).
+
+La instalación local (Windows) sigue funcionando con un solo establecimiento, sin cambios.

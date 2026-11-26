@@ -51,10 +51,30 @@ def es_solo_lectura(user) -> bool:
 
 
 def rol_de(user) -> str:
-    if user.is_superuser:
-        return Perfil.Rol.DIRECTOR
     perfil = getattr(user, "perfil", None)
-    return perfil.rol if perfil else Perfil.Rol.PROFESOR
+    if perfil:
+        return perfil.rol
+    return Perfil.Rol.DIRECTOR if user.is_superuser else Perfil.Rol.PROFESOR
+
+
+def es_superadmin(user) -> bool:
+    perfil = _perfil(user)
+    return bool(perfil and perfil.rol == Perfil.Rol.SUPERADMIN)
+
+
+def usuarios_establecimiento(activos=True):
+    """Usuarios del establecimiento actual (para elegir profesores, jefaturas, etc.)."""
+    from django.contrib.auth.models import User
+
+    from .tenencia import establecimiento_actual
+
+    qs = User.objects.all()
+    if activos:
+        qs = qs.filter(is_active=True)
+    est = establecimiento_actual()
+    if est is not None:
+        qs = qs.filter(perfil__establecimiento=est)
+    return qs.order_by("first_name", "last_name")
 
 
 def cursos_visibles(user):
