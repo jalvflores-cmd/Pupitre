@@ -1,4 +1,4 @@
-"""Configuración de la Plataforma de Gestión Curricular.
+"""Configuración de la plataforma Pupitre (gestión curricular).
 
 Todas las opciones sensibles se leen desde variables de entorno (ver README.md).
 """

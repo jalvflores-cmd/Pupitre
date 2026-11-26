@@ -237,7 +237,7 @@ def _construir_pdf(historia, horizontal=False):
     tam = landscape(letter) if horizontal else letter
     doc = SimpleDocTemplate(salida, pagesize=tam, leftMargin=1.6 * cm, rightMargin=1.6 * cm,
                             topMargin=1.4 * cm, bottomMargin=1.4 * cm,
-                            title="Informe de calificaciones", author=Establecimiento.actual().nombre)
+                            title="Informe de calificaciones", creator="Pupitre", author=Establecimiento.actual().nombre)
 
     def pie(canvas, doc_):
         canvas.saveState()

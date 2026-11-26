@@ -4,7 +4,8 @@
 <div class="row justify-content-center mt-5">
   <div class="col-md-4">
     <div class="card p-4">
-      <h4 class="mb-1 text-center"><i class="bi bi-mortarboard"></i> Gestión Curricular</h4>
+      <h4 class="mb-1 text-center"><i class="bi bi-mortarboard"></i> Pupitre</h4>
+      <p class="text-center small mb-1">Gestión curricular</p>
       <p class="text-muted text-center small mb-4">Ingrese con su usuario y contraseña</p>
       {% if form.errors %}<div class="alert alert-danger py-2">Usuario o contraseña incorrectos.</div>{% endif %}
       <form method="post">{% csrf_token %}

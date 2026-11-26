@@ -1,6 +1,6 @@
-# Plataforma de Gestión Curricular
+# Pupitre
 
-Aplicación web para administrar cursos, asignaturas, estudiantes, calificaciones y convivencia escolar
+Aplicación web de gestión curricular para administrar cursos, asignaturas, estudiantes, calificaciones y convivencia escolar
 de un establecimiento educacional chileno, con carga desde Excel y emisión de informes en PDF y Excel.
 
 ## Funcionalidades
