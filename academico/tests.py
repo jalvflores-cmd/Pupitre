@@ -528,18 +528,36 @@ class TalleresYConceptosTests(BaseDatos):
         _, _, resumenes = resumen_curso(self.curso)
         self.assertEqual(resumenes[0].promedio_general, Decimal("6.5"))
 
-    def test_crear_taller_jec(self):
+    def test_crear_taller_jec_desde_el_curso(self):
         self.client.force_login(self.utp)
-        self.client.post(reverse("talleres"), {"nombre": "Taller de Ajedrez", "cursos": [self.curso.pk, self.otro_curso.pk],
-                                               "profesor": self.profe_mat.pk, "horas_semanales": "2"})
+        r = self.client.get(reverse("curso_detalle", args=[self.curso.pk]))
+        self.assertContains(r, "Agregar asignatura o taller JEC")
+        self.client.post(reverse("curso_asignatura_agregar", args=[self.curso.pk]), {
+            "nuevo_taller": "Taller de Ajedrez", "profesor": self.profe_mat.pk, "horas_semanales": "2",
+            "incide_en_promedio": "on", "todo_el_nivel": "on"})
         talleres = AsignaturaCurso.objects.filter(asignatura__nombre="Taller de Ajedrez")
-        self.assertEqual(talleres.count(), 2)
-        self.assertEqual(talleres.first().asignatura.tipo, "TALLER")
-        self.assertFalse(talleres.first().asignatura.incide_en_promedio)
-        self.client.force_login(self.profe_mat)
-        r = self.client.get(reverse("talleres"))
-        self.assertContains(r, "Taller de Ajedrez")
-        self.assertEqual(self.client.post(reverse("talleres"), {"nombre": "x"}).status_code, 403)
+        self.assertEqual(talleres.count(), 2)  # el curso y el otro curso del mismo nivel
+        taller = talleres.get(curso=self.curso)
+        self.assertEqual(taller.asignatura.tipo, "TALLER")
+        self.assertTrue(taller.asignatura.incide_en_promedio)
+        # cambiar profesor y horas desde la carga académica del curso
+        self.client.post(reverse("curso_carga_guardar", args=[self.curso.pk]),
+                         {f"profesor_{taller.pk}": self.utp.pk, f"horas_{taller.pk}": "3,5"})
+        taller.refresh_from_db()
+        self.assertEqual((taller.profesor, taller.horas_semanales), (self.utp, Decimal("3.5")))
+        # no se puede agregar una asignatura del plan escribiéndola como taller
+        self.client.post(reverse("curso_asignatura_agregar", args=[self.curso.pk]), {"nuevo_taller": "matemática"})
+        self.assertEqual(Asignatura.objects.filter(nombre__iexact="matemática").count(), 1)
+        self.client.force_login(self.profe_len)  # profesora jefe: ve todo el curso, sin editar la carga
+        r = self.client.get(reverse("curso_detalle", args=[self.curso.pk]))
+        self.assertContains(r, "Talleres JEC")
+        self.assertNotContains(r, "Agregar asignatura o taller JEC")
+        self.assertEqual(self.client.post(reverse("curso_asignatura_agregar", args=[self.curso.pk]),
+                                          {"nuevo_taller": "x"}).status_code, 403)
+        otro = talleres.get(curso=self.otro_curso)
+        self.client.force_login(self.utp)
+        self.client.post(reverse("curso_asignatura_quitar", args=[otro.pk]))
+        self.assertFalse(AsignaturaCurso.objects.filter(pk=otro.pk).exists())
         self.client.force_login(self.director)
         self.assertEqual(self.client.get(reverse("informe_final_pdf", args=[self.curso.pk])).status_code, 200)
         self.assertEqual(self.client.get(reverse("acta_final_pdf", args=[self.curso.pk])).status_code, 200)

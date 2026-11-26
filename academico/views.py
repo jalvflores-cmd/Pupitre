@@ -12,7 +12,8 @@ from django.views.decorators.http import require_POST
 from . import exportacion, importacion
 from .calculos import resumen_curso
 from .forms import (
-    AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm, TallerForm,
+    AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm,
+    AgregarAsignaturaCursoForm,
 )
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Establecimiento, Estudiante, Evaluacion,
@@ -78,8 +79,16 @@ def curso_detalle(request, pk):
     asignaturas = [ac for ac in curso.asignaturas_curso.select_related("asignatura", "profesor")
                    if puede_ver_asignatura_curso(request.user, ac)]
     _, _, resumenes = resumen_curso(curso, asignaturas)
+    gestion = es_gestion(request.user)
+    del_plan = [ac for ac in asignaturas if ac.asignatura.tipo != Asignatura.Tipo.TALLER]
+    talleres = [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.TALLER]
     return render(request, "academico/curso_detalle.html", {
         "curso": curso, "asignaturas": asignaturas, "resumenes": resumenes,
+        "del_plan": del_plan, "talleres": talleres,
+        "grupos": [("Plan de estudios", del_plan), ("Talleres JEC (Jornada Escolar Completa)", talleres)],
+        "horas_totales": sum((ac.horas_semanales or 0) for ac in asignaturas),
+        "form_agregar": AgregarAsignaturaCursoForm(curso=curso, profesores=_profesores()) if gestion else None,
+        "profesores": _profesores() if gestion else None,
         "informes": puede_ver_informe_curso(request.user, curso),
         "n_anotaciones": Anotacion.objects.filter(estudiante__curso=curso).count(),
     })
@@ -627,50 +636,83 @@ def prioritarios(request):
     return redirect("funcionarios")
 
 
-# --------------------------------------------------------------------------- Talleres JEC
+# --------------------------------------------------------------------------- Carga académica del curso
+# (asignaturas del plan y talleres JEC se administran juntos, dentro de cada curso)
 
-@login_required
-def talleres(request):
+def _profesores():
     from django.contrib.auth.models import User
-
-    form = None
-    if es_gestion(request.user):
-        form = TallerForm(
-            request.POST or None,
-            cursos=Curso.objects.filter(anio=anio_actual()).select_related("nivel"),
-            profesores=User.objects.filter(is_active=True).order_by("first_name", "last_name"),
-        )
-        if request.method == "POST" and form.is_valid():
-            datos = form.cleaned_data
-            asignatura, _ = Asignatura.objects.get_or_create(
-                nombre=datos["nombre"].strip(),
-                defaults={"tipo": Asignatura.Tipo.TALLER, "incide_en_promedio": datos["incide_en_promedio"], "orden": 90})
-            if asignatura.tipo != Asignatura.Tipo.TALLER:
-                messages.error(request, f"«{asignatura}» ya existe como asignatura del plan de estudios. Use otro nombre.")
-                return redirect("talleres")
-            asignatura.incide_en_promedio = datos["incide_en_promedio"]
-            asignatura.save(update_fields=["incide_en_promedio"])
-            for curso in datos["cursos"]:
-                AsignaturaCurso.objects.update_or_create(curso=curso, asignatura=asignatura, defaults={
-                    "profesor": datos["profesor"], "horas_semanales": datos["horas_semanales"]})
-            messages.success(request, f"Taller «{asignatura}» asignado a {len(datos['cursos'])} curso(s).")
-            return redirect("talleres")
-    elif request.method == "POST":
-        exigir(False)
-    lista = asignaturas_curso_visibles(request.user).filter(
-        asignatura__tipo=Asignatura.Tipo.TALLER, curso__anio=anio_actual()).order_by(
-        "asignatura__nombre", "curso__nivel__orden", "curso__letra")
-    return render(request, "academico/talleres.html", {"talleres": lista, "form": form})
+    return User.objects.filter(is_active=True).order_by("first_name", "last_name")
 
 
 @login_required
 @solo_gestion
 @require_POST
-def taller_quitar(request, pk):
-    ac = get_object_or_404(AsignaturaCurso, pk=pk, asignatura__tipo=Asignatura.Tipo.TALLER)
+def curso_asignatura_agregar(request, pk):
+    curso = get_object_or_404(Curso.objects.select_related("nivel"), pk=pk)
+    form = AgregarAsignaturaCursoForm(request.POST, curso=curso, profesores=_profesores())
+    if not form.is_valid():
+        for e in form.non_field_errors() + [e for f in form for e in f.errors]:
+            messages.error(request, e)
+        return redirect("curso_detalle", pk=curso.pk)
+    datos = form.cleaned_data
+    asignatura = datos["asignatura"]
+    if not asignatura:
+        asignatura = Asignatura.objects.filter(nombre__iexact=datos["nuevo_taller"]).first()
+        if not asignatura:
+            asignatura = Asignatura.objects.create(nombre=datos["nuevo_taller"], tipo=Asignatura.Tipo.TALLER,
+                                                   incide_en_promedio=datos["incide_en_promedio"], orden=90)
+    cursos = [curso]
+    if datos["todo_el_nivel"]:
+        cursos += list(Curso.objects.filter(nivel=curso.nivel, anio=curso.anio).exclude(pk=curso.pk))
+    agregados = 0
+    for c in cursos:
+        _, creado = AsignaturaCurso.objects.get_or_create(curso=c, asignatura=asignatura, defaults={
+            "profesor": datos["profesor"], "horas_semanales": datos["horas_semanales"]})
+        agregados += creado
+    messages.success(request, f"«{asignatura}» agregada a {agregados} curso(s).")
+    return redirect("curso_detalle", pk=curso.pk)
+
+
+@login_required
+@solo_gestion
+@require_POST
+def curso_carga_guardar(request, pk):
+    """Guarda profesor(a) y horas de cada asignatura o taller del curso."""
+    from decimal import Decimal, InvalidOperation
+
+    curso = get_object_or_404(Curso, pk=pk)
+    profesores = {str(u.pk): u for u in _profesores()}
+    cambios = 0
+    for ac in curso.asignaturas_curso.all():
+        prof = profesores.get(request.POST.get(f"profesor_{ac.pk}", ""))
+        texto = (request.POST.get(f"horas_{ac.pk}") or "").replace(",", ".").strip()
+        try:
+            horas = Decimal(texto) if texto else None
+        except InvalidOperation:
+            messages.error(request, f"Horas no válidas en {ac.asignatura}.")
+            continue
+        if prof != ac.profesor or horas != ac.horas_semanales:
+            ac.profesor, ac.horas_semanales = prof, horas
+            ac.save(update_fields=["profesor", "horas_semanales"])
+            cambios += 1
+    messages.success(request, f"Carga académica guardada ({cambios} cambio(s)).")
+    return redirect("curso_detalle", pk=curso.pk)
+
+
+@login_required
+@solo_gestion
+@require_POST
+def curso_asignatura_quitar(request, pk):
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("asignatura"), pk=pk)
     if ac.evaluaciones.exists():
-        messages.error(request, "El taller ya tiene evaluaciones en este curso: elimínelas primero desde su libro de notas.")
+        messages.error(request, f"«{ac.asignatura}» ya tiene evaluaciones en este curso: elimínelas primero desde su libro de notas.")
     else:
         ac.delete()
-        messages.success(request, "Taller quitado del curso.")
-    return redirect("talleres")
+        messages.success(request, f"«{ac.asignatura}» quitada del curso.")
+    return redirect("curso_detalle", pk=ac.curso_id)
+
+
+@login_required
+def talleres(request):
+    """Antigua sección separada de talleres: ahora los talleres se ven dentro de cada curso."""
+    return redirect("cursos")

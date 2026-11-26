@@ -15,12 +15,69 @@
   {% endif %}
 </div>
 <div class="card p-3 p-lg-4 mb-4">
-  <h5>Asignaturas</h5>
-  <div class="d-flex flex-wrap gap-2">
-  {% for ac in asignaturas %}
-    <a class="p-asig" href="{% url 'libro_notas' ac.pk %}"><b>{{ ac.asignatura }}</b><span class="small text-muted">{{ ac.profesor.get_full_name|default:"sin profesor" }}</span></a>
-  {% empty %}<span class="text-muted">Sin asignaturas visibles.</span>{% endfor %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+    <h5 class="mb-0">Asignaturas y talleres JEC</h5>
+    <span class="small text-muted">{{ del_plan|length }} asignatura{{ del_plan|length|pluralize }} · {{ talleres|length }} taller{{ talleres|length|pluralize:"es" }} JEC{% if horas_totales %} · {{ horas_totales|floatformat:"-1" }} horas semanales{% endif %}</span>
   </div>
+  {% if form_agregar %}
+  <form method="post" action="{% url 'curso_carga_guardar' curso.pk %}">{% csrf_token %}
+  <div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead><tr><th>Asignatura</th><th style="min-width:14rem">Profesor(a)</th><th class="text-center" style="width:6rem">Horas/sem.</th><th></th></tr></thead>
+    <tbody>
+    {% for grupo, filas in grupos %}
+      {% if filas %}<tr><td colspan="4" class="pt-3 border-0 small fw-semibold text-uppercase text-muted">{{ grupo }}</td></tr>{% endif %}
+      {% for ac in filas %}
+      <tr>
+        <td><a href="{% url 'libro_notas' ac.pk %}" class="fw-semibold">{{ ac.asignatura }}</a>
+          {% if ac.asignatura.tipo == "TALLER" %}<span class="badge bg-info-subtle text-info-emphasis ms-1">Taller JEC</span>{% endif %}
+          {% if not ac.asignatura.incide_en_promedio %}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">No incide en promedio</span>{% endif %}</td>
+        <td><select name="profesor_{{ ac.pk }}" class="form-select form-select-sm">
+          <option value="">Sin asignar</option>
+          {% for u in profesores %}<option value="{{ u.pk }}"{% if u.pk == ac.profesor_id %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+        </select></td>
+        <td><input name="horas_{{ ac.pk }}" class="form-control form-control-sm text-center" value="{{ ac.horas_semanales|floatformat:'-1'|default:'' }}" inputmode="decimal"></td>
+        <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{% url 'libro_notas' ac.pk %}"><i class="bi bi-journal-check"></i> Notas</a>
+          <button class="btn btn-sm btn-link text-danger" form="quitar-{{ ac.pk }}" title="Quitar del curso"><i class="bi bi-x-lg"></i></button></td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    {% if not asignaturas %}<tr><td colspan="4" class="text-muted">Este curso aún no tiene asignaturas.</td></tr>{% endif %}
+    </tbody>
+  </table>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    {% if asignaturas %}<button class="btn btn-primary btn-sm"><i class="bi bi-check-lg"></i> Guardar profesores y horas</button>{% endif %}
+    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#agregar-asig"><i class="bi bi-plus-lg"></i> Agregar asignatura o taller JEC</button>
+  </div>
+  </form>
+  {% for ac in asignaturas %}<form method="post" action="{% url 'curso_asignatura_quitar' ac.pk %}" id="quitar-{{ ac.pk }}" class="d-none" onsubmit="return confirm('¿Quitar {{ ac.asignatura|escapejs }} de este curso?');">{% csrf_token %}</form>{% endfor %}
+  <div class="collapse mt-3" id="agregar-asig">
+    <div class="border rounded-3 p-3 bg-light">
+      <form method="post" action="{% url 'curso_asignatura_agregar' curso.pk %}" class="row g-3">{% csrf_token %}
+        {% for f in form_agregar %}
+        <div class="{% if f.field.widget.input_type == 'checkbox' %}col-md-6{% else %}col-md-6 col-xl-3{% endif %}">
+          {% if f.field.widget.input_type == "checkbox" %}
+            <div class="form-check">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
+          {% else %}<label class="form-label small" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% endif %}
+          {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="col-12"><button class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Agregar al curso</button></div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  {% for grupo, filas in grupos %}{% if filas %}
+  <div class="small fw-semibold text-uppercase text-muted mt-2 mb-2">{{ grupo }}</div>
+  <div class="d-flex flex-wrap gap-2 mb-2">
+  {% for ac in filas %}
+    <a class="p-asig" href="{% url 'libro_notas' ac.pk %}"><b>{{ ac.asignatura }}</b><span class="small text-muted">{{ ac.profesor.get_full_name|default:"sin profesor" }}{% if ac.horas_semanales %} · {{ ac.horas_semanales|floatformat:"-1" }} h{% endif %}</span></a>
+  {% endfor %}
+  </div>
+  {% endif %}{% endfor %}
+  {% if not asignaturas %}<span class="text-muted">Sin asignaturas visibles.</span>{% endif %}
+  {% endif %}
 </div>
 <div class="card p-3 p-lg-4">
   <h5>Promedios finales</h5>

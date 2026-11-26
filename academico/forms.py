@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Anotacion, Estudiante, Evaluacion, Funcionario
+from .models import Anotacion, Asignatura, Estudiante, Evaluacion, Funcionario
 from .lectores import EXTENSIONES
 from .rut import normalizar_rut
 
@@ -146,23 +146,38 @@ class FuncionarioForm(BootstrapMixin, forms.ModelForm):
         return rut
 
 
-class TallerForm(BootstrapMixin, forms.Form):
-    nombre = forms.CharField(label="Nombre del taller", max_length=100,
-                             help_text="Ej.: Taller de Robótica. Si ya existe, se reutiliza.")
-    cursos = forms.ModelMultipleChoiceField(label="Cursos", queryset=None,
-                                            widget=forms.SelectMultiple(attrs={"size": 8}),
-                                            help_text="Mantenga Ctrl (o Cmd) para elegir varios.")
-    profesor = forms.ModelChoiceField(label="Profesor(a)", queryset=None, required=False)
+class AgregarAsignaturaCursoForm(BootstrapMixin, forms.Form):
+    """Agrega una asignatura del plan o un taller JEC a la carga académica de un curso."""
+    asignatura = forms.ModelChoiceField(label="Asignatura o taller existente", queryset=None, required=False,
+                                        empty_label="— Elegir —")
+    nuevo_taller = forms.CharField(label="…o crear un taller JEC nuevo", max_length=100, required=False,
+                                   help_text="Ej.: Taller de Ajedrez. Déjelo vacío si eligió una asignatura arriba.")
+    profesor = forms.ModelChoiceField(label="Profesor(a)", queryset=None, required=False, empty_label="Sin asignar")
     horas_semanales = forms.DecimalField(label="Horas semanales", max_digits=4, decimal_places=1, min_value=0,
                                          required=False)
     incide_en_promedio = forms.BooleanField(
-        label="La nota incide en el promedio", required=False, initial=True,
-        help_text="Los talleres se califican con nota. Desmarque si el taller no debe contar para el promedio "
-                  "ni para la promoción.")
+        label="La nota del taller incide en el promedio", required=False, initial=True,
+        help_text="Solo para talleres nuevos. Los talleres se califican con nota.")
+    todo_el_nivel = forms.BooleanField(label="Agregar también a los otros cursos del mismo nivel", required=False)
 
-    def __init__(self, *args, cursos=None, profesores=None, **kwargs):
+    def __init__(self, *args, curso=None, profesores=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["cursos"].queryset = cursos
+        self.curso = curso
+        self.fields["asignatura"].queryset = Asignatura.objects.exclude(cursos__curso=curso).order_by(
+            "tipo", "orden", "nombre")
+        self.fields["asignatura"].label_from_instance = lambda a: (
+            f"{a.nombre} (taller JEC)" if a.tipo == Asignatura.Tipo.TALLER else a.nombre)
         self.fields["profesor"].queryset = profesores
         self.fields["profesor"].label_from_instance = lambda u: u.get_full_name() or u.username
-        self.fields["cursos"].widget.attrs["class"] = "form-select"
+
+    def clean(self):
+        datos = super().clean()
+        nombre = (datos.get("nuevo_taller") or "").strip()
+        if bool(datos.get("asignatura")) == bool(nombre):
+            raise forms.ValidationError("Elija una asignatura existente o escriba el nombre de un taller nuevo (solo una).")
+        if nombre:
+            existente = Asignatura.objects.filter(nombre__iexact=nombre).first()
+            if existente and existente.tipo != Asignatura.Tipo.TALLER:
+                raise forms.ValidationError(f"«{existente}» ya existe como asignatura del plan: elíjala en la lista.")
+            datos["nuevo_taller"] = nombre
+        return datos
