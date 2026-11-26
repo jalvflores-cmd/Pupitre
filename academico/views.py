@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -13,7 +14,7 @@ from . import exportacion, importacion
 from .calculos import resumen_curso
 from .forms import (
     AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm,
-    AgregarAsignaturaCursoForm, DerivacionForm, EntrevistaForm, RedApoyoForm,
+    AgregarAsignaturaCursoForm, ConfiguracionEstablecimientoForm, DerivacionForm, PrimeraConfiguracionForm, EntrevistaForm, RedApoyoForm,
 )
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Establecimiento, Estudiante, Evaluacion,
@@ -833,6 +834,183 @@ def curso_asignatura_quitar(request, pk):
 
 
 @login_required
+@solo_gestion
+@require_POST
+def cargar_plan_oficial(request, pk=None):
+    """Agrega el plan de estudios oficial de Enseñanza Básica a un curso o a todos los del año."""
+    from .plan_oficial import aplicar_plan, asegurar_catalogo
+
+    asignaturas = asegurar_catalogo()
+    cursos = ([get_object_or_404(Curso.objects.select_related("nivel"), pk=pk)] if pk
+              else Curso.objects.filter(anio=anio_actual()).select_related("nivel"))
+    total, aplicados, sin_plan = 0, 0, []
+    for curso in cursos:
+        n = aplicar_plan(curso, asignaturas)
+        if n is None:
+            sin_plan.append(curso.nombre_corto)
+        else:
+            aplicados += 1
+            total += n
+    if aplicados:
+        messages.success(request, f"Plan oficial cargado: {total} asignatura(s) agregada(s) en {aplicados} curso(s). "
+                                  "Ahora asigne los profesores en cada curso.")
+    if sin_plan:
+        messages.warning(request, "Sin plan automático (solo 1° a 8° básico por ahora): " + ", ".join(sin_plan)
+                         + ". Agregue sus asignaturas desde la página de cada curso.")
+    return redirect("curso_detalle", pk=pk) if pk else redirect("cursos")
+
+
+@login_required
 def talleres(request):
     """Antigua sección separada de talleres: ahora los talleres se ven dentro de cada curso."""
     return redirect("cursos")
+
+
+# --------------------------------------------------------------------------- Primera configuración (instalación nueva)
+
+def bienvenida(request):
+    from django.contrib.auth import login
+    from django.contrib.auth.models import User
+
+    from .models import Perfil
+    from .primera_vez import plataforma_configurada
+
+    if plataforma_configurada():
+        return redirect("inicio")
+    form = PrimeraConfiguracionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        with transaction.atomic():
+            est = Establecimiento.objects.first() or Establecimiento()
+            for campo in ("nombre", "rbd", "comuna", "region", "director", "jefe_utp"):
+                setattr(est, campo, d[campo].strip())
+            if not est.director and d["rol"] == "DIRECTOR":
+                est.director = f"{d['nombres']} {d['apellidos']}"
+            if not est.jefe_utp and d["rol"] == "UTP":
+                est.jefe_utp = f"{d['nombres']} {d['apellidos']}"
+            est.save()
+            u = User.objects.create_user(d["usuario"], password=d["clave1"], first_name=d["nombres"].strip(),
+                                         last_name=d["apellidos"].strip(), is_superuser=True, is_staff=True)
+            Perfil.objects.create(usuario=u, rol=d["rol"])
+            if d["plan_oficial"]:
+                from .plan_oficial import asegurar_catalogo
+                asegurar_catalogo()
+        login(request, u, backend="django.contrib.auth.backends.ModelBackend")
+        messages.success(request, "¡Pupitre está listo! Siga los pasos de la guía: importe la nómina de SIGE, "
+                                  "cargue el plan oficial en los cursos y cree las cuentas de los funcionarios.")
+        return redirect("inicio")
+    return render(request, "academico/bienvenida.html", {"form": form})
+
+
+# --------------------------------------------------------------------------- Respaldos (instalación local)
+
+@login_required
+@solo_gestion
+def respaldos_vista(request):
+    from django import forms as dj_forms
+
+    from . import respaldos
+
+    if not respaldos.usa_sqlite():
+        messages.info(request, "Los respaldos de esta versión en internet los hace el servicio de alojamiento.")
+        return redirect("inicio")
+    est = Establecimiento.objects.first()
+
+    class ConfigForm(dj_forms.ModelForm):
+        class Meta:
+            model = Establecimiento
+            fields = ["respaldo_carpeta_extra", "respaldo_conservar"]
+
+    form = ConfigForm(request.POST if request.POST.get("accion") == "config" else None, instance=est)
+    for f in form.fields.values():
+        f.widget.attrs["class"] = "form-control"
+    if request.method == "POST":
+        if request.POST.get("accion") == "crear":
+            try:
+                r, advertencias = respaldos.crear("manual")
+                messages.success(request, f"Respaldo creado: {r.nombre}")
+                for a in advertencias:
+                    messages.warning(request, a)
+            except Exception as e:
+                messages.error(request, f"No se pudo crear el respaldo: {e}")
+            return redirect("respaldos")
+        if request.POST.get("accion") == "config" and est and form.is_valid():
+            form.save()
+            messages.success(request, "Configuración de respaldos guardada.")
+            return redirect("respaldos")
+    return render(request, "academico/respaldos.html", {
+        "lista": respaldos.listar(), "carpeta": settings.RESPALDOS_DIR, "form": form if est else None,
+        "base": respaldos.ruta_base(),
+    })
+
+
+@login_required
+@solo_gestion
+def respaldo_descargar(request, nombre):
+    from django.http import FileResponse, Http404
+
+    from . import respaldos
+
+    for r in respaldos.listar():
+        if r.nombre == nombre:
+            return FileResponse(open(r.ruta, "rb"), as_attachment=True, filename=r.nombre)
+    raise Http404
+
+
+# --------------------------------------------------------------------------- Configuración editable
+
+def logo(request):
+    est = Establecimiento.objects.first()
+    if not est or not est.logo:
+        from django.http import Http404
+        raise Http404
+    respuesta = HttpResponse(bytes(est.logo), content_type="image/png")
+    respuesta["Cache-Control"] = "max-age=86400"
+    return respuesta
+
+
+@login_required
+@solo_gestion
+def configuracion(request):
+    from django.forms import modelformset_factory
+
+    from .models import OpcionCatalogo
+
+    est = Establecimiento.objects.first() or Establecimiento(nombre="Establecimiento educacional")
+    Listas = modelformset_factory(OpcionCatalogo, fields=["nombre", "activo"], extra=2)
+    post = request.POST if request.method == "POST" else None
+    seccion = request.POST.get("seccion") if post else None
+    form = ConfiguracionEstablecimientoForm(post if seccion == "escuela" else None,
+                                            request.FILES if seccion == "escuela" else None, instance=est)
+    listas = {}
+    for tipo, titulo in OpcionCatalogo.Tipo.choices:
+        listas[tipo] = (titulo, Listas(post if seccion == tipo else None, prefix=tipo.lower(),
+                                       queryset=OpcionCatalogo.objects.filter(tipo=tipo)))
+    if seccion == "escuela" and form.is_valid():
+        form.save()
+        messages.success(request, "Datos del establecimiento guardados.")
+        return redirect("configuracion")
+    if seccion in listas:
+        formset = listas[seccion][1]
+        if formset.is_valid():
+            n = OpcionCatalogo.objects.filter(tipo=seccion).count()
+            for f in formset.forms:
+                if not f.has_changed() or not f.cleaned_data.get("nombre"):
+                    continue
+                opcion = f.save(commit=False)
+                if not opcion.pk:
+                    opcion.tipo, opcion.orden = seccion, n
+                    opcion.codigo = OpcionCatalogo.nuevo_codigo(seccion, opcion.nombre)
+                    n += 1
+                opcion.save()
+            messages.success(request, "Lista actualizada.")
+            return redirect("configuracion")
+    for f in [form] + [fs for _, fs in listas.values()]:
+        if getattr(f, "errors", None) and any(f.errors if isinstance(f.errors, list) else [f.errors]):
+            messages.error(request, "Revise los datos marcados.")
+            break
+    for _, fs in listas.values():
+        for f in fs.forms:
+            f.fields["nombre"].widget.attrs["class"] = "form-control form-control-sm"
+            f.fields["activo"].widget.attrs["class"] = "form-check-input"
+    return render(request, "academico/configuracion.html", {"form": form, "listas": listas, "est": est})

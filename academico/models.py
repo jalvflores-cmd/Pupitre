@@ -33,6 +33,18 @@ class Establecimiento(models.Model):
     alta_concentracion = models.BooleanField(
         "establecimiento con 80 % o más de alumnos prioritarios", default=False,
         help_text="Si se marca, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
+    logo = models.BinaryField("logo institucional", null=True, blank=True, editable=False)
+    color_principal = models.CharField(
+        "color institucional", max_length=7, blank=True,
+        help_text="Color del menú y los botones. Vacío = azul de Pupitre.")
+    pie_documentos = models.CharField(
+        "texto al pie de los documentos internos", max_length=200, blank=True,
+        help_text="Ej.: lema o dirección del establecimiento. Aparece en Excel y entrevistas (no en documentos oficiales).")
+    respaldo_carpeta_extra = models.CharField(
+        "carpeta adicional para respaldos", max_length=300, blank=True,
+        help_text="Opcional. Ej.: E:\\Respaldos Pupitre (disco externo). Cada respaldo también se copia ahí.")
+    respaldo_conservar = models.PositiveSmallIntegerField(
+        "respaldos a conservar", default=30, help_text="Los más antiguos se borran automáticamente.")
 
     class Meta:
         verbose_name = "establecimiento"
@@ -288,20 +300,52 @@ class Calificacion(models.Model):
         return f"{self.estudiante} – {self.evaluacion}: {self.nota}"
 
 
-class Protocolo(models.TextChoices):
-    """Protocolos de actuación exigidos por la Superintendencia de Educación (Circular 482 y 860)."""
-    VULNERACION = "VULNERACION", "Vulneración de derechos"
-    ABUSO_SEXUAL = "ABUSO_SEXUAL", "Agresiones sexuales y hechos de connotación sexual"
-    MALTRATO_ESTUDIANTES = "MALTRATO_ESTUDIANTES", "Maltrato, acoso escolar o violencia entre estudiantes"
-    MALTRATO_ADULTO = "MALTRATO_ADULTO", "Maltrato de adulto a estudiante"
-    MALTRATO_A_FUNCIONARIO = "MALTRATO_A_FUNCIONARIO", "Maltrato a funcionario(a) de la comunidad"
-    DROGAS_ALCOHOL = "DROGAS_ALCOHOL", "Consumo o porte de drogas y alcohol"
-    ACCIDENTE = "ACCIDENTE", "Accidente escolar"
-    AUTOLESION = "AUTOLESION", "Conducta autolesiva o riesgo suicida"
-    DESREGULACION = "DESREGULACION", "Desregulación emocional y conductual"
-    EMBARAZO = "EMBARAZO", "Retención de estudiantes embarazadas, madres y padres"
-    AULA_SEGURA = "AULA_SEGURA", "Ley Aula Segura (expulsión o cancelación de matrícula)"
-    OTRO = "OTRO", "Otro protocolo del Reglamento Interno"
+class OpcionCatalogo(models.Model):
+    """Listas editables por el establecimiento (protocolos de convivencia, redes de apoyo externas)."""
+
+    class Tipo(models.TextChoices):
+        PROTOCOLO = "PROTOCOLO", "Protocolo de convivencia"
+        RED = "RED", "Institución o red de apoyo externa"
+
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    codigo = models.CharField(max_length=30)
+    nombre = models.CharField(max_length=150)
+    orden = models.PositiveSmallIntegerField(default=0)
+    activo = models.BooleanField(default=True, help_text="Desmarque para dejar de ofrecerla (se conserva en los registros).")
+
+    class Meta:
+        verbose_name = "opción de lista"
+        verbose_name_plural = "listas editables"
+        ordering = ["tipo", "orden", "nombre"]
+        unique_together = [("tipo", "codigo")]
+
+    def __str__(self):
+        return self.nombre
+
+    @classmethod
+    def nombres(cls, tipo):
+        return dict(cls.objects.filter(tipo=tipo).values_list("codigo", "nombre"))
+
+    @classmethod
+    def opciones(cls, tipo, actual=""):
+        qs = cls.objects.filter(tipo=tipo)
+        return [(o.codigo, o.nombre) for o in qs if o.activo or o.codigo == actual]
+
+    @classmethod
+    def nuevo_codigo(cls, tipo, nombre):
+        from django.utils.text import slugify
+
+        base = (slugify(nombre).replace("-", "_").upper() or "OPCION")[:24]
+        codigo, n = base, 2
+        while cls.objects.filter(tipo=tipo, codigo=codigo).exists():
+            codigo, n = f"{base}_{n}", n + 1
+        return codigo
+
+
+def _nombre_catalogo(tipo, codigo):
+    if not codigo:
+        return ""
+    return OpcionCatalogo.nombres(tipo).get(codigo, codigo.replace("_", " ").capitalize())
 
 
 class EstadoDerivacion(models.TextChoices):
@@ -333,12 +377,15 @@ class Anotacion(models.Model):
     medida = models.TextField("medida o acción tomada", blank=True)
     # Derivación a Convivencia Escolar (datos sensibles)
     derivada = models.BooleanField("derivada a Convivencia Escolar", default=False)
-    protocolo = models.CharField("protocolo activado", max_length=30, choices=Protocolo.choices, blank=True)
+    protocolo = models.CharField("protocolo activado", max_length=30, blank=True)
     estado_derivacion = models.CharField("estado de la derivación", max_length=20, choices=EstadoDerivacion.choices,
                                          blank=True)
     seguimiento = models.TextField("seguimiento de Convivencia", blank=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     creada = models.DateTimeField(auto_now_add=True)
+
+    def get_protocolo_display(self):
+        return _nombre_catalogo(OpcionCatalogo.Tipo.PROTOCOLO, self.protocolo)
 
     # Sugerencia: según el Reglamento Interno, las faltas graves y gravísimas se derivan a Convivencia
     GRAVEDADES_QUE_SE_DERIVAN = ("GRAVE", "GRAVISIMA")
@@ -534,21 +581,8 @@ class Funcionario(models.Model):
 class RedApoyo(models.Model):
     """Programa o institución externa que atiende al estudiante (dato sensible)."""
 
-    class Institucion(models.TextChoices):
-        MEJOR_NINEZ = "MEJOR_NINEZ", "Servicio Mejor Niñez"
-        SENAME = "SENAME", "SENAME (antecedente histórico)"
-        OLN = "OLN", "Oficina Local de la Niñez (OLN)"
-        OPD = "OPD", "Oficina de Protección de Derechos (OPD)"
-        TRIBUNAL = "TRIBUNAL", "Tribunal de Familia (medida de protección)"
-        CESFAM = "CESFAM", "CESFAM / Salud primaria"
-        COSAM = "COSAM", "COSAM / Salud mental"
-        SENDA = "SENDA", "SENDA Previene"
-        FISCALIA = "FISCALIA", "Fiscalía / Programa de víctimas"
-        HPV = "HPV", "Habilidades para la Vida (JUNAEB)"
-        OTRA = "OTRA", "Otra institución"
-
     estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="redes_apoyo")
-    institucion = models.CharField("institución", max_length=20, choices=Institucion.choices)
+    institucion = models.CharField("institución", max_length=30)
     programa = models.CharField("programa o detalle", max_length=150, blank=True,
                                 help_text="Ej.: PPF Chillán, PIE, PRM, DAM, residencia, causa RIT P-123-2026.")
     profesional = models.CharField("profesional de contacto", max_length=150, blank=True)
@@ -564,6 +598,9 @@ class RedApoyo(models.Model):
         verbose_name = "red de apoyo externa"
         verbose_name_plural = "redes de apoyo externas"
         ordering = ["-vigente", "-fecha_inicio", "-creada"]
+
+    def get_institucion_display(self):
+        return _nombre_catalogo(OpcionCatalogo.Tipo.RED, self.institucion)
 
     def __str__(self):
         return f"{self.get_institucion_display()} – {self.estudiante}"
@@ -584,7 +621,7 @@ class Entrevista(models.Model):
     hora = models.TimeField(null=True, blank=True)
     anotacion = models.ForeignKey(Anotacion, on_delete=models.SET_NULL, null=True, blank=True,
                                   related_name="entrevistas", verbose_name="anotación relacionada")
-    protocolo = models.CharField("protocolo", max_length=30, choices=Protocolo.choices, blank=True)
+    protocolo = models.CharField("protocolo", max_length=30, blank=True)
     entrevistado = models.CharField("nombre de la persona entrevistada", max_length=150, blank=True)
     parentesco = models.CharField("parentesco o relación con el estudiante", max_length=80, blank=True)
     rut_entrevistado = models.CharField("RUT de la persona entrevistada", max_length=15, blank=True)
@@ -607,6 +644,9 @@ class Entrevista(models.Model):
         verbose_name = "entrevista"
         verbose_name_plural = "entrevistas"
         ordering = ["-fecha", "-creada"]
+
+    def get_protocolo_display(self):
+        return _nombre_catalogo(OpcionCatalogo.Tipo.PROTOCOLO, self.protocolo)
 
     def __str__(self):
         return f"{self.get_tipo_display()} – {self.estudiante} ({self.fecha:%d-%m-%Y})"

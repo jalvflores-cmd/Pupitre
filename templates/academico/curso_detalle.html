@@ -48,9 +48,11 @@
   </div>
   <div class="d-flex flex-wrap gap-2 mt-3">
     {% if asignaturas %}<button class="btn btn-primary btn-sm"><i class="bi bi-check-lg"></i> Guardar profesores y horas</button>{% endif %}
+    <button class="btn btn-outline-secondary btn-sm" form="plan-oficial"><i class="bi bi-journal-plus"></i> Cargar plan oficial</button>
     <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#agregar-asig"><i class="bi bi-plus-lg"></i> Agregar asignatura o taller JEC</button>
   </div>
   </form>
+  <form method="post" action="{% url 'cargar_plan_oficial_curso' curso.pk %}" id="plan-oficial" class="d-none">{% csrf_token %}</form>
   {% for ac in asignaturas %}<form method="post" action="{% url 'curso_asignatura_quitar' ac.pk %}" id="quitar-{{ ac.pk }}" class="d-none" onsubmit="return confirm('¿Quitar {{ ac.asignatura|escapejs }} de este curso?');">{% csrf_token %}</form>{% endfor %}
   <div class="collapse mt-3" id="agregar-asig">
     <div class="border rounded-3 p-3 bg-light">

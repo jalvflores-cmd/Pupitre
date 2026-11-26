@@ -203,7 +203,7 @@ class Command(BaseCommand):
             descripcion="Se retira de la sala sin autorización y no regresa a la clase.", autor=b.curso.profesor_jefe,
             derivada=True, estado_derivacion="PENDIENTE")
         RedApoyo.objects.create(
-            estudiante=c, institucion=RedApoyo.Institucion.MEJOR_NINEZ, programa="PPF Chillán (ejemplo)",
+            estudiante=c, institucion="MEJOR_NINEZ", programa="PPF Chillán (ejemplo)",
             profesional="Dupla psicosocial del programa", fecha_inicio=date(anio, 4, 1), registrada_por=conv,
             observaciones="Ejemplo de demostración: seguimiento mensual con la dupla del programa.")
         Entrevista.objects.create(

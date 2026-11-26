@@ -4,17 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Pupitre{% endblock %} · {{ establecimiento.nombre|default:"Pupitre" }}</title>
-  <link rel="icon" href="{% static 'pupitre/emblema.svg' %}" type="image/svg+xml">
+  {% if logo_url %}<link rel="icon" href="{{ logo_url }}" type="image/png">{% else %}<link rel="icon" href="{% static 'pupitre/emblema.svg' %}" type="image/svg+xml">{% endif %}
   <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
   <link href="{% static 'pupitre/pupitre.css' %}" rel="stylesheet">
+  {% if color_institucional %}<style>:root { --p-azul: {{ color_institucional }}; --p-azul-2: color-mix(in srgb, {{ color_institucional }} 85%, white);
+    --p-azul-claro: color-mix(in srgb, {{ color_institucional }} 12%, white);
+    --bs-primary: {{ color_institucional }}; --bs-primary-rgb: {{ color_institucional_rgb }};
+    --bs-link-color: {{ color_institucional }}; --bs-link-color-rgb: {{ color_institucional_rgb }}; }</style>{% endif %}
 </head>
 <body>
 {% if user.is_authenticated %}
 {% with p=request.path %}
 <aside class="p-sidebar" id="sidebar">
   <a class="p-marca" href="{% url 'inicio' %}">
-    <img src="{% static 'pupitre/emblema.svg' %}" alt="">
+    <img src="{% if logo_url %}{{ logo_url }}{% else %}{% static 'pupitre/emblema.svg' %}{% endif %}" alt=""{% if logo_url %} class="p-logo"{% endif %}>
     <span><span class="nombre d-block">Pupitre</span><span class="escuela d-block">{{ establecimiento.nombre }}</span></span>
   </a>
   <nav class="p-nav">
@@ -26,10 +30,11 @@
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
     {% if ve_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
+    {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
     {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}
     {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<a href="{% url 'solicitudes' %}" class="{% if '/solicitudes/' in p %}activo{% endif %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %}<span class="badge bg-warning">{{ solicitudes_pendientes }}</span>{% endif %}</a>{% endif %}
     {% if es_gestion %}<a href="{% url 'comentarios' %}" class="{% if '/comentarios/' in p %}activo{% endif %}"><i class="bi bi-chat-square-heart"></i> Comentarios</a>
-    <a href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Configuración</a>{% endif %}
+    <a href="{% url 'configuracion' %}" class="{% if '/configuracion/' in p %}activo{% endif %}"><i class="bi bi-gear"></i> Configuración</a>{% endif %}
   </nav>
   <div class="p-usuario">
     <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>

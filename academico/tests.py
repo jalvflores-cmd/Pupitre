@@ -631,3 +631,95 @@ class ConvivenciaDerivacionesTests(BaseDatos):
             self.assertNotContains(r, "María Pérez")
             self.assertEqual(self.client.get(reverse("entrevista_pdf", args=[e.pk])).status_code, 403)
             self.assertEqual(self.client.get(reverse("entrevista_crear", args=[self.est.pk])).status_code, 403)
+
+
+class InstalacionLocalTests(TestCase):
+    def setUp(self):
+        from . import primera_vez
+        primera_vez._configurada = False
+
+    def test_asistente_de_primera_configuracion(self):
+        from .models import Establecimiento
+        r = self.client.get("/cursos/")
+        self.assertRedirects(r, reverse("bienvenida"), fetch_redirect_response=False)
+        r = self.client.post(reverse("bienvenida"), {
+            "nombre": "Escuela Rural Los Aromos", "rbd": "12345", "comuna": "Chillán", "region": "Ñuble",
+            "director": "", "jefe_utp": "", "rol": "DIRECTOR", "nombres": "Jorge", "apellidos": "Sandoval Morales",
+            "usuario": "jsandoval", "clave1": "Escuela-2026!", "clave2": "Escuela-2026!", "plan_oficial": "on"})
+        self.assertRedirects(r, reverse("inicio"), fetch_redirect_response=False)
+        est = Establecimiento.objects.get()
+        self.assertEqual((est.nombre, est.director), ("Escuela Rural Los Aromos", "Jorge Sandoval Morales"))
+        u = User.objects.get(username="jsandoval")
+        self.assertTrue(u.is_superuser)
+        self.assertEqual(u.perfil.rol, "DIRECTOR")
+        self.assertTrue(Asignatura.objects.filter(nombre="Religión Evangélica", religion="EVANGELICA").exists())
+        self.assertEqual(self.client.get("/cursos/").status_code, 200)
+        self.assertRedirects(self.client.get(reverse("bienvenida")), reverse("inicio"), fetch_redirect_response=False)
+
+    def test_cargar_plan_oficial(self):
+        from .models import Perfil
+        u = User.objects.create_user("utp", password="x")
+        Perfil.objects.create(usuario=u, rol="UTP")
+        quinto = Curso.objects.create(nivel=Nivel.objects.create(nombre="5° Básico", orden=7), letra="A", anio=2026)
+        kinder = Curso.objects.create(nivel=Nivel.objects.create(nombre="Kínder", orden=2), letra="A", anio=2026)
+        self.client.force_login(u)
+        from unittest import mock
+        with mock.patch("academico.views.anio_actual", return_value=2026):
+            self.client.post(reverse("cargar_plan_oficial"))
+        self.assertEqual(quinto.asignaturas_curso.count(), 12)
+        self.assertEqual(kinder.asignaturas_curso.count(), 0)
+        self.assertEqual(quinto.asignaturas_curso.get(asignatura__nombre="Matemática").horas_semanales, 6)
+        self.client.post(reverse("cargar_plan_oficial_curso", args=[quinto.pk]))  # no duplica
+        self.assertEqual(quinto.asignaturas_curso.count(), 12)
+
+
+class ConfiguracionEditableTests(BaseDatos):
+    def _logo(self):
+        from PIL import Image
+        b = BytesIO()
+        Image.new("RGB", (300, 150), (200, 30, 30)).save(b, format="PNG")
+        return SimpleUploadedFile("logo.png", b.getvalue(), content_type="image/png")
+
+    def test_logo_color_y_listas(self):
+        from .models import Establecimiento, OpcionCatalogo
+        Establecimiento.objects.create(nombre="Escuela X")
+        self.client.force_login(self.utp)
+        r = self.client.post(reverse("configuracion"), {
+            "seccion": "escuela", "nombre": "Escuela Los Aromos", "color_principal": "#7A1F3D",
+            "pie_documentos": "Educar con cariño", "logo_archivo": self._logo()})
+        self.assertRedirects(r, reverse("configuracion"), fetch_redirect_response=False)
+        est = Establecimiento.objects.get()
+        self.assertTrue(est.logo)
+        self.assertEqual(est.color_principal, "#7A1F3D")
+        self.assertEqual(self.client.get(reverse("logo"))["Content-Type"], "image/png")
+        r = self.client.get(reverse("inicio"))
+        self.assertContains(r, "--p-azul: #7A1F3D")
+        self.assertContains(r, "/logo.png?v=")
+        # Excel interno con logo y pie
+        xl = self.client.get(reverse("informe_final_excel", args=[self.curso.pk]))
+        libro = load_workbook(BytesIO(xl.content))
+        self.assertEqual(len(libro.active._images), 1)
+        self.assertEqual(libro.active["A4"].value, "Educar con cariño")
+        # documentos oficiales sin cambios (se generan igual)
+        self.assertEqual(self.client.get(reverse("acta_final_pdf", args=[self.curso.pk])).status_code, 200)
+        # listas editables: renombrar un protocolo y agregar uno nuevo
+        prot = OpcionCatalogo.objects.filter(tipo="PROTOCOLO")
+        datos = {"seccion": "PROTOCOLO", "protocolo-TOTAL_FORMS": prot.count() + 1,
+                 "protocolo-INITIAL_FORMS": prot.count(), "protocolo-MIN_NUM_FORMS": 0, "protocolo-MAX_NUM_FORMS": 1000}
+        for i, o in enumerate(prot):
+            datos[f"protocolo-{i}-id"] = o.pk
+            datos[f"protocolo-{i}-nombre"] = "Protocolo de bullying" if o.codigo == "MALTRATO_ESTUDIANTES" else o.nombre
+            if o.codigo != "ACCIDENTE":
+                datos[f"protocolo-{i}-activo"] = "on"
+        datos[f"protocolo-{prot.count()}-nombre"] = "Protocolo de salidas pedagógicas"
+        datos[f"protocolo-{prot.count()}-activo"] = "on"
+        self.client.post(reverse("configuracion"), datos)
+        self.assertTrue(OpcionCatalogo.objects.filter(nombre="Protocolo de salidas pedagógicas", tipo="PROTOCOLO").exists())
+        self.assertFalse(OpcionCatalogo.objects.get(codigo="ACCIDENTE").activo)
+        from .forms import DerivacionForm
+        opciones = dict(DerivacionForm().fields["protocolo"].choices)
+        self.assertEqual(opciones["MALTRATO_ESTUDIANTES"], "Protocolo de bullying")
+        self.assertNotIn("ACCIDENTE", opciones)
+        # profesores no acceden a la configuración
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("configuracion")).status_code, 403)

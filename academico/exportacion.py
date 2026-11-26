@@ -44,6 +44,11 @@ def _xl_titulo(hoja, titulo, subtitulo):
     hoja["A2"] = titulo
     hoja["A2"].font = Font(bold=True, size=12)
     hoja["A3"] = f"{subtitulo} · Emitido el {timezone.localdate():%d-%m-%Y}"
+    if est.pie_documentos:
+        hoja["A4"] = est.pie_documentos
+        hoja["A4"].font = Font(italic=True, size=9, color="666666")
+        hoja.oddFooter.center.text = est.pie_documentos
+    hoja.pupitre_con_logo = True  # el logo se agrega al final, cuando se conoce el ancho de la tabla
 
 
 def _xl_pintar_notas(hoja, fila_ini, col_ini):
@@ -56,7 +61,34 @@ def _xl_pintar_notas(hoja, fila_ini, col_ini):
                     c.font = _ROJO_XL
 
 
+def _xl_logo(libro):
+    """Logo institucional en la esquina superior derecha de las planillas (no en documentos oficiales)."""
+    est = Establecimiento.actual()
+    if not est.logo:
+        return
+    from openpyxl.drawing.image import Image as XLImagen
+    from openpyxl.utils import get_column_letter
+    from PIL import Image
+
+    for hoja in libro.worksheets:
+        if not getattr(hoja, "pupitre_con_logo", False):
+            continue
+        img = Image.open(BytesIO(bytes(est.logo)))
+        alto = 50
+        ancho = max(1, int(img.width * alto / img.height))
+        xl = XLImagen(BytesIO(bytes(est.logo)))
+        xl.height, xl.width = alto, ancho
+        # a la derecha del título: se busca la primera columna libre después del texto más largo
+        largo = max(len(str(hoja[f"A{f}"].value or "")) * (1.35 if f <= 2 else 1.0) for f in (1, 2, 3, 4))
+        acumulado, columna = 0, 1
+        while acumulado < largo and columna < 40:
+            acumulado += hoja.column_dimensions[get_column_letter(columna)].width or 8.43
+            columna += 1
+        hoja.add_image(xl, f"{get_column_letter(columna)}1")
+
+
 def _bytes(libro):
+    _xl_logo(libro)
     salida = BytesIO()
     libro.save(salida)
     return salida.getvalue()
@@ -239,6 +271,15 @@ def _membrete(titulo, subtitulo="", decreto=True):
     if est.comuna:
         datos.append(f"Comuna de {est.comuna}")
     derecha = Paragraph("<br/>".join(datos), ParagraphStyle("der", parent=E_MINI, alignment=2))
+    if not decreto and est.logo:  # documentos internos: con logo institucional
+        from reportlab.platypus import Image as PDFImagen
+        from PIL import Image
+
+        img = Image.open(BytesIO(bytes(est.logo)))
+        alto = 1.6 * cm
+        logo = PDFImagen(BytesIO(bytes(est.logo)), width=alto * img.width / img.height, height=alto)
+        izquierda = Table([[logo, izquierda]], colWidths=[alto * img.width / img.height + 0.3 * cm, None])
+        izquierda.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
     t = Table([[izquierda, derecha]], colWidths=["50%", "50%"])
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
                            ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
@@ -295,7 +336,7 @@ def _asistencia_txt(est):
     return f"{est.porcentaje_asistencia:.1f} %".replace(".", ",") if est.porcentaje_asistencia is not None else "—"
 
 
-def _construir_pdf(historia, horizontal=False, titulo="Documento"):
+def _construir_pdf(historia, horizontal=False, titulo="Documento", interno=False):
     salida = BytesIO()
     tam = landscape(letter) if horizontal else letter
     doc = SimpleDocTemplate(salida, pagesize=tam, leftMargin=2 * cm, rightMargin=2 * cm,
@@ -306,7 +347,11 @@ def _construir_pdf(historia, horizontal=False, titulo="Documento"):
         canvas.saveState()
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(colors.grey)
-        canvas.drawString(doc_.leftMargin, 0.8 * cm, f"Emitido el {timezone.localdate():%d-%m-%Y} · Pupitre")
+        texto = f"Emitido el {timezone.localdate():%d-%m-%Y} · Pupitre"
+        pie_extra = Establecimiento.actual().pie_documentos if interno else ""
+        if pie_extra:
+            texto = f"{pie_extra} · {texto}"
+        canvas.drawString(doc_.leftMargin, 0.8 * cm, texto)
         canvas.drawRightString(tam[0] - doc_.rightMargin, 0.8 * cm, f"Página {doc_.page}")
         canvas.restoreState()
 
@@ -537,7 +582,7 @@ def _seccion(titulo, contenido, lineas_vacias=4):
 
 def pdf_entrevista(estudiante, entrevista=None):
     """Registro de entrevista. Sin `entrevista` genera el formato en blanco para completar a mano."""
-    from .models import Entrevista, Protocolo
+    from .models import Entrevista, OpcionCatalogo
 
     e = entrevista
     blanco = e is None
@@ -571,7 +616,7 @@ def pdf_entrevista(estudiante, entrevista=None):
     if blanco:
         historia.append(Paragraph(f"<b>Tipo de entrevista:</b> {tipo}", E_CELDA))
         historia.append(Spacer(1, 4))
-        protocolos = " · ".join(t for v, t in Protocolo.choices if v != "OTRO")
+        protocolos = " · ".join(o.nombre for o in OpcionCatalogo.objects.filter(tipo="PROTOCOLO", activo=True))
         historia.append(Paragraph(f"<b>Protocolos del Reglamento Interno:</b> {protocolos}.", E_MINI))
         historia.append(Spacer(1, 8))
     elif e.anotacion:
@@ -605,4 +650,4 @@ def pdf_entrevista(estudiante, entrevista=None):
     historia.append(Spacer(1, 4))
     historia.append(Paragraph(f"{escape(est.comuna or '')}, {'____ de ______________ de ________' if blanco else _fecha_larga(e.fecha)}.",
                               ParagraphStyle("f", parent=E_NORMAL, alignment=2)))
-    return _construir_pdf(historia, titulo="Registro de entrevista")
+    return _construir_pdf(historia, titulo="Registro de entrevista", interno=True)

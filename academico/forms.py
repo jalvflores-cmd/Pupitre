@@ -1,6 +1,8 @@
 from django import forms
 
-from .models import Anotacion, Asignatura, Entrevista, Estudiante, Evaluacion, Funcionario, RedApoyo
+from .models import (
+    Anotacion, Asignatura, Entrevista, Establecimiento, Estudiante, Evaluacion, Funcionario, OpcionCatalogo, RedApoyo,
+)
 from .lectores import EXTENSIONES
 from .rut import normalizar_rut, validar_rut
 
@@ -39,6 +41,17 @@ class EstudianteForm(BootstrapMixin, forms.ModelForm):
             raise forms.ValidationError("Ya existe un estudiante con este RUT.")
         return rut
 
+
+
+def _campo_catalogo(form, nombre, tipo, obligatorio=False):
+    """Convierte un campo de texto en una lista desplegable con las opciones editables del establecimiento."""
+    actual = getattr(form.instance, nombre, "") or form.initial.get(nombre, "")
+    vacio = [] if obligatorio else [("", "— Ninguno —")]
+    campo = forms.ChoiceField(label=form.fields[nombre].label, required=obligatorio,
+                              choices=vacio + OpcionCatalogo.opciones(tipo, actual),
+                              help_text=form.fields[nombre].help_text)
+    campo.widget.attrs["class"] = "form-select"
+    form.fields[nombre] = campo
 
 class AnotacionForm(BootstrapMixin, forms.ModelForm):
     class Meta:
@@ -82,6 +95,10 @@ class DerivacionForm(BootstrapMixin, forms.ModelForm):
         widgets = {"seguimiento": forms.Textarea(attrs={"rows": 5})}
         help_texts = {"protocolo": "Deje vacío si no fue necesario activar un protocolo."}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _campo_catalogo(self, "protocolo", OpcionCatalogo.Tipo.PROTOCOLO)
+
     def clean(self):
         datos = super().clean()
         if datos.get("derivada") and not datos.get("estado_derivacion"):
@@ -103,6 +120,10 @@ class RedApoyoForm(BootstrapMixin, forms.ModelForm):
                    "fecha_termino": forms.DateInput(attrs=_FECHA, format="%Y-%m-%d"),
                    "observaciones": forms.Textarea(attrs={"rows": 3})}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _campo_catalogo(self, "institucion", OpcionCatalogo.Tipo.RED, obligatorio=True)
+
 
 class EntrevistaForm(BootstrapMixin, forms.ModelForm):
     class Meta:
@@ -122,6 +143,7 @@ class EntrevistaForm(BootstrapMixin, forms.ModelForm):
 
     def __init__(self, *args, estudiante=None, **kwargs):
         super().__init__(*args, **kwargs)
+        _campo_catalogo(self, "protocolo", OpcionCatalogo.Tipo.PROTOCOLO)
         self.fields["anotacion"].queryset = estudiante.anotaciones.all() if estudiante else Anotacion.objects.none()
         self.fields["anotacion"].label_from_instance = lambda a: (
             f"{a.fecha:%d-%m-%Y} · {a.get_tipo_display()}{' ' + a.get_gravedad_display() if a.gravedad else ''}: "
@@ -254,3 +276,93 @@ class AgregarAsignaturaCursoForm(BootstrapMixin, forms.Form):
                 raise forms.ValidationError(f"«{existente}» ya existe como asignatura del plan: elíjala en la lista.")
             datos["nuevo_taller"] = nombre
         return datos
+
+
+class PrimeraConfiguracionForm(BootstrapMixin, forms.Form):
+    """Asistente de la primera vez: datos de la escuela y la cuenta de quien administra la plataforma."""
+    nombre = forms.CharField(label="Nombre del establecimiento", max_length=200)
+    rbd = forms.CharField(label="RBD", max_length=20, required=False)
+    comuna = forms.CharField(max_length=100, required=False)
+    region = forms.CharField(label="Región", max_length=100, required=False, help_text="Ej.: Ñuble")
+    director = forms.CharField(label="Nombre del director(a)", max_length=200, required=False)
+    jefe_utp = forms.CharField(label="Nombre del jefe(a) de UTP", max_length=200, required=False)
+    rol = forms.ChoiceField(label="Su cargo", choices=[("DIRECTOR", "Director(a)"), ("UTP", "Jefe(a) de UTP")])
+    nombres = forms.CharField(label="Sus nombres", max_length=150)
+    apellidos = forms.CharField(label="Sus apellidos", max_length=150)
+    usuario = forms.SlugField(label="Nombre de usuario para ingresar", max_length=150,
+                              help_text="Sin espacios ni tildes. Ej.: jsandoval")
+    clave1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+    clave2 = forms.CharField(label="Repita la contraseña", widget=forms.PasswordInput)
+    plan_oficial = forms.BooleanField(label="Crear las asignaturas del plan oficial de Enseñanza Básica",
+                                      required=False, initial=True)
+
+    def clean(self):
+        from django.contrib.auth.password_validation import validate_password
+
+        datos = super().clean()
+        if datos.get("clave1") != datos.get("clave2"):
+            self.add_error("clave2", "Las contraseñas no coinciden.")
+        elif datos.get("clave1"):
+            try:
+                validate_password(datos["clave1"])
+            except forms.ValidationError as e:
+                self.add_error("clave1", e)
+        return datos
+
+
+class ConfiguracionEstablecimientoForm(BootstrapMixin, forms.ModelForm):
+    logo_archivo = forms.ImageField(label="Logo institucional", required=False,
+                                    help_text="PNG o JPG. Aparece en el menú, la pantalla de ingreso, las planillas Excel "
+                                              "y las entrevistas. Los documentos oficiales Mineduc no lo llevan.")
+    quitar_logo = forms.BooleanField(label="Quitar el logo actual", required=False)
+
+    class Meta:
+        model = Establecimiento
+        fields = ["nombre", "rbd", "direccion", "comuna", "region", "telefono", "director", "jefe_utp",
+                  "resolucion_reconocimiento", "alta_concentracion", "color_principal", "pie_documentos"]
+        widgets = {"color_principal": forms.TextInput(attrs={"type": "color"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["color_principal"].widget.attrs["class"] = "form-control form-control-color"
+        if not self.instance.color_principal:
+            self.initial["color_principal"] = "#24476B"
+
+    def clean_color_principal(self):
+        import re
+        color = (self.cleaned_data.get("color_principal") or "").strip()
+        if color.upper() == "#24476B":
+            return ""
+        if color and not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+            raise forms.ValidationError("Color no válido.")
+        return color
+
+    def clean_logo_archivo(self):
+        archivo = self.cleaned_data.get("logo_archivo")
+        if not archivo:
+            return None
+        if archivo.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("El logo debe pesar menos de 5 MB.")
+        from io import BytesIO
+
+        from PIL import Image
+        try:
+            img = Image.open(archivo)
+            img.load()
+        except Exception:
+            raise forms.ValidationError("No se pudo leer la imagen. Use un archivo PNG o JPG.")
+        img = img.convert("RGBA")
+        img.thumbnail((600, 600))
+        salida = BytesIO()
+        img.save(salida, format="PNG", optimize=True)
+        return salida.getvalue()
+
+    def save(self, commit=True):
+        est = super().save(commit=False)
+        if self.cleaned_data.get("quitar_logo"):
+            est.logo = None
+        elif self.cleaned_data.get("logo_archivo"):
+            est.logo = self.cleaned_data["logo_archivo"]
+        if commit:
+            est.save()
+        return est

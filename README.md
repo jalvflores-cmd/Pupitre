@@ -112,3 +112,24 @@ Programe este comando a diario (cron) y guarde los respaldos fuera del servidor.
 - Pruebas: `python manage.py test academico`
 - Estructura principal: `academico/models.py` (datos), `permisos.py` (reglas de acceso), `calculos.py` (promedios),
   `importacion.py` / `exportacion.py` (Excel y PDF), `views.py`, `templates/`.
+
+
+## Instalación local en un establecimiento (Windows)
+
+Para que una escuela use Pupitre en su propio computador, solo dentro de su red y con respaldos propios,
+siga la guía [docs/Guia_instalacion_Pupitre.pdf](docs/Guia_instalacion_Pupitre.pdf). En resumen:
+
+1. Extraer el proyecto en `C:\Pupitre` y ejecutar `windows\instalar.bat` (instala Python si falta, prepara todo,
+   deja Pupitre arrancando con el equipo y abre el puerto 8000 en la red interna).
+2. Completar el asistente de bienvenida (datos de la escuela y la primera cuenta de Dirección/UTP).
+3. Los demás computadores entran a `http://NOMBRE-DEL-EQUIPO:8000`.
+
+Respaldos: automáticos cada día en `C:\Pupitre\respaldos` (menú **Respaldos**), con copia opcional a un disco externo
+y a Google Drive para escritorio (sincronizando esa carpeta). Restaurar con `windows\restaurar.bat`;
+actualizar con `windows\actualizar.bat`.
+
+## Configuración editable
+
+Menú **Configuración** (Dirección y UTP): datos del establecimiento, logo institucional (menú, ingreso, planillas
+Excel y entrevistas; no en los documentos oficiales Mineduc), color institucional, texto al pie de documentos
+internos, y las listas de protocolos de convivencia y redes de apoyo externas.

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Bienvenida{% endblock %}
+{% block publico %}
+<div class="container py-5" style="max-width: 860px">
+  <div class="text-center mb-4">
+    <img src="{% if logo_url %}{{ logo_url }}{% else %}{% static 'pupitre/emblema.svg' %}{% endif %}" alt="" style="width:64px">
+    <h2 class="mt-3 mb-1">Bienvenido(a) a Pupitre</h2>
+    <p class="text-muted">Esta es la primera vez que se abre la plataforma en este computador. Complete estos datos una sola vez.</p>
+  </div>
+  <form method="post" class="card p-4">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <h5 class="mb-3">1. Datos del establecimiento</h5>
+    <div class="row g-3 mb-4">
+      {% for f in form %}{% if forloop.counter <= 6 %}
+      <div class="col-md-6"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} *{% endif %}</label>{{ f }}
+        {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      {% endif %}{% endfor %}
+    </div>
+    <h5 class="mb-1">2. Su cuenta</h5>
+    <p class="small text-muted">Con esta cuenta administrará la plataforma y creará las cuentas de los demás funcionarios.</p>
+    <div class="row g-3 mb-4">
+      {% for f in form %}{% if forloop.counter > 6 and forloop.counter <= 12 %}
+      <div class="col-md-6"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }} *</label>{{ f }}
+        {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      {% endif %}{% endfor %}
+    </div>
+    <div class="form-check mb-4">{{ form.plan_oficial }} <label class="form-check-label" for="{{ form.plan_oficial.id_for_label }}">{{ form.plan_oficial.label }}</label></div>
+    <button class="btn btn-primary btn-lg">Comenzar a usar Pupitre</button>
+  </form>
+</div>
+{% endblock %}

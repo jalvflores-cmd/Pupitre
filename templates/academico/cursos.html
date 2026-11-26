@@ -3,8 +3,12 @@
 {% block contenido %}
 <div class="p-encabezado">
   <div><h3>Cursos y notas</h3><div class="sub">Año académico {{ anio }}</div></div>
+  <div class="d-flex gap-2 align-items-center">
+  {% if es_gestion and por_nivel %}<form method="post" action="{% url 'cargar_plan_oficial' %}" onsubmit="return confirm('¿Agregar a todos los cursos de 1° a 8° básico las asignaturas del plan oficial que les falten? No se borra nada.');">{% csrf_token %}
+    <button class="btn btn-outline-primary btn-sm text-nowrap"><i class="bi bi-journal-plus"></i> Cargar plan oficial</button></form>{% endif %}
   <form><select name="anio" class="form-select" onchange="this.form.submit()">
     {% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></form>
+  </div>
 </div>
 {% for nivel, lista in por_nivel.items %}
   <h6 class="text-muted text-uppercase small fw-semibold mt-4 mb-2">{{ nivel }}</h6>
@@ -21,6 +25,6 @@
   {% endfor %}
   </div>
 {% empty %}
-  <div class="card p-4 text-muted">No hay cursos visibles para este año.{% if es_gestion %} Créelos en <a href="{% url 'admin:academico_curso_add' %}">Configuración › Cursos</a> o importando estudiantes desde Excel.{% endif %}</div>
+  <div class="card p-4 text-muted">No hay cursos visibles para este año.{% if es_gestion %} La forma más rápida es <a href="{% url 'importar' %}">importar la nómina de SIGE</a>: se crean los cursos y estudiantes. Después use «Cargar plan oficial» para agregar las asignaturas. También puede crearlos en <a href="{% url 'admin:academico_curso_add' %}">Configuración › Cursos</a>.{% endif %}</div>
 {% endfor %}
 {% endblock %}

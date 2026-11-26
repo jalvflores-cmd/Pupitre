@@ -4,6 +4,11 @@ from . import views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
+    path("bienvenida/", views.bienvenida, name="bienvenida"),
+    path("logo.png", views.logo, name="logo"),
+    path("configuracion/", views.configuracion, name="configuracion"),
+    path("respaldos/", views.respaldos_vista, name="respaldos"),
+    path("respaldos/descargar/<str:nombre>", views.respaldo_descargar, name="respaldo_descargar"),
     path("cursos/", views.cursos, name="cursos"),
     path("cursos/<int:pk>/", views.curso_detalle, name="curso_detalle"),
     path("notas/<int:pk>/", views.libro_notas, name="libro_notas"),
@@ -29,6 +34,8 @@ urlpatterns = [
     path("talleres/", views.talleres, name="talleres"),
     path("cursos/<int:pk>/agregar-asignatura/", views.curso_asignatura_agregar, name="curso_asignatura_agregar"),
     path("cursos/<int:pk>/carga/", views.curso_carga_guardar, name="curso_carga_guardar"),
+    path("cursos/plan-oficial/", views.cargar_plan_oficial, name="cargar_plan_oficial"),
+    path("cursos/<int:pk>/plan-oficial/", views.cargar_plan_oficial, name="cargar_plan_oficial_curso"),
     path("carga/<int:pk>/quitar/", views.curso_asignatura_quitar, name="curso_asignatura_quitar"),
     path("convivencia/", views.convivencia, name="convivencia"),
     path("anotaciones/<int:pk>/derivacion/", views.anotacion_derivacion, name="anotacion_derivacion"),

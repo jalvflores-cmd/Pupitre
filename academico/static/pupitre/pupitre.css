@@ -27,7 +27,7 @@
   --bs-primary-rgb: 36, 71, 107;
   --bs-link-color: #24476B;
   --bs-link-color-rgb: 36, 71, 107;
-  --bs-link-hover-color: #1a3550;
+  --bs-link-hover-color: color-mix(in srgb, var(--p-azul) 82%, black);
   --bs-border-color: var(--p-borde);
 }
 body { font-size: .925rem; -webkit-font-smoothing: antialiased; }
@@ -39,8 +39,8 @@ h5 { font-size: 1.02rem; }
 
 /* Botones */
 .btn { border-radius: 10px; font-weight: 500; }
-.btn-primary { --bs-btn-bg: var(--p-azul); --bs-btn-border-color: var(--p-azul); --bs-btn-hover-bg: #1a3550;
-  --bs-btn-hover-border-color: #1a3550; --bs-btn-active-bg: #142a40; --bs-btn-disabled-bg: var(--p-azul); }
+.btn-primary { --bs-btn-bg: var(--p-azul); --bs-btn-border-color: var(--p-azul); --bs-btn-hover-bg: color-mix(in srgb, var(--p-azul) 82%, black);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--p-azul) 82%, black); --bs-btn-active-bg: color-mix(in srgb, var(--p-azul) 70%, black); --bs-btn-disabled-bg: var(--p-azul); }
 .btn-outline-primary { --bs-btn-color: var(--p-azul); --bs-btn-border-color: #c5d2e0; --bs-btn-hover-bg: var(--p-azul);
   --bs-btn-hover-border-color: var(--p-azul); --bs-btn-active-bg: var(--p-azul); }
 .btn-outline-success { --bs-btn-color: var(--p-verde); --bs-btn-border-color: #bfdccf; --bs-btn-hover-bg: var(--p-verde);
@@ -155,7 +155,7 @@ main.p-main { padding: .5rem 2rem 3rem; max-width: 1500px; }
 .p-login .lado { background: var(--p-azul); color: #fff; padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;
   background-image: radial-gradient(circle at 85% 15%, rgba(242,181,68,.25) 0, transparent 35%),
                     radial-gradient(circle at 10% 90%, rgba(255,255,255,.08) 0, transparent 40%); }
-.p-login .lado img { width: 64px; height: 64px; background: #fff; border-radius: 16px; padding: 5px; }
+.p-login .lado img { width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 16px; padding: 5px; }
 .p-login .lado h1 { font-size: 2.4rem; font-weight: 750; margin: 1.5rem 0 .5rem; }
 .p-login .lado .lema { font-size: 1.05rem; opacity: .85; max-width: 28rem; }
 .p-login .lado ul { list-style: none; padding: 0; margin: 2rem 0 0; opacity: .9; }
@@ -172,3 +172,6 @@ main.p-main { padding: .5rem 2rem 3rem; max-width: 1500px; }
 .table { --bs-table-bg: transparent; }
 .form-control, .form-select { background-color: #fff; }
 .p-usuario .acciones { display: flex; flex-direction: column; gap: .2rem; align-items: flex-start; }
+
+/* Logo institucional en el menú */
+.p-marca img.p-logo { background: #fff; border-radius: 10px; padding: 3px; object-fit: contain; }

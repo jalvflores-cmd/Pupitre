@@ -5,7 +5,7 @@
 <div class="p-login">
   <section class="lado">
     <div>
-      <img src="{% static 'pupitre/emblema.svg' %}" alt="">
+      <img src="{% if logo_url %}{{ logo_url }}{% else %}{% static 'pupitre/emblema.svg' %}{% endif %}" alt="">
       <h1>Pupitre</h1>
       <p class="lema">Gestión curricular de {{ establecimiento.nombre|default:"su establecimiento" }}{% if establecimiento.comuna %}, {{ establecimiento.comuna }}{% endif %}.</p>
       <ul>

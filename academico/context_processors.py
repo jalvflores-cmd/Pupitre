@@ -11,10 +11,21 @@ USUARIOS_DEMO = [
 ]
 
 
+def _marca(est):
+    """Logo y color institucional configurados por el establecimiento."""
+    from zlib import crc32
+
+    color = est.color_principal or ""
+    rgb = ", ".join(str(int(color[i:i + 2], 16)) for i in (1, 3, 5)) if len(color) == 7 else ""
+    return {"logo_url": f"/logo.png?v={crc32(bytes(est.logo))}" if est.logo else "",
+            "color_institucional": color, "color_institucional_rgb": rgb}
+
+
 def rol(request):
+    est = Establecimiento.actual()
     if not request.user.is_authenticated:
         return {"modo_demo": settings.MODO_DEMO, "usuarios_demo": USUARIOS_DEMO if settings.MODO_DEMO else [],
-                "establecimiento": Establecimiento.actual()}
+                "establecimiento": est, **_marca(est)}
     gestion = es_gestion(request.user)
     if gestion:
         pendientes = SolicitudCambio.objects.filter(estado=SolicitudCambio.Estado.PENDIENTE).count()
@@ -31,5 +42,6 @@ def rol(request):
         "puede_editar_contacto": puede_editar_contacto(request.user),
         "solo_lectura": es_solo_lectura(request.user),
         "rol_usuario": Perfil.Rol(rol_de(request.user)).label,
-        "establecimiento": Establecimiento.actual(),
+        "establecimiento": est, **_marca(est),
+        "respaldos_disponibles": gestion and settings.DATABASES["default"]["ENGINE"].endswith("sqlite3"),
     }

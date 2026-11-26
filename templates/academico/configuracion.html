@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Configuración{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Configuración</h3><div class="sub">Datos del establecimiento, imagen institucional y listas que usa la plataforma.</div></div>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'admin:index' %}"><i class="bi bi-sliders"></i> Usuarios, cursos y opciones avanzadas</a>
+</div>
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card p-3 p-lg-4">
+      <h5>Establecimiento e imagen institucional</h5>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="seccion" value="escuela">
+        {{ form.non_field_errors }}
+        <div class="row g-3">
+          {% for f in form %}{% if f.name != 'quitar_logo' or est.logo %}
+          <div class="{% if f.name == 'resolucion_reconocimiento' or f.name == 'pie_documentos' or f.name == 'logo_archivo' %}col-lg-6{% else %}col-md-6 col-lg-3{% endif %}">
+            {% if f.field.widget.input_type == "checkbox" %}
+              <div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}</label></div>
+            {% else %}
+              <label class="form-label small" for="{{ f.id_for_label }}">{{ f.label|capfirst }}</label>
+              {% if f.name == 'logo_archivo' and est.logo %}<div class="mb-2"><img src="{{ logo_url }}" alt="Logo actual" style="max-height:70px" class="border rounded p-1 bg-white"></div>{% endif %}
+              {{ f }}
+            {% endif %}
+            {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+            {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+        <button class="btn btn-primary mt-3"><i class="bi bi-check-lg"></i> Guardar</button>
+      </form>
+      <div class="alert alert-light border small mt-3 mb-0"><i class="bi bi-info-circle"></i> Los documentos oficiales (Informe de Calificaciones, Certificado Anual y Acta Final) mantienen el formato del Ministerio de Educación, sin logo ni colores.</div>
+    </div>
+  </div>
+  {% for tipo, par in listas.items %}{% with titulo=par.0 fs=par.1 %}
+  <div class="col-xl-6">
+    <div class="card p-3 p-lg-4 h-100">
+      <h5 class="mb-1">{% if tipo == "PROTOCOLO" %}Protocolos de convivencia{% else %}Redes de apoyo externas{% endif %}</h5>
+      <p class="small text-muted">{% if tipo == "PROTOCOLO" %}Use los nombres de su Reglamento Interno.{% else %}Instituciones y programas que atienden a sus estudiantes.{% endif %} Cambie un nombre, desmarque «Activo» para dejar de ofrecerlo o agregue uno nuevo en las filas vacías.</p>
+      <form method="post">{% csrf_token %}<input type="hidden" name="seccion" value="{{ tipo }}">
+        {{ fs.management_form }}
+        <table class="table table-sm align-middle mb-2">
+          <thead><tr><th>Nombre</th><th class="text-center" style="width:4rem">Activo</th></tr></thead>
+          {% for f in fs.forms %}
+          <tr><td>{{ f.id }}{{ f.nombre }}{% for e in f.nombre.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td class="text-center">{{ f.activo }}</td></tr>
+          {% endfor %}
+        </table>
+        <button class="btn btn-outline-primary btn-sm"><i class="bi bi-check-lg"></i> Guardar lista</button>
+      </form>
+    </div>
+  </div>
+  {% endwith %}{% endfor %}
+</div>
+{% endblock %}
