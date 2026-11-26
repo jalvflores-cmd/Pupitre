@@ -13,9 +13,16 @@
   <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-azul"><i class="bi bi-people"></i></div><div><div class="valor">{{ filas|length }}</div><div class="etiqueta">Funcionarios</div></div></div></div>
   <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-verde"><i class="bi bi-clock"></i></div><div><div class="valor">{{ total_horas|floatformat:"-1" }}</div><div class="etiqueta">Horas de contrato en total</div></div></div></div>
   <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-amarillo"><i class="bi bi-percent"></i></div><div>
-    <div class="valor fs-5">{% if est.porcentaje_prioritarios is not None %}{{ est.porcentaje_prioritarios|floatformat:"-1" }} % prioritarios{% else %}Sin dato{% endif %}</div>
-    <div class="etiqueta">{% if est.alta_concentracion %}Alta concentración: 60/40 en pre-kínder a 4° básico{% elif est.porcentaje_prioritarios is not None %}Bajo 80 %: todos los docentes 65/35{% else %}Indique el % de alumnos prioritarios{% endif %}
-      {% if es_gestion and est.pk %} · <a href="{% url 'admin:academico_establecimiento_change' est.pk %}">editar</a>{% endif %}</div></div></div></div>
+    {% if es_gestion %}
+    <form method="post" action="{% url 'prioritarios' %}">{% csrf_token %}
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" role="switch" id="alta" name="alta_concentracion" {% if est.alta_concentracion %}checked{% endif %} onchange="this.form.submit()">
+        <label class="form-check-label fw-semibold" for="alta">80 % o más de alumnos prioritarios</label>
+      </div>
+    </form>
+    {% else %}<div class="fw-semibold">{% if est.alta_concentracion %}80 % o más de alumnos prioritarios{% else %}Menos de 80 % de alumnos prioritarios{% endif %}</div>{% endif %}
+    <div class="etiqueta">{% if est.alta_concentracion %}Pre-kínder a 4° básico: 60/40. Resto: 65/35.{% else %}Todos los docentes de aula: 65/35.{% endif %}</div>
+  </div></div></div>
 </div>
 <div class="card p-2 p-lg-3">
   <div class="table-responsive"><table class="table table-hover align-middle">

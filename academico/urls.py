@@ -23,6 +23,7 @@ urlpatterns = [
     path("comentarios/", views.comentarios, name="comentarios"),
     path("comentarios/enviar/", views.comentario_enviar, name="comentario_enviar"),
     path("funcionarios/", views.funcionarios, name="funcionarios"),
+    path("funcionarios/prioritarios/", views.prioritarios, name="prioritarios"),
     path("funcionarios/nuevo/", views.funcionario_form, name="funcionario_crear"),
     path("funcionarios/<int:pk>/editar/", views.funcionario_form, name="funcionario_editar"),
     path("convivencia/", views.convivencia, name="convivencia"),

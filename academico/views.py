@@ -594,7 +594,19 @@ def funcionario_form(request, pk=None):
     return render(request, "academico/form.html", {
         "form": form, "titulo": "Editar funcionario(a)" if pk else "Nuevo funcionario(a)",
         "ayuda": "La proporción lectiva/no lectiva se calcula sola: 65/35 en general, y 60/40 para docentes de "
-                 "pre-kínder a 4° básico si el establecimiento tiene 80 % o más de alumnos prioritarios. "
+                 "pre-kínder a 4° básico si el establecimiento está marcado con 80 % o más de alumnos prioritarios. "
                  "Puede fijarla a mano si corresponde otra.",
         "volver": ("funcionarios", None),
     })
+
+
+@login_required
+@solo_gestion
+@require_POST
+def prioritarios(request):
+    est = Establecimiento.actual()
+    est.alta_concentracion = request.POST.get("alta_concentracion") == "on"
+    est.save()
+    messages.success(request, "Proporción actualizada: " + (
+        "docentes de pre-kínder a 4° básico con 60/40." if est.alta_concentracion else "todos los docentes con 65/35."))
+    return redirect("funcionarios")

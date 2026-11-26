@@ -355,12 +355,12 @@ class FuncionariosTests(BaseDatos):
 
     def test_distribucion_ley_20903(self):
         from .models import Establecimiento
-        est = Establecimiento.objects.create(nombre="Escuela", porcentaje_prioritarios=Decimal("85"))
+        est = Establecimiento.objects.create(nombre="Escuela", alta_concentracion=True)
         f = self.crear(primer_ciclo=True)
         self.assertEqual(f.distribucion(est), (60, Decimal("26.40"), Decimal("17.60")))
         f.primer_ciclo = False
         self.assertEqual(f.distribucion(est), (65, Decimal("28.60"), Decimal("15.40")))
-        est.porcentaje_prioritarios = Decimal("79.9")
+        est.alta_concentracion = False
         f.primer_ciclo = True
         self.assertEqual(f.distribucion(est)[0], 65)
         f.proporcion = "60"
@@ -379,5 +379,9 @@ class FuncionariosTests(BaseDatos):
             "rut": "9.876.543-3", "nombres": "Luis", "apellido_paterno": "Soto", "cargo": "DOCENTE",
             "tipo_contrato": "CONTRATA", "horas_contrato": "30", "proporcion": "AUTO", "activo": "on"})
         self.assertEqual(r.status_code, 302)
+        self.client.post(reverse("prioritarios"), {"alta_concentracion": "on"})
+        from .models import Establecimiento
+        self.assertTrue(Establecimiento.actual().alta_concentracion)
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("funcionarios")).status_code, 403)
+        self.assertEqual(self.client.post(reverse("prioritarios"), {}).status_code, 403)

@@ -26,9 +26,9 @@ class Establecimiento(models.Model):
     telefono = models.CharField("teléfono", max_length=50, blank=True)
     director = models.CharField("nombre del director(a)", max_length=200, blank=True)
     jefe_utp = models.CharField("nombre del jefe(a) de UTP", max_length=200, blank=True)
-    porcentaje_prioritarios = models.DecimalField(
-        "% de alumnos prioritarios", max_digits=5, decimal_places=2, null=True, blank=True,
-        help_text="Con 80 % o más, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
+    alta_concentracion = models.BooleanField(
+        "establecimiento con 80 % o más de alumnos prioritarios", default=False,
+        help_text="Si se marca, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
 
     class Meta:
         verbose_name = "establecimiento"
@@ -36,10 +36,6 @@ class Establecimiento(models.Model):
 
     def __str__(self):
         return self.nombre
-
-    @property
-    def alta_concentracion(self):
-        return self.porcentaje_prioritarios is not None and self.porcentaje_prioritarios >= 80
 
     @classmethod
     def actual(cls):
