@@ -4,9 +4,17 @@ from .models import Establecimiento, Perfil, SolicitudCambio
 from .permisos import es_gestion, es_solo_lectura, gestiona_convivencia, puede_editar_contacto, rol_de, ve_todo
 
 
+USUARIOS_DEMO = [
+    ("sostenedor", "Sostenedor(a)"), ("director", "Director(a)"), ("utp", "Jefe(a) de UTP"),
+    ("inspector", "Inspector(a) general"), ("convivencia", "Encargado(a) de convivencia"),
+    ("profe.historia", "Profesor(a) de asignatura"), ("profe.lenguaje", "Profesor(a) jefe"),
+]
+
+
 def rol(request):
     if not request.user.is_authenticated:
-        return {"modo_demo": settings.MODO_DEMO}
+        return {"modo_demo": settings.MODO_DEMO, "usuarios_demo": USUARIOS_DEMO if settings.MODO_DEMO else [],
+                "establecimiento": Establecimiento.actual()}
     gestion = es_gestion(request.user)
     if gestion:
         pendientes = SolicitudCambio.objects.filter(estado=SolicitudCambio.Estado.PENDIENTE).count()

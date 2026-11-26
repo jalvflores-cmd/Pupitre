@@ -20,6 +20,8 @@ from academico.rut import calcular_dv
 
 NOMBRES = ["Sofía", "Benjamín", "Isidora", "Agustín", "Florencia", "Vicente", "Emilia", "Matías", "Antonella",
            "Tomás", "Josefa", "Maximiliano", "Martina", "Joaquín", "Catalina", "Lucas", "Trinidad", "Cristóbal"]
+CALLES = ["Av. Libertad", "Calle Arauco", "Av. Collín", "Calle Maipón", "Av. O'Higgins", "Calle Itata",
+          "Pasaje Los Aromos", "Calle 18 de Septiembre", "Av. Brasil", "Calle Constitución"]
 APELLIDOS = ["González", "Muñoz", "Rojas", "Díaz", "Pérez", "Soto", "Contreras", "Silva", "Martínez", "Sepúlveda",
              "Morales", "Rodríguez", "López", "Fuentes", "Hernández", "Torres", "Araya", "Flores"]
 
@@ -31,9 +33,15 @@ class Command(BaseCommand):
     def handle(self, *args, **opciones):
         random.seed(42)
         anio = anio_actual()
-        Establecimiento.objects.get_or_create(nombre="Colegio Demostración", defaults={
-            "rbd": "12345-6", "direccion": "Av. Educación 1234", "comuna": "Santiago",
-            "director": "Ana Valenzuela Rojas", "jefe_utp": "Pedro Castillo Mena"})
+        datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán",
+                         "director": "Ana Valenzuela Rojas", "jefe_utp": "Pedro Castillo Mena"}
+        escuela = Establecimiento.objects.first()
+        if escuela is None:
+            Establecimiento.objects.create(**datos_escuela)
+        else:
+            for campo, valor in datos_escuela.items():
+                setattr(escuela, campo, valor)
+            escuela.save()
 
         def usuario(username, nombre, apellido, rol):
             u, creado = User.objects.get_or_create(username=username, defaults={"first_name": nombre, "last_name": apellido})
@@ -60,11 +68,15 @@ class Command(BaseCommand):
         profes = {"Matemática": mate, "Lenguaje y Comunicación": leng, "Ciencias Naturales": cien,
                   "Historia, Geografía y Cs. Sociales": hist, "Inglés": hist}
 
-        rut_base = 23_000_000
-        for orden, nombre_nivel in enumerate(["5° Básico", "6° Básico", "7° Básico"], start=5):
+        jefes = [mate, leng, cien]
+        niveles = ["1° Básico", "2° Básico", "3° Básico", "4° Básico", "5° Básico", "6° Básico", "7° Básico", "8° Básico"]
+        for orden, nombre_nivel in enumerate(niveles, start=1):
             nivel, _ = Nivel.objects.get_or_create(nombre=nombre_nivel, defaults={"orden": orden})
+            if nivel.orden != orden:
+                nivel.orden = orden
+                nivel.save(update_fields=["orden"])
             for letra in "AB":
-                jefe = [mate, leng, cien][(orden + ord(letra)) % 3]
+                jefe = jefes[(orden * 2 + ord(letra)) % 3]
                 curso, _ = Curso.objects.get_or_create(nivel=nivel, letra=letra, anio=anio,
                                                        defaults={"profesor_jefe": jefe})
                 acs = []
@@ -72,36 +84,40 @@ class Command(BaseCommand):
                     ac, _ = AsignaturaCurso.objects.get_or_create(curso=curso, asignatura=asig,
                                                                   defaults={"profesor": profes.get(nombre_asig)})
                     acs.append(ac)
+                if Evaluacion.objects.filter(asignatura_curso__curso=curso).exists():
+                    continue  # curso ya poblado: el arranque queda rápido
                 ests = []
+                rut_base = 21_000_000 + orden * 100_000 + (ord(letra) - ord("A")) * 50_000
                 for _ in range(12):
-                    rut_base += random.randint(1000, 9000)
+                    rut_base += random.randint(1000, 3500)
                     est, _ = Estudiante.objects.get_or_create(rut=f"{rut_base}-{calcular_dv(rut_base)}", defaults={
                         "nombres": random.choice(NOMBRES), "apellido_paterno": random.choice(APELLIDOS),
                         "apellido_materno": random.choice(APELLIDOS), "curso": curso,
                         "fecha_nacimiento": date(anio - orden - 6, random.randint(1, 12), random.randint(1, 28)),
-                        "direccion": f"Calle {random.choice(APELLIDOS)} {random.randint(100, 3000)}",
-                        "comuna": random.choice(["Santiago", "Ñuñoa", "Maipú", "La Florida"]),
+                        "direccion": f"{random.choice(CALLES)} {random.randint(100, 2500)}",
+                        "comuna": random.choice(["Chillán", "Chillán", "Chillán Viejo"]),
                         "telefono": f"+56 9 {random.randint(1000, 9999)} {random.randint(1000, 9999)}",
                         "apoderado_nombre": f"{random.choice(NOMBRES)} {random.choice(APELLIDOS)}",
                         "apoderado_telefono": f"+56 9 {random.randint(1000, 9999)} {random.randint(1000, 9999)}",
                     })
                     ests.append(est)
+                notas = []
                 for ac in acs:
                     for sem in (1, 2):
                         for n in range(1, 4):
-                            ev, _ = Evaluacion.objects.get_or_create(
-                                asignatura_curso=ac, nombre=f"Prueba {n}", semestre=sem,
-                                defaults={"fecha": date(anio, 3 + n + (sem - 1) * 4, 15)})
+                            ev = Evaluacion.objects.create(asignatura_curso=ac, nombre=f"Prueba {n}", semestre=sem,
+                                                           fecha=date(anio, 3 + n + (sem - 1) * 4, 15))
                             for est in ests:
                                 nota = Decimal(str(round(min(7, max(1, random.gauss(5.4, 1.0))), 1)))
-                                Calificacion.objects.get_or_create(evaluacion=ev, estudiante=est, defaults={"nota": nota})
+                                notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
+                Calificacion.objects.bulk_create(notas, ignore_conflicts=True)
                 for est in random.sample(ests, 3):
                     tipo = random.choice([Anotacion.Tipo.POSITIVA, Anotacion.Tipo.NEGATIVA])
-                    Anotacion.objects.get_or_create(
-                        estudiante=est, descripcion=("Destaca por su participación en clases." if tipo == "POSITIVA"
-                                                     else "No trae materiales de trabajo."),
-                        defaults={"tipo": tipo, "gravedad": "LEVE" if tipo == "NEGATIVA" else "",
-                                  "fecha": date(anio, 5, random.randint(1, 28)), "autor": jefe})
+                    Anotacion.objects.create(
+                        estudiante=est, tipo=tipo, gravedad="LEVE" if tipo == "NEGATIVA" else "",
+                        descripcion=("Destaca por su participación en clases." if tipo == "POSITIVA"
+                                     else "No trae materiales de trabajo."),
+                        fecha=date(anio, 5, random.randint(1, 28)), autor=jefe)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
             "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))

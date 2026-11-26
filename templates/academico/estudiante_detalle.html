@@ -2,9 +2,9 @@
 {% load academico_extras %}
 {% block titulo %}{{ est.nombre_completo }}{% endblock %}
 {% block contenido %}
-<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
-  <div><h3 class="mb-0">{{ est.nombres }} {{ est.apellido_paterno }} {{ est.apellido_materno }}{% if not est.activo %} <span class="badge bg-secondary fs-6">Retirado</span>{% endif %}</h3>
-    <div class="text-muted">RUT {{ est.rut_formateado }} · {% if est.curso %}<a href="{% url 'curso_detalle' est.curso.pk %}">{{ est.curso }}</a>{% else %}Sin curso{% endif %}</div></div>
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'estudiantes' %}">Estudiantes</a></div><h3>{{ est.nombres }} {{ est.apellido_paterno }} {{ est.apellido_materno }}{% if not est.activo %} <span class="badge bg-secondary fs-6">Retirado</span>{% endif %}</h3>
+    <div class="sub">RUT {{ est.rut_formateado }} · {% if est.curso %}<a href="{% url 'curso_detalle' est.curso.pk %}">{{ est.curso }}</a>{% else %}Sin curso{% endif %}</div></div>
   <div class="d-flex gap-2">
     {% if informes %}
       <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_notas_pdf' est.curso.pk %}?estudiante={{ est.pk }}"><i class="bi bi-file-pdf"></i> Informe de notas</a>
@@ -17,7 +17,7 @@
 </div>
 <div class="row g-4">
   <div class="col-lg-4">
-    <div class="card p-3">
+    <div class="card p-3 p-lg-4">
       <h5>Datos personales y contacto</h5>
       <dl class="row small mb-0">
         <dt class="col-5">Fecha nacimiento</dt><dd class="col-7">{{ est.fecha_nacimiento|date:"d-m-Y"|default:"—" }}</dd>
@@ -31,7 +31,7 @@
     </div>
   </div>
   <div class="col-lg-8">
-    <div class="card p-3">
+    <div class="card p-3 p-lg-4">
       <h5>Calificaciones</h5>
       {% if resumen %}
       <table class="table table-sm tabla-notas mb-0">
@@ -51,7 +51,7 @@
   </div>
 </div>
 {% if solicitudes %}
-<div class="card p-3 mt-4">
+<div class="card p-3 p-lg-4 mt-4">
   <h5>Solicitudes de modificación de datos</h5>
   <table class="table table-sm mb-0">
     <thead><tr><th>Fecha</th><th>Solicitada por</th><th>Cambios</th><th>Estado</th></tr></thead>
@@ -64,7 +64,7 @@
   </table>
 </div>
 {% endif %}
-<div class="card p-3 mt-4">
+<div class="card p-3 p-lg-4 mt-4">
   <div class="d-flex justify-content-between"><h5>Convivencia escolar (anotaciones)</h5>
     {% if puede_anotar %}<button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nueva"><i class="bi bi-plus-lg"></i> Nueva anotación</button>{% endif %}</div>
   <div class="collapse" id="nueva">

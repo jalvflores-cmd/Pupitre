@@ -2,9 +2,10 @@
 {% load academico_extras %}
 {% block titulo %}Notas {{ ac }}{% endblock %}
 {% block contenido %}
-<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
-  <div><h3 class="mb-0">{{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</h3>
-    <div class="text-muted">Profesor(a): {{ ac.profesor.get_full_name|default:"sin asignar" }} · Año {{ ac.curso.anio }} · <a href="{% url 'curso_detalle' ac.curso.pk %}">Ver curso</a></div></div>
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'cursos' %}">Cursos</a> / <a href="{% url 'curso_detalle' ac.curso.pk %}">{{ ac.curso.nombre_corto }}</a> / {{ ac.asignatura }}</div>
+    <h3>{{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</h3>
+    <div class="sub">Profesor(a): {{ ac.profesor.get_full_name|default:"sin asignar" }} · Año {{ ac.curso.anio }} · <a href="{% url 'curso_detalle' ac.curso.pk %}">Ver curso</a></div></div>
   <div class="d-flex gap-2">
     {% if editable %}<a class="btn btn-primary btn-sm" href="{% url 'evaluacion_crear' ac.pk %}"><i class="bi bi-plus-lg"></i> Nueva evaluación</a>
     <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#excel"><i class="bi bi-file-earmark-arrow-up"></i> Cargar desde Excel</button>{% endif %}
@@ -28,7 +29,7 @@
 <div class="card p-2">
 <div class="table-responsive">
 <table class="table table-sm table-bordered tabla-notas mb-0">
-  <thead class="table-light">
+  <thead>
     <tr><th rowspan="2" class="sticky-col">Estudiante</th>
       {% if evs_s1 %}<th colspan="{{ evs_s1|length|add:1 }}" class="text-center">1er semestre</th>{% endif %}
       {% if evs_s2 %}<th colspan="{{ evs_s2|length|add:1 }}" class="text-center">2do semestre</th>{% endif %}

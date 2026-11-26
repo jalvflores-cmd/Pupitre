@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block titulo %}Importar desde Excel{% endblock %}
 {% block contenido %}
-<h3 class="mb-1">Importar desde Excel</h3>
+<div class="p-encabezado"><div><h3>Importar desde Excel</h3></div></div>
 <p class="text-muted">Descargue la plantilla, complétela y súbala. Si alguna fila tiene errores no se guarda nada y se muestra el detalle para corregir.</p>
 <div class="row g-4">
   {% if es_gestion %}
-  <div class="col-lg-4"><div class="card p-3 h-100">
+  <div class="col-lg-4"><div class="card p-3 p-lg-4 h-100">
     <h5><i class="bi bi-people"></i> Estudiantes</h5>
     <p class="small">RUT, nombres, curso, dirección, teléfonos y apoderado. Si el RUT ya existe se actualizan sus datos. Los cursos que no existan se crean.</p>
     <a href="{% url 'plantilla' 'estudiantes' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>
@@ -15,7 +15,7 @@
     </form>
   </div></div>
   {% endif %}
-  <div class="col-lg-4"><div class="card p-3 h-100">
+  <div class="col-lg-4"><div class="card p-3 p-lg-4 h-100">
     <h5><i class="bi bi-123"></i> Notas</h5>
     <p class="small">La plantilla de cada asignatura trae la lista del curso y las evaluaciones existentes. Puede agregar columnas para nuevas evaluaciones.</p>
     {% if asignaturas %}
@@ -30,7 +30,7 @@
     </form>
     {% else %}<p class="text-muted small">No tiene asignaturas a su cargo este año.</p>{% endif %}
   </div></div>
-  <div class="col-lg-4"><div class="card p-3 h-100">
+  <div class="col-lg-4"><div class="card p-3 p-lg-4 h-100">
     <h5><i class="bi bi-journal-text"></i> Anotaciones</h5>
     <p class="small">RUT, fecha, tipo (positiva/negativa/observación), gravedad, asignatura y descripción.</p>
     <a href="{% url 'plantilla' 'anotaciones' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>

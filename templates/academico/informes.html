@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block titulo %}Informes{% endblock %}
 {% block contenido %}
-<h3 class="mb-3">Informes</h3>
+<div class="p-encabezado"><div><h3>Informes</h3></div></div>
 {% if cursos_completos %}
-<div class="card p-3 mb-4">
+<div class="card p-3 p-lg-4 mb-4">
   <h5>Informes por curso</h5>
   <p class="small text-muted">Informe de notas: todas las notas por semestre, una página por estudiante. Informe final: promedios anuales y situación final. Acta: resumen del curso en una sola tabla. Para un solo estudiante, use los botones de su ficha.</p>
   <table class="table table-sm align-middle mb-0">
@@ -19,7 +19,7 @@
   </table>
 </div>
 {% endif %}
-<div class="card p-3">
+<div class="card p-3 p-lg-4">
   <h5>Notas por asignatura (Excel)</h5>
   <table class="table table-sm mb-0">
     {% for ac in asignaturas %}

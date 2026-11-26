@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block titulo %}Convivencia{% endblock %}
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="p-encabezado">
   <h3>Convivencia escolar <span class="text-muted fs-6">({{ total }} anotaciones)</span></h3>
   <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
 </div>
@@ -13,7 +13,7 @@
   <div class="col-md-1"><button class="btn btn-secondary">Filtrar</button></div>
 </form>
 <p class="small text-muted">Para registrar una anotación, abra la ficha del estudiante. Para cargar varias, use <a href="{% url 'importar' %}">Importar Excel</a>.</p>
-<div class="card p-2"><table class="table table-sm mb-0">
+<div class="card p-2 p-lg-3"><table class="table table-sm mb-0">
   <thead><tr><th>Fecha</th><th>Estudiante</th><th>Curso</th><th>Tipo</th><th>Descripción</th><th>Por</th></tr></thead>
   {% for a in anotaciones %}
   <tr><td class="small">{{ a.fecha|date:"d-m-Y" }}</td><td><a href="{% url 'estudiante_detalle' a.estudiante_id %}">{{ a.estudiante }}</a></td><td class="small">{{ a.estudiante.curso.nombre_corto }}</td>

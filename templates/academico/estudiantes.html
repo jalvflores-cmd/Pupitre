@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block titulo %}Estudiantes{% endblock %}
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="p-encabezado">
   <h3>Estudiantes <span class="text-muted fs-6">({{ total }})</span></h3>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
@@ -15,7 +15,7 @@
   <div class="col-md-2 form-check mt-2 ms-2"><input type="checkbox" class="form-check-input" name="inactivos" value="1" id="inac" {% if inactivos %}checked{% endif %}><label for="inac" class="form-check-label">Incluir retirados</label></div>
   <div class="col-md-1"><button class="btn btn-secondary w-100"><i class="bi bi-search"></i></button></div>
 </form>
-<div class="card p-2"><table class="table table-sm table-hover mb-0">
+<div class="card p-2 p-lg-3"><table class="table table-sm table-hover mb-0">
   <thead><tr><th>RUT</th><th>Estudiante</th><th>Curso</th><th>Teléfono</th><th>Apoderado</th><th>Tel. apoderado</th></tr></thead>
   <tbody>
   {% for e in estudiantes %}

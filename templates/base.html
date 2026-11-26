@@ -4,59 +4,62 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Pupitre{% endblock %} · {{ establecimiento.nombre|default:"Pupitre" }}</title>
+  <link rel="icon" href="{% static 'pupitre/emblema.svg' %}" type="image/svg+xml">
   <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
-  <style>
-    body { background: #f5f7fa; }
-    .navbar { background: #1F4E79; }
-    .nota-roja { color: #C00000; font-weight: 600; }
-    .nota-azul { color: #1F4E79; }
-    .tabla-notas input { width: 4.2rem; text-align: center; padding: .15rem .25rem; }
-    .tabla-notas input.invalida { border-color: #C00000; background: #fde8e8; }
-    .tabla-notas th, .tabla-notas td { white-space: nowrap; vertical-align: middle; }
-    .tabla-notas .col-prom { background: #eef4fb; font-weight: 600; }
-    .tabla-notas .sticky-col { position: sticky; left: 0; background: #fff; z-index: 1; }
-    .card { border: 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  </style>
+  <link href="{% static 'pupitre/pupitre.css' %}" rel="stylesheet">
 </head>
 <body>
-{% if modo_demo %}<div class="bg-warning-subtle text-center small py-1">Versión de prueba con datos ficticios.</div>{% endif %}
 {% if user.is_authenticated %}
-<nav class="navbar navbar-expand-lg navbar-dark mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'inicio' %}"><i class="bi bi-mortarboard"></i> Pupitre</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'cursos' %}"><i class="bi bi-grid-3x3-gap"></i> Cursos</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'estudiantes' %}"><i class="bi bi-people"></i> Estudiantes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'convivencia' %}"><i class="bi bi-journal-text"></i> Convivencia</a></li>
-        {% if not solo_lectura %}<li class="nav-item"><a class="nav-link" href="{% url 'importar' %}"><i class="bi bi-file-earmark-arrow-up"></i> Importar Excel</a></li>{% endif %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'informes' %}"><i class="bi bi-file-earmark-pdf"></i> Informes</a></li>
-        {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<li class="nav-item"><a class="nav-link" href="{% url 'solicitudes' %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %} <span class="badge bg-warning text-dark">{{ solicitudes_pendientes }}</span>{% endif %}</a></li>{% endif %}
-        {% if es_gestion %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Configuración</a></li>{% endif %}
-      </ul>
-      <button class="btn btn-sm btn-warning me-3" data-bs-toggle="modal" data-bs-target="#modalComentario"><i class="bi bi-chat-dots"></i> Enviar comentarios</button>
-      <div class="dropdown">
-        <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
-          <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
-          <span class="badge bg-light text-dark ms-1">{{ rol_usuario }}</span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-          {% if es_gestion %}<li><a class="dropdown-item" href="{% url 'comentarios' %}">Ver comentarios recibidos</a></li>{% endif %}
-          <li><a class="dropdown-item" href="{% url 'password_change' %}">Cambiar contraseña</a></li>
-          <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item">Cerrar sesión</button></form></li>
-        </ul>
-      </div>
+{% with p=request.path %}
+<aside class="p-sidebar" id="sidebar">
+  <a class="p-marca" href="{% url 'inicio' %}">
+    <img src="{% static 'pupitre/emblema.svg' %}" alt="">
+    <span><span class="nombre d-block">Pupitre</span><span class="escuela d-block">{{ establecimiento.nombre }}</span></span>
+  </a>
+  <nav class="p-nav">
+    <a href="{% url 'inicio' %}" class="{% if p == '/' %}activo{% endif %}"><i class="bi bi-house"></i> Inicio</a>
+    <div class="titulo">Académico</div>
+    <a href="{% url 'cursos' %}" class="{% if '/cursos/' in p or '/notas/' in p or '/evaluaciones/' in p %}activo{% endif %}"><i class="bi bi-grid-1x2"></i> Cursos y notas</a>
+    <a href="{% url 'estudiantes' %}" class="{% if '/estudiantes/' in p %}activo{% endif %}"><i class="bi bi-people"></i> Estudiantes</a>
+    <a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>
+    <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
+    <div class="titulo">Gestión</div>
+    {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}
+    {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<a href="{% url 'solicitudes' %}" class="{% if '/solicitudes/' in p %}activo{% endif %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %}<span class="badge bg-warning">{{ solicitudes_pendientes }}</span>{% endif %}</a>{% endif %}
+    {% if es_gestion %}<a href="{% url 'comentarios' %}" class="{% if '/comentarios/' in p %}activo{% endif %}"><i class="bi bi-chat-square-heart"></i> Comentarios</a>
+    <a href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Configuración</a>{% endif %}
+  </nav>
+  <div class="p-usuario">
+    <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+    <div class="rol mb-2">{{ rol_usuario }}</div>
+    <div class="acciones">
+      <a href="{% url 'password_change' %}"><i class="bi bi-key"></i> Cambiar contraseña</a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button><i class="bi bi-box-arrow-left"></i> Cerrar sesión</button></form>
     </div>
   </div>
-</nav>
-{% endif %}
-{% if user.is_authenticated %}
-<div class="modal fade" id="modalComentario" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+</aside>
+{% endwith %}
+<div class="p-contenido">
+  {% if modo_demo %}<div class="p-demo"><i class="bi bi-info-circle"></i> Versión de prueba con datos ficticios.</div>{% endif %}
+  <div class="p-barra">
+    <button class="btn btn-sm btn-outline-primary p-movil" onclick="document.getElementById('sidebar').classList.toggle('abierto')"><i class="bi bi-list"></i></button>
+    <span class="fecha">{% now "l j \d\e F \d\e Y" %}</span>
+    <button class="btn btn-sm btn-acento" data-bs-toggle="modal" data-bs-target="#modalComentario"><i class="bi bi-chat-dots"></i> Enviar comentarios</button>
+  </div>
+  <main class="p-main">
+    {% for m in messages %}
+      <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show py-2">
+        {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+<div class="modal fade" id="modalComentario" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="border-radius:16px">
   <form method="post" action="{% url 'comentario_enviar' %}">{% csrf_token %}
     <input type="hidden" name="pagina" value="{{ request.get_full_path }}">
-    <div class="modal-header"><h5 class="modal-title">Enviar comentarios</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header border-0 pb-0"><h5 class="modal-title"><i class="bi bi-chat-dots text-warning"></i> Enviar comentarios</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
       <p class="small text-muted">Cuéntenos qué le parece Pupitre, qué no funciona o qué le gustaría que tuviera. Se registra la pantalla en la que está.</p>
       <select name="tipo" class="form-select mb-2">
@@ -64,18 +67,12 @@
       </select>
       <textarea name="texto" class="form-control" rows="5" required placeholder="Escriba aquí su comentario"></textarea>
     </div>
-    <div class="modal-footer"><button class="btn btn-primary">Enviar</button></div>
+    <div class="modal-footer border-0 pt-0"><button class="btn btn-primary">Enviar</button></div>
   </form>
 </div></div></div>
+{% else %}
+  {% block publico %}{% endblock %}
 {% endif %}
-<main class="container-fluid px-4 pb-5">
-  {% for m in messages %}
-    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show py-2">
-      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  {% endfor %}
-  {% block contenido %}{% endblock %}
-</main>
 <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>

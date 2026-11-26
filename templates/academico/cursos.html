@@ -1,24 +1,26 @@
 {% extends "base.html" %}
 {% block titulo %}Cursos{% endblock %}
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Cursos {{ anio }}</h3>
-  <form class="d-flex gap-2"><select name="anio" class="form-select form-select-sm" onchange="this.form.submit()">
+<div class="p-encabezado">
+  <div><h3>Cursos y notas</h3><div class="sub">Año académico {{ anio }}</div></div>
+  <form><select name="anio" class="form-select" onchange="this.form.submit()">
     {% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></form>
 </div>
 {% for nivel, lista in por_nivel.items %}
-  <h6 class="text-muted mt-3">{{ nivel }}</h6>
+  <h6 class="text-muted text-uppercase small fw-semibold mt-4 mb-2">{{ nivel }}</h6>
   <div class="row g-3">
   {% for c in lista %}
-    <div class="col-sm-6 col-md-4 col-xl-3">
-      <a href="{% url 'curso_detalle' c.pk %}" class="card p-3 text-decoration-none text-dark h-100">
-        <div class="fs-5 fw-bold">{{ c.nombre_corto }}</div>
-        <div class="small text-muted">{{ c.n_est }} estudiantes · Jefe: {{ c.profesor_jefe.get_full_name|default:"sin asignar" }}</div>
+    <div class="col-sm-6 col-lg-4 col-xxl-3">
+      <a href="{% url 'curso_detalle' c.pk %}" class="p-curso d-flex gap-3 align-items-center">
+        <div class="letra">{{ c.letra }}</div>
+        <div><div class="fw-semibold">{{ c.nombre_corto }}</div>
+          <div class="small text-muted"><i class="bi bi-people"></i> {{ c.n_est }} estudiantes</div>
+          <div class="small text-muted"><i class="bi bi-person-badge"></i> {{ c.profesor_jefe.get_full_name|default:"Sin profesor jefe" }}</div></div>
       </a>
     </div>
   {% endfor %}
   </div>
 {% empty %}
-  <p class="text-muted">No hay cursos visibles para este año.{% if es_gestion %} Créelos en <a href="{% url 'admin:academico_curso_add' %}">Configuración › Cursos</a> o importando estudiantes desde Excel.{% endif %}</p>
+  <div class="card p-4 text-muted">No hay cursos visibles para este año.{% if es_gestion %} Créelos en <a href="{% url 'admin:academico_curso_add' %}">Configuración › Cursos</a> o importando estudiantes desde Excel.{% endif %}</div>
 {% endfor %}
 {% endblock %}

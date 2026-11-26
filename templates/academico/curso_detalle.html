@@ -2,9 +2,9 @@
 {% load academico_extras %}
 {% block titulo %}{{ curso.nombre_corto }}{% endblock %}
 {% block contenido %}
-<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
-  <div><h3 class="mb-0">{{ curso }}</h3>
-    <div class="text-muted">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · {{ resumenes|length }} estudiantes · <a href="{% url 'convivencia' %}?curso={{ curso.pk }}">{{ n_anotaciones }} anotaciones</a></div></div>
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'cursos' %}">Cursos</a> / {{ curso.nombre_corto }}</div><h3>{{ curso }}</h3>
+    <div class="sub">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · {{ resumenes|length }} estudiantes · <a href="{% url 'convivencia' %}?curso={{ curso.pk }}">{{ n_anotaciones }} anotaciones</a></div></div>
   {% if informes %}
   <div class="btn-group">
     <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_notas_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Informes de notas</a>
@@ -14,15 +14,15 @@
   </div>
   {% endif %}
 </div>
-<div class="card p-3 mb-4">
+<div class="card p-3 p-lg-4 mb-4">
   <h5>Asignaturas</h5>
   <div class="d-flex flex-wrap gap-2">
   {% for ac in asignaturas %}
-    <a class="btn btn-light border" href="{% url 'libro_notas' ac.pk %}"><b>{{ ac.asignatura }}</b><br><span class="small text-muted">{{ ac.profesor.get_full_name|default:"sin profesor" }}</span></a>
+    <a class="p-asig" href="{% url 'libro_notas' ac.pk %}"><b>{{ ac.asignatura }}</b><span class="small text-muted">{{ ac.profesor.get_full_name|default:"sin profesor" }}</span></a>
   {% empty %}<span class="text-muted">Sin asignaturas visibles.</span>{% endfor %}
   </div>
 </div>
-<div class="card p-3">
+<div class="card p-3 p-lg-4">
   <h5>Promedios finales</h5>
   <div class="table-responsive">
   <table class="table table-sm table-hover tabla-notas">
