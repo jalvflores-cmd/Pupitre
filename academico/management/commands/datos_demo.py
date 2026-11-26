@@ -36,7 +36,7 @@ class Command(BaseCommand):
         random.seed(42)
         anio = anio_actual()
         datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán", "region": "Ñuble",
-                         "director": "Ana Valenzuela Rojas", "jefe_utp": "Pedro Castillo Mena"}
+                         "director": "Jorge Sandoval Morales", "jefe_utp": "Pedro Castillo Mena"}
         escuela = Establecimiento.objects.first()
         if escuela is None:
             Establecimiento.objects.create(**datos_escuela)
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             return u
 
         usuario("sostenedor", "Ricardo", "Ibáñez Cortés", Perfil.Rol.SOSTENEDOR)
-        usuario("director", "Ana", "Valenzuela Rojas", Perfil.Rol.DIRECTOR)
+        usuario("director", "Jorge", "Sandoval Morales", Perfil.Rol.DIRECTOR)
         usuario("inspector", "Mónica", "Saavedra Lillo", Perfil.Rol.INSPECTOR)
         usuario("convivencia", "Felipe", "Bravo Olave", Perfil.Rol.CONVIVENCIA)
         hist = usuario("profe.historia", "Claudia", "Fuentes Vidal", Perfil.Rol.PROFESOR)
@@ -74,7 +74,7 @@ class Command(BaseCommand):
 
         fichas = [
             # usuario, rut, cargo, título, mención, contrato, horas, primer ciclo
-            ("director", 12_345_670, "DIRECTIVO", "Profesora de Educación General Básica", "Gestión educacional", "TITULAR", 44, False),
+            ("director", 12_345_670, "DIRECTIVO", "Profesor de Educación General Básica", "Gestión educacional", "TITULAR", 44, False),
             ("utp", 13_456_780, "TECNICO", "Profesor de Educación General Básica", "Currículum y evaluación", "TITULAR", 44, False),
             ("inspector", 14_567_890, "DIRECTIVO", "Profesora de Historia y Geografía", "", "TITULAR", 44, False),
             ("convivencia", 15_678_900, "ASISTENTE", "Psicólogo", "Convivencia escolar", "CONTRATA", 44, False),
@@ -175,10 +175,22 @@ class Command(BaseCommand):
             est.genero = "F" if est.nombres.split()[0] in femeninos else "M"
             est.porcentaje_asistencia = Decimal(str(round(random.uniform(78, 99), 1)))
             est.save(update_fields=["genero", "porcentaje_asistencia"])
+        self.corregir_director()
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
             "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))
 
+
+    def corregir_director(self):
+        """El director actual de la escuela es Jorge Sandoval Morales: reemplaza el nombre antiguo de la demo."""
+        Establecimiento.objects.filter(director__in=["Ana Valenzuela Rojas", ""]).update(director="Jorge Sandoval Morales")
+        User.objects.filter(first_name="Ana", last_name="Valenzuela Rojas").update(
+            first_name="Jorge", last_name="Sandoval Morales")
+        for f in Funcionario.objects.filter(nombres="Ana", apellido_paterno="Valenzuela", apellido_materno="Rojas"):
+            f.nombres, f.apellido_paterno, f.apellido_materno = "Jorge", "Sandoval", "Morales"
+            if f.titulo == "Profesora de Educación General Básica":
+                f.titulo = "Profesor de Educación General Básica"
+            f.save()
 
     # Plan de estudios oficial de Enseñanza Básica (horas semanales referenciales con JEC)
     PLAN = {
