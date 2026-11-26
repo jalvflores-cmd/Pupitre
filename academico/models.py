@@ -41,8 +41,11 @@ class Establecimiento(models.Model):
 
 class Perfil(models.Model):
     class Rol(models.TextChoices):
+        SOSTENEDOR = "SOSTENEDOR", "Sostenedor(a)"
         DIRECTOR = "DIRECTOR", "Director(a)"
         UTP = "UTP", "Jefe(a) de UTP"
+        INSPECTOR = "INSPECTOR", "Inspector(a) general"
+        CONVIVENCIA = "CONVIVENCIA", "Encargado(a) de convivencia"
         PROFESOR = "PROFESOR", "Profesor(a)"
 
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="perfil")
@@ -58,7 +61,17 @@ class Perfil(models.Model):
 
     @property
     def es_gestion(self):
+        """Dirección y UTP: editan todo y configuran la plataforma."""
         return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP)
+
+    @property
+    def ve_todo(self):
+        """Roles que consultan todos los cursos y niveles."""
+        return self.rol != self.Rol.PROFESOR
+
+    @property
+    def gestiona_convivencia(self):
+        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.INSPECTOR, self.Rol.CONVIVENCIA)
 
     def save(self, *args, **kwargs):
         if self.rut:
@@ -319,3 +332,27 @@ def _fecha_legible(iso):
         return ""
     a, m, d = iso.split("-")
     return f"{d}-{m}-{a}"
+
+
+class Comentario(models.Model):
+    """Retroalimentación que los usuarios envían desde cualquier pantalla."""
+
+    class Tipo(models.TextChoices):
+        PROBLEMA = "PROBLEMA", "Algo no funciona"
+        SUGERENCIA = "SUGERENCIA", "Sugerencia o idea"
+        OTRO = "OTRO", "Otro comentario"
+
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.SUGERENCIA)
+    pagina = models.CharField("página", max_length=300, blank=True)
+    texto = models.TextField("comentario")
+    creado = models.DateTimeField(auto_now_add=True)
+    revisado = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "comentario de usuarios"
+        verbose_name_plural = "comentarios de usuarios"
+        ordering = ["-creado"]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} – {self.usuario} ({self.creado:%d-%m-%Y})"

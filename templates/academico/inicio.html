@@ -2,11 +2,11 @@
 {% block titulo %}Inicio{% endblock %}
 {% block contenido %}
 <h3 class="mb-4">Hola, {{ user.first_name|default:user.username }}</h3>
-{% if es_gestion %}
+{% if ve_todo %}
 <div class="row g-3 mb-4">
   <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Cursos este año</div><div class="fs-2 fw-bold">{{ n_cursos }}</div><a href="{% url 'cursos' %}" class="small">Ver cursos</a></div></div>
   <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Estudiantes activos</div><div class="fs-2 fw-bold">{{ n_estudiantes }}</div><a href="{% url 'estudiantes' %}" class="small">Ver estudiantes</a></div></div>
-  <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Asignaturas</div><div class="fs-2 fw-bold">{{ n_asignaturas }}</div><a href="{% url 'admin:academico_asignaturacurso_changelist' %}" class="small">Carga académica</a></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Asignaturas</div><div class="fs-2 fw-bold">{{ n_asignaturas }}</div>{% if es_gestion %}<a href="{% url 'admin:academico_asignaturacurso_changelist' %}" class="small">Carga académica</a>{% endif %}</div></div>
 </div>
 {% endif %}
 <div class="row g-4">
@@ -21,7 +21,7 @@
         </a>
         {% endfor %}
       </div>
-      {% else %}<p class="text-muted mb-0">No tiene asignaturas asignadas este año.{% if es_gestion %} Como Dirección/UTP puede ver todos los cursos desde <a href="{% url 'cursos' %}">Cursos</a>.{% endif %}</p>{% endif %}
+      {% else %}<p class="text-muted mb-0">No tiene asignaturas asignadas este año.{% if ve_todo %} Con su rol puede ver todos los cursos desde <a href="{% url 'cursos' %}">Cursos</a>.{% endif %}</p>{% endif %}
     </div>
     {% if mis_jefaturas %}
     <div class="card p-3 mt-4">
@@ -30,7 +30,7 @@
     </div>
     {% endif %}
   </div>
-  {% if es_gestion %}
+  {% if ve_todo %}
   <div class="col-lg-6">
     <div class="card p-3">
       <h5><i class="bi bi-journal-text"></i> Últimas anotaciones</h5>

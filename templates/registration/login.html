@@ -2,7 +2,7 @@
 {% block titulo %}Ingresar{% endblock %}
 {% block contenido %}
 <div class="row justify-content-center mt-5">
-  <div class="col-md-4">
+  <div class="col-md-6 col-lg-5">
     <div class="card p-4">
       <h4 class="mb-1 text-center"><i class="bi bi-mortarboard"></i> Pupitre</h4>
       <p class="text-center small mb-1">Gestión curricular</p>
@@ -14,6 +14,21 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button class="btn btn-primary w-100">Ingresar</button>
       </form>
+      {% if modo_demo %}
+      <div class="mt-4 small">
+        <p class="fw-bold mb-1">Usuarios de prueba (contraseña: <code>demo1234</code>)</p>
+        <table class="table table-sm mb-1">
+          <tr><td><code>sostenedor</code></td><td>Sostenedor(a): ve todo, sin modificar</td></tr>
+          <tr><td><code>director</code></td><td>Director(a): ve y edita todo</td></tr>
+          <tr><td><code>utp</code></td><td>Jefe(a) de UTP: ve y edita todo, aprueba solicitudes</td></tr>
+          <tr><td><code>inspector</code></td><td>Inspector(a) general: convivencia y contacto, ve notas</td></tr>
+          <tr><td><code>convivencia</code></td><td>Encargado(a) de convivencia: anotaciones y contacto, ve notas</td></tr>
+          <tr><td><code>profe.historia</code></td><td>Profesor(a) de asignatura (Historia e Inglés)</td></tr>
+          <tr><td><code>profe.lenguaje</code></td><td>Profesor(a) de Lenguaje y profesor(a) jefe</td></tr>
+        </table>
+        <p class="text-muted mb-0">Los datos son ficticios. Use el botón «Enviar comentarios» para contarnos qué mejorar.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -13,11 +13,13 @@ from . import exportacion, importacion
 from .calculos import resumen_curso
 from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, SolicitudCambioForm
 from .models import (
-    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Estudiante, Evaluacion, SolicitudCambio, anio_actual,
+    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Estudiante, Evaluacion, SolicitudCambio,
+    anio_actual,
 )
 from .permisos import (
     asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
-    puede_solicitar_cambio, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
+    es_solo_lectura, gestiona_convivencia, puede_anotar, puede_editar_contacto, puede_eliminar_anotacion,
+    puede_solicitar_cambio, ve_todo, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -41,7 +43,7 @@ def inicio(request):
     contexto = {"mis_asignaturas": AsignaturaCurso.objects.filter(profesor=user, curso__anio=anio_actual())
                 .select_related("curso__nivel", "asignatura").annotate(n_eval=Count("evaluaciones")),
                 "mis_jefaturas": Curso.objects.filter(profesor_jefe=user, anio=anio_actual()).select_related("nivel")}
-    if es_gestion(user):
+    if ve_todo(user):
         contexto.update({
             "n_cursos": Curso.objects.filter(anio=anio_actual()).count(),
             "n_estudiantes": Estudiante.objects.filter(activo=True).count(),
@@ -205,6 +207,7 @@ def estudiante_detalle(request, pk):
         "puede_solicitar": puede_solicitar_cambio(request.user, est),
         "solicitudes": (est.solicitudes.select_related("solicitante", "revisor")[:10]
                         if es_gestion(request.user) or puede_solicitar_cambio(request.user, est) else []),
+        "puede_anotar": puede_anotar(request.user, est),
         "form_anotacion": AnotacionForm(asignaturas=_asignaturas_para_anotar(request.user, est)),
     })
 
@@ -222,6 +225,25 @@ def estudiante_form(request, pk=None):
     return render(request, "academico/form.html", {
         "form": form, "titulo": "Editar estudiante" if pk else "Nuevo estudiante",
         "volver": ("estudiante_detalle", pk) if pk else ("estudiantes", None),
+    })
+
+
+@login_required
+def estudiante_contacto(request, pk):
+    """Inspectoría y Convivencia actualizan directamente los datos de contacto."""
+    from .forms import ContactoEstudianteForm
+
+    est = get_object_or_404(Estudiante, pk=pk)
+    exigir(puede_editar_contacto(request.user))
+    form = ContactoEstudianteForm(request.POST or None, instance=est)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Datos de contacto actualizados.")
+        return redirect("estudiante_detalle", pk=est.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"Datos de contacto – {est}",
+        "ayuda": "Para cambiar nombre, RUT o fecha de nacimiento use «Solicitar modificación» (lo aprueba UTP).",
+        "volver": ("estudiante_detalle", est.pk),
     })
 
 
@@ -293,7 +315,7 @@ def solicitud_resolver(request, pk):
 # --------------------------------------------------------------------------- Convivencia
 
 def _asignaturas_para_anotar(user, est):
-    if es_gestion(user) or not est.curso:
+    if ve_todo(user) or not est.curso:
         return Asignatura.objects.all()
     return Asignatura.objects.filter(cursos__curso=est.curso, cursos__profesor=user)
 
@@ -302,7 +324,7 @@ def _asignaturas_para_anotar(user, est):
 @require_POST
 def anotacion_crear(request, est_pk):
     est = get_object_or_404(Estudiante, pk=est_pk)
-    exigir(puede_ver_estudiante(request.user, est))
+    exigir(puede_anotar(request.user, est))
     form = AnotacionForm(request.POST, asignaturas=_asignaturas_para_anotar(request.user, est))
     if form.is_valid():
         anotacion = form.save(commit=False)
@@ -319,7 +341,7 @@ def anotacion_crear(request, est_pk):
 @require_POST
 def anotacion_eliminar(request, pk):
     anotacion = get_object_or_404(Anotacion, pk=pk)
-    exigir(es_gestion(request.user) or anotacion.autor_id == request.user.id)
+    exigir(puede_eliminar_anotacion(request.user, anotacion))
     anotacion.delete()
     messages.success(request, "Anotación eliminada.")
     return redirect("estudiante_detalle", pk=anotacion.estudiante_id)
@@ -401,6 +423,7 @@ def importar_notas(request, pk):
 @login_required
 @require_POST
 def importar_anotaciones(request):
+    exigir(not es_solo_lectura(request.user))
     r = _procesar_importacion(request, importacion.importar_anotaciones,
                               estudiantes_visibles(request.user), request.user)
     if r:
@@ -414,6 +437,7 @@ def plantilla(request, tipo, pk=None):
         exigir(es_gestion(request.user))
         return _descarga(importacion.plantilla_estudiantes(), "plantilla_estudiantes.xlsx", XLSX)
     if tipo == "anotaciones":
+        exigir(not es_solo_lectura(request.user))
         return _descarga(importacion.plantilla_anotaciones(), "plantilla_anotaciones.xlsx", XLSX)
     ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura"), pk=pk)
     exigir(puede_editar_notas(request.user, ac))
@@ -476,3 +500,41 @@ def acta_final_pdf(request, pk):
     curso, _, _ = _curso_y_estudiantes(request, pk)
     return _descarga(exportacion.pdf_acta_final_curso(curso),
                      _nombre_archivo("acta_final", curso.nombre_corto, curso.anio, ext="pdf"), "application/pdf")
+
+
+# --------------------------------------------------------------------------- Comentarios
+
+@login_required
+@require_POST
+def comentario_enviar(request):
+    texto = request.POST.get("texto", "").strip()
+    tipo = request.POST.get("tipo")
+    pagina = request.POST.get("pagina", "")[:300]
+    if not pagina.startswith("/") or pagina.startswith("//"):
+        pagina = ""
+    if texto:
+        Comentario.objects.create(usuario=request.user, texto=texto[:5000], pagina=pagina,
+                                  tipo=tipo if tipo in Comentario.Tipo.values else Comentario.Tipo.OTRO)
+        messages.success(request, "¡Gracias! Su comentario fue enviado.")
+    return redirect(pagina or "/")
+
+
+@login_required
+@solo_gestion
+def comentarios(request):
+    qs = Comentario.objects.select_related("usuario__perfil")
+    if request.GET.get("exportar") == "excel":
+        from openpyxl import Workbook
+        from io import BytesIO
+        libro = Workbook()
+        hoja = libro.active
+        hoja.append(["Fecha", "Usuario", "Rol", "Tipo", "Página", "Comentario"])
+        for c in qs:
+            perfil = getattr(c.usuario, "perfil", None)
+            hoja.append([c.creado.astimezone().strftime("%d-%m-%Y %H:%M"),
+                         c.usuario.get_full_name() if c.usuario else "", perfil.get_rol_display() if perfil else "",
+                         c.get_tipo_display(), c.pagina, c.texto])
+        salida = BytesIO()
+        libro.save(salida)
+        return _descarga(salida.getvalue(), "comentarios.xlsx", XLSX)
+    return render(request, "academico/comentarios.html", {"comentarios": qs[:300]})

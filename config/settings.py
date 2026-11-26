@@ -19,6 +19,15 @@ DEBUG = env_bool("DEBUG", True)
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 
+# Render (y servicios similares) informan el dominio público en esta variable.
+_HOST_EXTERNO = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if _HOST_EXTERNO:
+    ALLOWED_HOSTS.append(_HOST_EXTERNO)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_HOST_EXTERNO}")
+
+# Modo demostración: muestra los usuarios de prueba en la pantalla de ingreso.
+MODO_DEMO = env_bool("MODO_DEMO", False)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

@@ -27,9 +27,25 @@ de un establecimiento educacional chileno, con carga desde Excel y emisión de i
 
 | Rol | Acceso |
 |---|---|
-| **Director(a)** y **Jefe(a) de UTP** | Todo: todos los niveles, cursos, asignaturas y estudiantes. Pueden editar notas, crear/editar estudiantes, importar, emitir todos los informes y entrar a **Configuración** (usuarios, cursos, asignaturas, carga académica). |
+| **Sostenedor(a)** | Ve todo (cursos, notas, estudiantes, convivencia e informes) en modo solo lectura. |
+| **Director(a)** y **Jefe(a) de UTP** | Todo: todos los niveles, cursos, asignaturas y estudiantes. Editan notas y estudiantes, importan, emiten informes, entran a **Configuración** y aprueban las **Solicitudes** de modificación de datos. |
+| **Inspector(a) general** y **Encargado(a) de convivencia** | Ven todos los cursos y notas (sin editarlas). Registran, importan y eliminan anotaciones en cualquier curso, actualizan directamente los datos de contacto (dirección, teléfonos, apoderado) y solicitan cambios de nombre, RUT o fecha de nacimiento. |
 | **Profesor(a)** | Solo las asignaturas que dicta: ve y edita sus notas, ve a los estudiantes de esos cursos y registra anotaciones. |
-| **Profesor(a) jefe** | Además, consulta (sin editar) todas las notas de su curso y emite los informes de su curso. Puede **solicitar** cambios en el nombre y los datos de sus estudiantes; los cambios se aplican solo cuando Jefe(a) de UTP o Dirección los aprueba en **Solicitudes**. |
+| **Profesor(a) jefe** | Además, consulta (sin editar) todas las notas de su curso y emite los informes de su curso. Puede **solicitar** cambios en el nombre y los datos de sus estudiantes; los cambios se aplican solo cuando Jefe(a) de UTP o Dirección los aprueba. |
+
+Todos los usuarios tienen el botón **Enviar comentarios**; Dirección y UTP los revisan en *menú de usuario › Ver comentarios recibidos* (exportables a Excel).
+
+## Publicar en internet (versión de prueba en Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/jalvflores-cmd/Pupitre)
+
+El archivo `render.yaml` crea el sitio web y su base de datos PostgreSQL en el plan gratuito de Render,
+con datos ficticios y usuarios de prueba (`MODO_DEMO=true`, contraseña `demo1234`):
+`sostenedor`, `director`, `utp`, `inspector`, `convivencia`, `profe.historia`, `profe.lenguaje`, `profe.matematica`, `profe.ciencias`.
+
+Limitaciones del plan gratuito: el sitio "se duerme" tras 15 minutos sin uso (la primera visita después tarda
+cerca de un minuto) y la base de datos gratuita vence a los 30 días. Para uso real con datos de estudiantes,
+cambie a un plan pagado, ponga `MODO_DEMO=false` y cree los usuarios reales.
 
 ## Puesta en marcha
 
@@ -58,7 +74,7 @@ python manage.py datos_demo          # opcional: datos de ejemplo
 python manage.py runserver
 ```
 
-Usuarios de demostración (contraseña `demo1234`): `director`, `utp`, `profe.matematica`, `profe.lenguaje`, `profe.ciencias`.
+Usuarios de demostración (contraseña `demo1234`): `sostenedor`, `director`, `utp`, `inspector`, `convivencia`, `profe.historia`, `profe.lenguaje`, `profe.matematica`, `profe.ciencias`.
 
 ### Variables de entorno
 
@@ -70,6 +86,7 @@ Usuarios de demostración (contraseña `demo1234`): `director`, `utp`, `profe.ma
 | `ALLOWED_HOSTS` | Dominios/IP separados por coma | `localhost,127.0.0.1` |
 | `CSRF_TRUSTED_ORIGINS` | Ej.: `https://notas.micolegio.cl` | vacío |
 | `COOKIES_SEGURAS` | `false` si aún no hay HTTPS | `true` |
+| `MODO_DEMO` | `true` carga datos ficticios y muestra los usuarios de prueba al ingresar | `false` |
 
 ## Primeros pasos después de instalar
 

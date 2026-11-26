@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Comentarios{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Comentarios de los usuarios <span class="text-muted fs-6">({{ comentarios|length }})</span></h3>
+  <a class="btn btn-outline-success btn-sm" href="?exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+</div>
+<div class="card p-2"><table class="table table-sm mb-0">
+  <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Comentario</th><th>Pantalla</th></tr></thead>
+  {% for c in comentarios %}
+  <tr><td class="small text-nowrap">{{ c.creado|date:"d-m-Y H:i" }}</td>
+    <td class="small">{{ c.usuario.get_full_name|default:c.usuario.username }}<div class="text-muted">{{ c.usuario.perfil.get_rol_display }}</div></td>
+    <td><span class="badge {% if c.tipo == 'PROBLEMA' %}bg-danger{% elif c.tipo == 'SUGERENCIA' %}bg-primary{% else %}bg-secondary{% endif %}">{{ c.get_tipo_display }}</span></td>
+    <td>{{ c.texto|linebreaksbr }}</td><td class="small"><a href="{{ c.pagina }}">{{ c.pagina|truncatechars:40 }}</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="text-muted">Aún no hay comentarios.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

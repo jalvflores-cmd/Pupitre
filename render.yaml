@@ -1,0 +1,22 @@
+# Despliegue en Render (https://render.com) con un clic: ver README, sección "Publicar en internet".
+services:
+  - type: web
+    name: pupitre
+    runtime: docker
+    plan: free
+    healthCheckPath: /ingresar/
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pupitre-db
+          property: connectionString
+      - key: MODO_DEMO
+        value: "true"
+
+databases:
+  - name: pupitre-db
+    plan: free
+    databaseName: pupitre
+    user: pupitre

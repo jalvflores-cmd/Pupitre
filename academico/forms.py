@@ -117,3 +117,10 @@ def _serializar(valor):
     if hasattr(valor, "isoformat"):
         return valor.isoformat()
     return str(valor)
+
+
+class ContactoEstudianteForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = Estudiante
+        fields = ["direccion", "comuna", "telefono", "email", "apoderado_nombre", "apoderado_rut",
+                  "apoderado_telefono", "contacto_emergencia", "telefono_emergencia"]

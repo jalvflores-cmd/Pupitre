@@ -1,19 +1,26 @@
+from django.conf import settings
+
 from .models import Establecimiento, Perfil, SolicitudCambio
-from .permisos import es_gestion, rol_de
+from .permisos import es_gestion, es_solo_lectura, gestiona_convivencia, puede_editar_contacto, rol_de, ve_todo
 
 
 def rol(request):
     if not request.user.is_authenticated:
-        return {}
+        return {"modo_demo": settings.MODO_DEMO}
     gestion = es_gestion(request.user)
     if gestion:
         pendientes = SolicitudCambio.objects.filter(estado=SolicitudCambio.Estado.PENDIENTE).count()
     else:
         pendientes = None
     return {
+        "modo_demo": settings.MODO_DEMO,
         "es_gestion": gestion,
         "solicitudes_pendientes": pendientes,
         "es_profesor_jefe": not gestion and request.user.jefaturas.exists(),
+        "ve_todo": ve_todo(request.user),
+        "gestiona_convivencia": gestiona_convivencia(request.user),
+        "puede_editar_contacto": puede_editar_contacto(request.user),
+        "solo_lectura": es_solo_lectura(request.user),
         "rol_usuario": Perfil.Rol(rol_de(request.user)).label,
         "establecimiento": Establecimiento.actual(),
     }

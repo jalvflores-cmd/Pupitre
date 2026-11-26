@@ -20,6 +20,7 @@
   </style>
 </head>
 <body>
+{% if modo_demo %}<div class="bg-warning-subtle text-center small py-1">Versión de prueba con datos ficticios.</div>{% endif %}
 {% if user.is_authenticated %}
 <nav class="navbar navbar-expand-lg navbar-dark mb-4">
   <div class="container-fluid">
@@ -30,17 +31,19 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'cursos' %}"><i class="bi bi-grid-3x3-gap"></i> Cursos</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'estudiantes' %}"><i class="bi bi-people"></i> Estudiantes</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'convivencia' %}"><i class="bi bi-journal-text"></i> Convivencia</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'importar' %}"><i class="bi bi-file-earmark-arrow-up"></i> Importar Excel</a></li>
+        {% if not solo_lectura %}<li class="nav-item"><a class="nav-link" href="{% url 'importar' %}"><i class="bi bi-file-earmark-arrow-up"></i> Importar Excel</a></li>{% endif %}
         <li class="nav-item"><a class="nav-link" href="{% url 'informes' %}"><i class="bi bi-file-earmark-pdf"></i> Informes</a></li>
-        {% if es_gestion or es_profesor_jefe %}<li class="nav-item"><a class="nav-link" href="{% url 'solicitudes' %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %} <span class="badge bg-warning text-dark">{{ solicitudes_pendientes }}</span>{% endif %}</a></li>{% endif %}
+        {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<li class="nav-item"><a class="nav-link" href="{% url 'solicitudes' %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %} <span class="badge bg-warning text-dark">{{ solicitudes_pendientes }}</span>{% endif %}</a></li>{% endif %}
         {% if es_gestion %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Configuración</a></li>{% endif %}
       </ul>
+      <button class="btn btn-sm btn-warning me-3" data-bs-toggle="modal" data-bs-target="#modalComentario"><i class="bi bi-chat-dots"></i> Enviar comentarios</button>
       <div class="dropdown">
         <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
           <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
           <span class="badge bg-light text-dark ms-1">{{ rol_usuario }}</span>
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
+          {% if es_gestion %}<li><a class="dropdown-item" href="{% url 'comentarios' %}">Ver comentarios recibidos</a></li>{% endif %}
           <li><a class="dropdown-item" href="{% url 'password_change' %}">Cambiar contraseña</a></li>
           <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item">Cerrar sesión</button></form></li>
         </ul>
@@ -48,6 +51,22 @@
     </div>
   </div>
 </nav>
+{% endif %}
+{% if user.is_authenticated %}
+<div class="modal fade" id="modalComentario" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+  <form method="post" action="{% url 'comentario_enviar' %}">{% csrf_token %}
+    <input type="hidden" name="pagina" value="{{ request.get_full_path }}">
+    <div class="modal-header"><h5 class="modal-title">Enviar comentarios</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <p class="small text-muted">Cuéntenos qué le parece Pupitre, qué no funciona o qué le gustaría que tuviera. Se registra la pantalla en la que está.</p>
+      <select name="tipo" class="form-select mb-2">
+        <option value="SUGERENCIA">Sugerencia o idea</option><option value="PROBLEMA">Algo no funciona</option><option value="OTRO">Otro comentario</option>
+      </select>
+      <textarea name="texto" class="form-control" rows="5" required placeholder="Escriba aquí su comentario"></textarea>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary">Enviar</button></div>
+  </form>
+</div></div></div>
 {% endif %}
 <main class="container-fluid px-4 pb-5">
   {% for m in messages %}

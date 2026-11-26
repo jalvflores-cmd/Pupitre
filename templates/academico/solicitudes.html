@@ -2,7 +2,7 @@
 {% block titulo %}Solicitudes{% endblock %}
 {% block contenido %}
 <h3 class="mb-1">Solicitudes de modificación de datos</h3>
-<p class="text-muted">{% if es_gestion %}Los profesores jefe solicitan cambios en los datos de sus estudiantes. Revise y apruebe o rechace: al aprobar, los cambios se aplican de inmediato.{% else %}Sus solicitudes de cambio de datos de estudiantes y su estado.{% endif %}</p>
+<p class="text-muted">{% if es_gestion %}Profesores jefe, Inspectoría y Convivencia solicitan cambios en los datos de los estudiantes. Revise y apruebe o rechace: al aprobar, los cambios se aplican de inmediato.{% else %}Sus solicitudes de cambio de datos de estudiantes y su estado.{% endif %}</p>
 <ul class="nav nav-pills mb-3">
   {% for v, t in estados %}<li class="nav-item"><a class="nav-link {% if v == estado %}active{% endif %}" href="?estado={{ v }}">{{ t }}s</a></li>{% endfor %}
   <li class="nav-item"><a class="nav-link {% if estado == 'todas' %}active{% endif %}" href="?estado=todas">Todas</a></li>

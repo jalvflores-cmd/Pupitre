@@ -277,3 +277,69 @@ class SolicitudCambioTests(BaseDatos):
         self.client.force_login(self.profe_len)
         self.client.post(reverse("solicitud_crear", args=[self.est.pk]), self.datos(rut="12.345.678-0"))
         self.assertFalse(SolicitudCambio.objects.exists())
+
+
+class RolesAdicionalesTests(BaseDatos):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        def usuario(nombre, rol):
+            u = User.objects.create_user(nombre, password="clave-segura-123")
+            Perfil.objects.create(usuario=u, rol=rol)
+            return u
+        cls.sostenedor = usuario("sostenedor", Perfil.Rol.SOSTENEDOR)
+        cls.inspector = usuario("inspector", Perfil.Rol.INSPECTOR)
+        cls.convivencia = usuario("convivencia", Perfil.Rol.CONVIVENCIA)
+
+    def test_sostenedor_ve_todo_sin_modificar(self):
+        self.client.force_login(self.sostenedor)
+        r = self.client.get(reverse("libro_notas", args=[self.mat.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'name="n_')
+        self.assertEqual(self.client.get(reverse("estudiante_detalle", args=[self.est_b.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("acta_final_pdf", args=[self.curso.pk])).status_code, 200)
+        self.assertEqual(self.client.post(reverse("libro_notas", args=[self.mat.pk]),
+                                          {f"n_{self.est.pk}_{self.ev.pk}": "2,0"}).status_code, 403)
+        self.assertEqual(self.client.post(reverse("anotacion_crear", args=[self.est.pk]),
+                                          {"fecha": "2026-05-01", "tipo": "POSITIVA", "descripcion": "x"}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("estudiante_editar", args=[self.est.pk])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("solicitud_crear", args=[self.est.pk])).status_code, 403)
+        self.assertEqual(self.client.get("/admin/").status_code, 302)
+
+    def test_convivencia_e_inspector(self):
+        for u in (self.inspector, self.convivencia):
+            self.client.force_login(u)
+            # Ven notas de todos los cursos, sin editarlas
+            r = self.client.get(reverse("libro_notas", args=[self.mat.pk]))
+            self.assertEqual(r.status_code, 200)
+            self.assertNotContains(r, 'name="n_')
+            # Anotan en cualquier curso
+            self.client.post(reverse("anotacion_crear", args=[self.est_b.pk]),
+                             {"fecha": "2026-05-01", "tipo": "NEGATIVA", "gravedad": "GRAVE", "descripcion": "Pelea"})
+            # Editan contacto directo, pero no el nombre
+            self.client.post(reverse("estudiante_contacto", args=[self.est_b.pk]),
+                             {"apoderado_telefono": f"+56 9 {u.pk}"})
+            self.est_b.refresh_from_db()
+            self.assertEqual(self.est_b.apoderado_telefono, f"+56 9 {u.pk}")
+            self.assertEqual(self.client.get(reverse("estudiante_editar", args=[self.est_b.pk])).status_code, 403)
+            self.assertEqual(self.client.get(reverse("solicitud_crear", args=[self.est_b.pk])).status_code, 200)
+        self.assertEqual(Anotacion.objects.filter(estudiante=self.est_b).count(), 2)
+        # Pueden eliminar anotaciones de otros
+        a = Anotacion.objects.filter(autor=self.inspector).get()
+        self.client.post(reverse("anotacion_eliminar", args=[a.pk]))
+        self.assertFalse(Anotacion.objects.filter(pk=a.pk).exists())
+
+    def test_profesor_no_edita_contacto(self):
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("estudiante_contacto", args=[self.est.pk])).status_code, 403)
+
+    def test_comentarios(self):
+        from .models import Comentario
+        self.client.force_login(self.profe_mat)
+        self.client.post(reverse("comentario_enviar"), {"texto": "Me gusta", "tipo": "SUGERENCIA", "pagina": "/cursos/"})
+        self.client.post(reverse("comentario_enviar"), {"texto": "x", "pagina": "javascript:alert(1)"})
+        self.assertEqual(Comentario.objects.count(), 2)
+        self.assertEqual(Comentario.objects.get(texto="x").pagina, "")
+        self.assertEqual(self.client.get(reverse("comentarios")).status_code, 403)
+        self.client.force_login(self.director)
+        self.assertContains(self.client.get(reverse("comentarios")), "Me gusta")

@@ -11,6 +11,7 @@
       <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_final_pdf' est.curso.pk %}?estudiante={{ est.pk }}"><i class="bi bi-file-pdf"></i> Informe final</a>
     {% endif %}
     {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'estudiante_editar' est.pk %}"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
+    {% if puede_editar_contacto %}<a class="btn btn-outline-primary btn-sm" href="{% url 'estudiante_contacto' est.pk %}"><i class="bi bi-telephone"></i> Editar contacto</a>{% endif %}
     {% if puede_solicitar %}<a class="btn btn-primary btn-sm" href="{% url 'solicitud_crear' est.pk %}"><i class="bi bi-pencil-square"></i> Solicitar modificación</a>{% endif %}
   </div>
 </div>
@@ -65,7 +66,7 @@
 {% endif %}
 <div class="card p-3 mt-4">
   <div class="d-flex justify-content-between"><h5>Convivencia escolar (anotaciones)</h5>
-    <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nueva"><i class="bi bi-plus-lg"></i> Nueva anotación</button></div>
+    {% if puede_anotar %}<button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nueva"><i class="bi bi-plus-lg"></i> Nueva anotación</button>{% endif %}</div>
   <div class="collapse" id="nueva">
     <form method="post" action="{% url 'anotacion_crear' est.pk %}" class="row g-2 border rounded p-2 my-2">{% csrf_token %}
       <div class="col-md-3"><label class="form-label small">Fecha</label>{{ form_anotacion.fecha }}</div>
@@ -84,7 +85,7 @@
       <td><span class="badge {% if a.tipo == 'POSITIVA' %}bg-success{% elif a.tipo == 'NEGATIVA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ a.get_tipo_display }}</span>{% if a.gravedad %} <span class="small">{{ a.get_gravedad_display }}</span>{% endif %}</td>
       <td>{{ a.descripcion|linebreaksbr }}{% if a.medida %}<div class="small text-muted">Medida: {{ a.medida }}</div>{% endif %}</td>
       <td class="small">{{ a.asignatura|default:"" }}</td><td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td>
-      <td>{% if es_gestion or a.autor_id == user.id %}<form method="post" action="{% url 'anotacion_eliminar' a.pk %}" onsubmit="return confirm('¿Eliminar esta anotación?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>
+      <td>{% if gestiona_convivencia or a.autor_id == user.id %}<form method="post" action="{% url 'anotacion_eliminar' a.pk %}" onsubmit="return confirm('¿Eliminar esta anotación?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>
     {% empty %}<tr><td colspan="6" class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
   </table>
 </div>
