@@ -1,3 +1,4 @@
+from io import StringIO
 from decimal import Decimal
 from io import BytesIO
 
@@ -385,3 +386,24 @@ class FuncionariosTests(BaseDatos):
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("funcionarios")).status_code, 403)
         self.assertEqual(self.client.post(reverse("prioritarios"), {}).status_code, 403)
+
+
+class DemoYListadoTests(BaseDatos):
+    def test_datos_demo_no_pisa_cambios(self):
+        from django.core.management import call_command
+        from .models import Establecimiento
+        Establecimiento.objects.create(nombre="Escuela Gabriela Mistral", director="Nombre editado")
+        call_command("datos_demo", stdout=StringIO())
+        u = User.objects.get(username="director")
+        u.perfil.rol = Perfil.Rol.UTP
+        u.perfil.save()
+        call_command("datos_demo", stdout=StringIO())
+        self.assertEqual(Establecimiento.actual().director, "Nombre editado")
+        self.assertEqual(User.objects.get(username="director").perfil.rol, Perfil.Rol.UTP)
+
+    def test_estudiantes_agrupados_por_curso(self):
+        self.client.force_login(self.director)
+        r = self.client.get(reverse("estudiantes"))
+        html = r.content.decode()
+        self.assertLess(html.index("5° Básico A"), html.index("5° Básico B"))
+        self.assertLess(html.index("Pérez, Ana"), html.index("Soto, Luis"))

@@ -15,14 +15,26 @@
   <div class="col-md-2 form-check mt-2 ms-2"><input type="checkbox" class="form-check-input" name="inactivos" value="1" id="inac" {% if inactivos %}checked{% endif %}><label for="inac" class="form-check-label">Incluir retirados</label></div>
   <div class="col-md-1"><button class="btn btn-secondary w-100"><i class="bi bi-search"></i></button></div>
 </form>
-<div class="card p-2 p-lg-3"><table class="table table-sm table-hover mb-0">
-  <thead><tr><th>RUT</th><th>Estudiante</th><th>Curso</th><th>Teléfono</th><th>Apoderado</th><th>Tel. apoderado</th></tr></thead>
-  <tbody>
-  {% for e in estudiantes %}
-    <tr class="{% if not e.activo %}text-muted{% endif %}"><td>{{ e.rut_formateado }}</td><td><a href="{% url 'estudiante_detalle' e.pk %}">{{ e.nombre_completo }}</a>{% if not e.activo %} <span class="badge bg-secondary">Retirado</span>{% endif %}</td>
-      <td>{{ e.curso.nombre_corto|default:"—" }}</td><td>{{ e.telefono }}</td><td>{{ e.apoderado_nombre }}</td><td>{{ e.apoderado_telefono }}</td></tr>
-  {% empty %}<tr><td colspan="6" class="text-muted">No se encontraron estudiantes.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
-{% if total > 500 %}<p class="small text-muted mt-2">Mostrando los primeros 500. Use la búsqueda o el filtro por curso.</p>{% endif %}
+{% regroup estudiantes by curso as grupos %}
+{% for g in grupos %}
+<div class="card p-2 p-lg-3 mb-3">
+  <div class="d-flex justify-content-between align-items-center px-2 pt-1 pb-2">
+    <h5 class="mb-0">{% if g.grouper %}<a href="{% url 'curso_detalle' g.grouper.pk %}" class="text-reset">{{ g.grouper.nombre_corto }}</a> <span class="text-muted fw-normal small">{{ g.grouper.anio }}</span>{% else %}Sin curso asignado{% endif %}</h5>
+    <span class="badge bg-secondary">{{ g.list|length }} estudiante{{ g.list|length|pluralize }}</span>
+  </div>
+  <table class="table table-sm table-hover">
+    <thead><tr><th style="width:3rem">N°</th><th>Estudiante</th><th>RUT</th><th>Teléfono</th><th>Apoderado(a)</th><th>Tel. apoderado</th></tr></thead>
+    <tbody>
+    {% for e in g.list %}
+      <tr class="{% if not e.activo %}text-muted{% endif %}"><td class="text-muted">{{ forloop.counter }}</td>
+        <td><a href="{% url 'estudiante_detalle' e.pk %}">{{ e.nombre_completo }}</a>{% if not e.activo %} <span class="badge bg-secondary">Retirado</span>{% endif %}</td>
+        <td class="text-nowrap">{{ e.rut_formateado }}</td><td>{{ e.telefono }}</td><td>{{ e.apoderado_nombre }}</td><td>{{ e.apoderado_telefono }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<div class="card p-4 text-muted">No se encontraron estudiantes.</div>
+{% endfor %}
+{% if total > 1500 %}<p class="small text-muted mt-2">Mostrando los primeros 1.500. Use la búsqueda o el filtro por curso.</p>{% endif %}
 {% endblock %}

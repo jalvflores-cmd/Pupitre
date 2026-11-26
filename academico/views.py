@@ -3,7 +3,7 @@ from collections import defaultdict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
@@ -170,7 +170,9 @@ def evaluacion_eliminar(request, pk):
 
 @login_required
 def estudiantes(request):
-    qs = estudiantes_visibles(request.user).select_related("curso__nivel")
+    qs = estudiantes_visibles(request.user).select_related("curso__nivel").order_by(
+        F("curso__anio").desc(nulls_last=True), F("curso__nivel__orden").asc(nulls_last=True), "curso__letra",
+        "apellido_paterno", "apellido_materno", "nombres")
     q = request.GET.get("q", "").strip()
     curso_id = request.GET.get("curso", "")
     inactivos = request.GET.get("inactivos") == "1"
@@ -185,7 +187,7 @@ def estudiantes(request):
     if request.GET.get("exportar") == "excel":
         return _descarga(exportacion.excel_estudiantes(qs), "estudiantes.xlsx", XLSX)
     return render(request, "academico/estudiantes.html", {
-        "estudiantes": qs[:500], "total": qs.count(), "q": q, "curso_id": curso_id, "inactivos": inactivos,
+        "estudiantes": qs[:1500], "total": qs.count(), "q": q, "curso_id": curso_id, "inactivos": inactivos,
         "cursos": cursos_visibles(request.user).filter(anio=anio_actual()).select_related("nivel"),
     })
 

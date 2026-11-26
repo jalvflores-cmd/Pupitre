@@ -39,7 +39,7 @@ class Command(BaseCommand):
         escuela = Establecimiento.objects.first()
         if escuela is None:
             Establecimiento.objects.create(**datos_escuela)
-        else:
+        elif escuela.nombre == "Colegio Demostración":  # solo reemplaza la demo antigua, nunca datos editados
             for campo, valor in datos_escuela.items():
                 setattr(escuela, campo, valor)
             escuela.save()
@@ -49,7 +49,7 @@ class Command(BaseCommand):
             if creado:
                 u.set_password("demo1234")
                 u.save()
-            Perfil.objects.update_or_create(usuario=u, defaults={"rol": rol})
+            Perfil.objects.get_or_create(usuario=u, defaults={"rol": rol})  # no pisa cambios hechos en el sitio
             return u
 
         usuario("sostenedor", "Ricardo", "Ibáñez Cortés", Perfil.Rol.SOSTENEDOR)
@@ -77,7 +77,7 @@ class Command(BaseCommand):
             u = User.objects.get(username=username)
             if not Funcionario.objects.filter(usuario=u).exists():
                 Funcionario.objects.get_or_create(rut=f"{cuerpo}-{calcular_dv(cuerpo)}", defaults={
-                    "usuario": u, "nombres": u.first_name, "apellido_paterno": u.last_name.split()[0],
+                    "usuario": u, "nombres": u.first_name or u.username, "apellido_paterno": (u.last_name.split() or ["—"])[0],
                     "apellido_materno": " ".join(u.last_name.split()[1:]), "cargo": cargo, "titulo": titulo,
                     "mencion": mencion, "tipo_contrato": contrato, "horas_contrato": horas, "primer_ciclo": ciclo,
                     "email": f"{username}@ejemplo.cl"})
