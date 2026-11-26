@@ -115,6 +115,25 @@ def puede_eliminar_anotacion(user, anotacion) -> bool:
     return gestiona_convivencia(user) or anotacion.autor_id == user.id
 
 
+def ve_datos_sensibles(user, estudiante) -> bool:
+    """Derivaciones, protocolos, redes externas y entrevistas: solo Dirección, UTP, Inspectoría,
+    Convivencia y el profesor(a) jefe del curso del estudiante."""
+    if not user.is_authenticated:
+        return False
+    if gestiona_convivencia(user):
+        return True
+    return bool(estudiante.curso_id and estudiante.curso.profesor_jefe_id == user.id)
+
+
+def puede_registrar_entrevista(user, estudiante) -> bool:
+    return ve_datos_sensibles(user, estudiante) and not es_solo_lectura(user)
+
+
+def puede_editar_entrevista(user, entrevista) -> bool:
+    return gestiona_convivencia(user) or (entrevista.entrevistador_id == user.id
+                                         and ve_datos_sensibles(user, entrevista.estudiante))
+
+
 def puede_ver_estudiante(user, estudiante) -> bool:
     return estudiantes_visibles(user).filter(pk=estudiante.pk).exists()
 

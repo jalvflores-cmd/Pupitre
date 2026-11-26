@@ -9,7 +9,8 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from django.utils.html import escape
 
 from .calculos import concepto, formato_nota, nota_en_palabras, resumen_curso
 from .models import NOTA_APROBACION, Establecimiento
@@ -157,15 +158,15 @@ def excel_anotaciones(anotaciones, titulo):
     hoja.title = "Anotaciones"
     _xl_titulo(hoja, "Registro de convivencia escolar", titulo)
     _xl_encabezado(hoja, 5, ["Fecha", "RUT", "Estudiante", "Curso", "Tipo", "Gravedad", "Asignatura",
-                             "Descripción", "Medida", "Registrada por"])
+                             "Descripción", "Medida", "Registrada por", "Derivada a Convivencia"])
     for a in anotaciones.select_related("estudiante__curso__nivel", "asignatura", "autor"):
         hoja.append([
             a.fecha.strftime("%d-%m-%Y"), a.estudiante.rut_formateado, a.estudiante.nombre_completo,
             a.estudiante.curso.nombre_corto if a.estudiante.curso else "", a.get_tipo_display(),
             a.get_gravedad_display(), str(a.asignatura or ""), a.descripcion, a.medida,
-            a.autor.get_full_name() if a.autor else "",
+            a.autor.get_full_name() if a.autor else "", "Sí" if a.derivada else "",
         ])
-    for col, ancho in zip("ABCDEFGHIJ", (12, 14, 32, 14, 12, 12, 18, 60, 40, 24)):
+    for col, ancho in zip("ABCDEFGHIJK", (12, 14, 32, 14, 12, 12, 18, 60, 40, 24, 12)):
         hoja.column_dimensions[col].width = ancho
     return _bytes(libro)
 
@@ -225,13 +226,13 @@ def _siguiente_nivel(nivel):
     return Nivel.objects.filter(orden__gt=nivel.orden).order_by("orden").first()
 
 
-def _membrete(titulo, subtitulo=""):
+def _membrete(titulo, subtitulo="", decreto=True):
     """Membrete oficial: República de Chile / Ministerio de Educación + datos del establecimiento."""
     est = Establecimiento.actual()
     izquierda = Paragraph(
         "<b>REPÚBLICA DE CHILE</b><br/>MINISTERIO DE EDUCACIÓN<br/>"
         + (f"REGIÓN DE {est.region.upper()}<br/>" if est.region and not est.region.lower().startswith("regi") else (f"{est.region.upper()}<br/>" if est.region else ""))
-        + "<font size=7>Decreto de Evaluación y Promoción N° 67 de 2018</font>", E_MINI)
+        + ("<font size=7>Decreto de Evaluación y Promoción N° 67 de 2018</font>" if decreto else ""), E_MINI)
     datos = [f"<b>{est.nombre.upper()}</b>"]
     if est.rbd:
         datos.append(f"RBD {est.rbd}")
@@ -511,3 +512,97 @@ def pdf_acta_final_curso(curso):
     historia.append(Spacer(1, 4))
     historia.append(Paragraph(f"{est.comuna or ''}, {_fecha_larga()}.", ParagraphStyle("f", parent=E_NORMAL, alignment=2)))
     return _construir_pdf(historia, horizontal=True, titulo="Acta de calificaciones finales")
+
+
+# --------------------------------------------------------------------------- Registro de entrevista
+
+def _texto(valor):
+    return escape(valor or "").replace("\n", "<br/>")
+
+
+def _seccion(titulo, contenido, lineas_vacias=4):
+    """Recuadro con título; si no hay contenido (formato en blanco) deja líneas para escribir a mano."""
+    encabezado = Paragraph(f"<b>{titulo}</b>", E_CELDA)
+    if contenido is None:
+        cuerpo = [[""] for _ in range(lineas_vacias)]
+        t = Table([[encabezado]] + cuerpo, colWidths=[17 * cm], rowHeights=[None] + [0.75 * cm] * lineas_vacias)
+        t.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.5, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+                               ("LINEBELOW", (0, 1), (-1, -2), 0.3, GRIS_LINEA)]))
+    else:
+        t = Table([[encabezado], [Paragraph(_texto(contenido) or "—", E_NORMAL)]], colWidths=[17 * cm])
+        t.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.5, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+                               ("TOPPADDING", (0, 1), (-1, 1), 5), ("BOTTOMPADDING", (0, 1), (-1, 1), 7)]))
+    return [KeepTogether([t]), Spacer(1, 7)]
+
+
+def pdf_entrevista(estudiante, entrevista=None):
+    """Registro de entrevista. Sin `entrevista` genera el formato en blanco para completar a mano."""
+    from .models import Entrevista, Protocolo
+
+    e = entrevista
+    blanco = e is None
+    est = Establecimiento.actual()
+    curso = estudiante.curso
+    jefe = curso.profesor_jefe.get_full_name() if curso and curso.profesor_jefe else ""
+    linea = "_" * 28
+    if blanco:
+        tipo = "   ".join(f"(  ) {t}" for _, t in Entrevista.Tipo.choices)
+        historia = _membrete("Registro de entrevista", "Convivencia escolar · Documento confidencial", decreto=False)
+    else:
+        historia = _membrete("Registro de entrevista", f"{e.get_tipo_display()} · Documento confidencial", decreto=False)
+    filas = [
+        ("Estudiante", escape(estudiante.nombre_completo), "RUN", estudiante.rut_formateado),
+        ("Curso", escape(curso.nombre_corto) if curso else "—", "Profesor(a) jefe", escape(jefe) or "—"),
+    ]
+    if blanco:
+        filas += [("Fecha", "____ / ____ / ________", "Hora", "____ : ____"),
+                  ("Persona entrevistada", linea, "Parentesco", linea),
+                  ("RUT entrevistado(a)", linea, "Entrevistador(a)", linea),
+                  ("Otros asistentes", linea, "Protocolo", linea)]
+    else:
+        entrevistador = e.entrevistador.get_full_name() if e.entrevistador else ""
+        filas += [("Fecha", f"{e.fecha:%d-%m-%Y}", "Hora", e.hora.strftime("%H:%M") if e.hora else "—"),
+                  ("Persona entrevistada", escape(e.entrevistado) or "—", "Parentesco", escape(e.parentesco) or "—"),
+                  ("RUT entrevistado(a)", e.rut_entrevistado or "—", "Entrevistador(a)", escape(entrevistador) or "—"),
+                  ("Otros asistentes", escape(e.otros_asistentes) or "—", "Protocolo",
+                   e.get_protocolo_display() if e.protocolo else "No aplica")]
+    historia.append(_tabla_datos(filas, [3.4 * cm, 5.4 * cm, 3 * cm, 5.2 * cm]))
+    historia.append(Spacer(1, 8))
+    if blanco:
+        historia.append(Paragraph(f"<b>Tipo de entrevista:</b> {tipo}", E_CELDA))
+        historia.append(Spacer(1, 4))
+        protocolos = " · ".join(t for v, t in Protocolo.choices if v != "OTRO")
+        historia.append(Paragraph(f"<b>Protocolos del Reglamento Interno:</b> {protocolos}.", E_MINI))
+        historia.append(Spacer(1, 8))
+    elif e.anotacion:
+        a = e.anotacion
+        historia += _seccion(f"Anotación relacionada ({a.fecha:%d-%m-%Y}, {a.get_tipo_display()}"
+                             f"{' ' + a.get_gravedad_display() if a.gravedad else ''})", a.descripcion)
+
+    def campo(nombre):
+        return None if blanco else getattr(e, nombre)
+
+    historia += _seccion("1. Motivo de la entrevista", campo("motivo"), 3)
+    historia += _seccion("2. Desarrollo / relato de los hechos", campo("desarrollo"), 8)
+    historia += _seccion("3. Acuerdos", campo("acuerdos"), 3)
+    historia += _seccion("4. Compromisos del apoderado(a)", campo("compromisos_apoderado"), 3)
+    historia += _seccion("5. Compromisos del estudiante", campo("compromisos_estudiante"), 3)
+    historia += _seccion("6. Compromisos del establecimiento", campo("compromisos_establecimiento"), 3)
+    historia += _seccion("7. Derivaciones (red externa, OLN, Tribunal de Familia, Fiscalía, CESFAM, otras)",
+                         campo("derivaciones"), 2)
+    seguimiento = ("____ / ____ / ________" if blanco
+                   else (f"{e.fecha_seguimiento:%d-%m-%Y}" if e.fecha_seguimiento else "Sin fecha definida"))
+    historia.append(Paragraph(f"<b>Fecha de seguimiento:</b> {seguimiento}", E_NORMAL))
+    historia.append(Spacer(1, 6))
+    historia.append(Paragraph(
+        "Documento confidencial. Contiene datos sensibles del estudiante y su familia (Ley N° 19.628 sobre protección "
+        "de la vida privada y Ley N° 21.430 sobre garantías de la niñez). Uso exclusivo del establecimiento. "
+        "Los participantes declaran haber leído el presente registro.", E_MINI))
+    entrevistado = "" if blanco else (escape(e.entrevistado) + "<br/>" if e.entrevistado else "")
+    entrevistador = "" if blanco or not e.entrevistador else escape(e.entrevistador.get_full_name()) + "<br/>"
+    historia += _firmas([f"{entrevistado}Persona entrevistada", f"{entrevistador}Entrevistador(a)",
+                         "Encargado(a) de Convivencia Escolar"], espacio=40)
+    historia.append(Spacer(1, 4))
+    historia.append(Paragraph(f"{escape(est.comuna or '')}, {'____ de ______________ de ________' if blanco else _fecha_larga(e.fecha)}.",
+                              ParagraphStyle("f", parent=E_NORMAL, alignment=2)))
+    return _construir_pdf(historia, titulo="Registro de entrevista")

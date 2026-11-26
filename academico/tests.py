@@ -561,3 +561,73 @@ class TalleresYConceptosTests(BaseDatos):
         self.client.force_login(self.director)
         self.assertEqual(self.client.get(reverse("informe_final_pdf", args=[self.curso.pk])).status_code, 200)
         self.assertEqual(self.client.get(reverse("acta_final_pdf", args=[self.curso.pk])).status_code, 200)
+
+
+class ConvivenciaDerivacionesTests(BaseDatos):
+    def _usuario(self, nombre, rol):
+        u = User.objects.create_user(nombre, password="x")
+        Perfil.objects.create(usuario=u, rol=rol)
+        return u
+
+    def test_falta_grave_se_deriva_y_convivencia_activa_protocolo(self):
+        from .models import Anotacion
+        self.client.force_login(self.profe_mat)
+        self.client.post(reverse("anotacion_crear", args=[self.est.pk]), {
+            "fecha": "2026-09-01", "tipo": "NEGATIVA", "gravedad": "GRAVE", "descripcion": "Agrede a un compañero."})
+        a = Anotacion.objects.get(estudiante=self.est)
+        self.assertTrue(a.derivada)
+        self.assertEqual(a.estado_derivacion, "PENDIENTE")
+        # el profesor de asignatura no gestiona la derivación
+        self.assertEqual(self.client.get(reverse("anotacion_derivacion", args=[a.pk])).status_code, 403)
+        conv = self._usuario("conv", Perfil.Rol.CONVIVENCIA)
+        self.client.force_login(conv)
+        self.client.post(reverse("anotacion_derivacion", args=[a.pk]), {
+            "derivada": "on", "estado_derivacion": "EN_PROCESO", "protocolo": "MALTRATO_ESTUDIANTES",
+            "seguimiento": "Se cita a apoderados."})
+        a.refresh_from_db()
+        self.assertEqual((a.estado_derivacion, a.protocolo), ("EN_PROCESO", "MALTRATO_ESTUDIANTES"))
+        r = self.client.get(reverse("convivencia") + "?derivadas=PROTOCOLO")
+        self.assertContains(r, "Maltrato, acoso escolar")
+
+    def test_leve_no_se_deriva_salvo_que_se_marque(self):
+        from .models import Anotacion
+        self.client.force_login(self.profe_mat)
+        self.client.post(reverse("anotacion_crear", args=[self.est.pk]), {
+            "fecha": "2026-09-01", "tipo": "NEGATIVA", "gravedad": "LEVE", "descripcion": "Sin materiales."})
+        self.client.post(reverse("anotacion_crear", args=[self.est.pk]), {
+            "fecha": "2026-09-02", "tipo": "OBSERVACION", "descripcion": "Se ve triste.", "derivada": "on"})
+        self.assertEqual(list(Anotacion.objects.order_by("fecha").values_list("derivada", flat=True)), [False, True])
+
+    def test_redes_y_entrevistas_solo_para_quienes_corresponde(self):
+        from .models import Entrevista, RedApoyo
+        conv = self._usuario("conv", Perfil.Rol.CONVIVENCIA)
+        sost = self._usuario("sost", Perfil.Rol.SOSTENEDOR)
+        self.client.force_login(conv)
+        self.client.post(reverse("red_crear", args=[self.est.pk]), {
+            "institucion": "OLN", "programa": "OLN Chillán", "vigente": "on"})
+        self.assertEqual(RedApoyo.objects.filter(estudiante=self.est).count(), 1)
+        self.client.post(reverse("entrevista_crear", args=[self.est.pk]), {
+            "tipo": "APODERADO", "fecha": "2026-09-03", "entrevistado": "María Pérez", "parentesco": "Madre",
+            "rut_entrevistado": "22222222-2", "motivo": "Conversar sobre conducta.", "desarrollo": "Relato <b>x</b>"})
+        e = Entrevista.objects.get(estudiante=self.est)
+        self.assertEqual(e.entrevistador, conv)
+        r = self.client.get(reverse("entrevista_pdf", args=[e.pk]))
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "application/pdf"))
+        self.assertEqual(self.client.get(reverse("entrevista_formato_pdf", args=[self.est.pk])).status_code, 200)
+        # profesor(a) jefe: ve redes y entrevistas de su curso y puede registrar entrevistas
+        self.client.force_login(self.profe_len)
+        r = self.client.get(reverse("estudiante_detalle", args=[self.est.pk]))
+        self.assertContains(r, "OLN Chillán")
+        self.assertContains(r, "María Pérez")
+        self.assertEqual(self.client.get(reverse("entrevista_pdf", args=[e.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("entrevista_crear", args=[self.est.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("red_crear", args=[self.est.pk])).status_code, 403)
+        # profesor(a) de asignatura y sostenedor: no ven datos sensibles
+        for u in (self.profe_mat, sost):
+            self.client.force_login(u)
+            r = self.client.get(reverse("estudiante_detalle", args=[self.est.pk]))
+            self.assertEqual(r.status_code, 200)
+            self.assertNotContains(r, "OLN Chillán")
+            self.assertNotContains(r, "María Pérez")
+            self.assertEqual(self.client.get(reverse("entrevista_pdf", args=[e.pk])).status_code, 403)
+            self.assertEqual(self.client.get(reverse("entrevista_crear", args=[self.est.pk])).status_code, 403)

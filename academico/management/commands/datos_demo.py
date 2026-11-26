@@ -15,7 +15,7 @@ from django.db import transaction
 from academico.models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Funcionario,
     Nivel,
-    Perfil, Religion, anio_actual,
+    Perfil, Religion, anio_actual, Entrevista, RedApoyo,
 )
 from academico.importacion import reordenar_niveles
 from academico.rut import calcular_dv
@@ -176,10 +176,47 @@ class Command(BaseCommand):
             est.porcentaje_asistencia = Decimal(str(round(random.uniform(78, 99), 1)))
             est.save(update_fields=["genero", "porcentaje_asistencia"])
         self.corregir_director()
+        self.demo_convivencia(anio)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
             "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))
 
+
+    def demo_convivencia(self, anio):
+        """Ejemplos de derivación, protocolo, red externa y entrevista (solo con estudiantes ficticios, una vez)."""
+        if Entrevista.objects.exists() or RedApoyo.objects.exists():
+            return
+        ficticios = list(Estudiante.objects.filter(rut__regex=r"^21[0-9]{6}-[0-9K]$", activo=True,
+                                                   curso__anio=anio).select_related("curso").order_by("rut")[:40])
+        if len(ficticios) < 3:
+            return
+        conv = User.objects.filter(username="convivencia").first()
+        a, b, c = ficticios[5], ficticios[17], ficticios[29]
+        grave = Anotacion.objects.create(
+            estudiante=a, tipo=Anotacion.Tipo.NEGATIVA, gravedad="GRAVE", fecha=date(anio, 9, 8),
+            descripcion="Durante el recreo empuja reiteradamente a un compañero y lo insulta frente al grupo.",
+            medida="Se separa a los estudiantes y se informa a Inspectoría.", autor=a.curso.profesor_jefe,
+            derivada=True, estado_derivacion="EN_PROCESO", protocolo="MALTRATO_ESTUDIANTES",
+            seguimiento="Se activa protocolo de maltrato entre estudiantes. Entrevistas con ambos apoderados.")
+        Anotacion.objects.create(
+            estudiante=b, tipo=Anotacion.Tipo.NEGATIVA, gravedad="GRAVE", fecha=date(anio, 10, 14),
+            descripcion="Se retira de la sala sin autorización y no regresa a la clase.", autor=b.curso.profesor_jefe,
+            derivada=True, estado_derivacion="PENDIENTE")
+        RedApoyo.objects.create(
+            estudiante=c, institucion=RedApoyo.Institucion.MEJOR_NINEZ, programa="PPF Chillán (ejemplo)",
+            profesional="Dupla psicosocial del programa", fecha_inicio=date(anio, 4, 1), registrada_por=conv,
+            observaciones="Ejemplo de demostración: seguimiento mensual con la dupla del programa.")
+        Entrevista.objects.create(
+            estudiante=a, tipo=Entrevista.Tipo.PROTOCOLO, fecha=date(anio, 9, 9), anotacion=grave,
+            protocolo="MALTRATO_ESTUDIANTES", entrevistado=a.apoderado_nombre, parentesco="Apoderado(a)",
+            motivo="Informar la activación del protocolo por maltrato entre estudiantes ocurrido el 8 de septiembre.",
+            desarrollo="Se informa al apoderado(a) de los hechos registrados. Indica que en el hogar no ha observado "
+                       "cambios de conducta y se compromete a conversar con el estudiante.",
+            acuerdos="Seguimiento quincenal con Convivencia Escolar.",
+            compromisos_apoderado="Asistir a las citaciones y reforzar en el hogar el buen trato.",
+            compromisos_estudiante="Respetar a sus compañeros y pedir ayuda a un adulto ante un conflicto.",
+            compromisos_establecimiento="Acompañamiento de la dupla psicosocial y monitoreo en recreos.",
+            fecha_seguimiento=date(anio, 9, 23), entrevistador=conv)
 
     def corregir_director(self):
         """El director actual de la escuela es Jorge Sandoval Morales: reemplaza el nombre antiguo de la demo."""

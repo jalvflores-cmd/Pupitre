@@ -8,7 +8,7 @@
     {{ form.non_field_errors }}
     <div class="row">
     {% for f in form %}
-      <div class="col-md-6 mb-3">
+      <div class="{% if f.field.widget.attrs.rows %}col-12{% else %}col-md-6{% endif %} mb-3">
         {% if f.field.widget.input_type == "checkbox" %}
           <div class="form-check mt-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
         {% else %}
@@ -22,6 +22,11 @@
     <button class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ boton|default:"Guardar" }}</button>
     {% if volver.1 %}<a class="btn btn-link" href="{% url volver.0 volver.1 %}">Cancelar</a>{% else %}<a class="btn btn-link" href="{% url volver.0 %}">Cancelar</a>{% endif %}
   </form>
+  {% if eliminar_red %}
+  <form method="post" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar este registro?');">{% csrf_token %}
+    <input type="hidden" name="eliminar" value="1"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+  </form>
+  {% endif %}
   {% if eliminar %}
   <form method="post" action="{% url eliminar.0 eliminar.1 %}" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar esta evaluación y todas sus notas?');">{% csrf_token %}
     <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>

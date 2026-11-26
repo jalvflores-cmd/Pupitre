@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Nivel,
-    Comentario, Funcionario, Perfil, SolicitudCambio,
+    Comentario, Entrevista, Funcionario, Perfil, RedApoyo, SolicitudCambio,
 )
 from .permisos import es_gestion
 
@@ -136,8 +136,8 @@ class CalificacionAdmin(SoloGestion, admin.ModelAdmin):
 
 @admin.register(Anotacion)
 class AnotacionAdmin(SoloGestion, admin.ModelAdmin):
-    list_display = ("fecha", "estudiante", "tipo", "gravedad", "autor")
-    list_filter = ("tipo", "gravedad", "estudiante__curso")
+    list_display = ("fecha", "estudiante", "tipo", "gravedad", "derivada", "protocolo", "autor")
+    list_filter = ("tipo", "gravedad", "derivada", "estado_derivacion", "protocolo", "estudiante__curso")
     search_fields = ("estudiante__rut", "estudiante__apellido_paterno", "descripcion")
 
 
@@ -160,3 +160,17 @@ class FuncionarioAdmin(SoloGestion, admin.ModelAdmin):
     list_display = ("rut", "apellido_paterno", "nombres", "cargo", "tipo_contrato", "horas_contrato", "activo")
     list_filter = ("cargo", "tipo_contrato", "activo")
     search_fields = ("rut", "nombres", "apellido_paterno")
+
+
+@admin.register(RedApoyo)
+class RedApoyoAdmin(SoloGestion, admin.ModelAdmin):
+    list_display = ("estudiante", "institucion", "programa", "vigente", "fecha_inicio")
+    list_filter = ("institucion", "vigente")
+    search_fields = ("estudiante__rut", "estudiante__apellido_paterno", "programa")
+
+
+@admin.register(Entrevista)
+class EntrevistaAdmin(SoloGestion, admin.ModelAdmin):
+    list_display = ("fecha", "estudiante", "tipo", "protocolo", "entrevistado", "entrevistador")
+    list_filter = ("tipo", "protocolo")
+    search_fields = ("estudiante__rut", "estudiante__apellido_paterno", "entrevistado")

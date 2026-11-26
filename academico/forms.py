@@ -1,8 +1,8 @@
 from django import forms
 
-from .models import Anotacion, Asignatura, Estudiante, Evaluacion, Funcionario
+from .models import Anotacion, Asignatura, Entrevista, Estudiante, Evaluacion, Funcionario, RedApoyo
 from .lectores import EXTENSIONES
-from .rut import normalizar_rut
+from .rut import normalizar_rut, validar_rut
 
 
 class BootstrapMixin:
@@ -43,12 +43,13 @@ class EstudianteForm(BootstrapMixin, forms.ModelForm):
 class AnotacionForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Anotacion
-        fields = ["fecha", "tipo", "gravedad", "asignatura", "descripcion", "medida"]
+        fields = ["fecha", "tipo", "gravedad", "asignatura", "descripcion", "medida", "derivada"]
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "descripcion": forms.Textarea(attrs={"rows": 3}),
             "medida": forms.Textarea(attrs={"rows": 2}),
         }
+        help_texts = {"derivada": "Las faltas graves y gravísimas se derivan automáticamente."}
 
     def __init__(self, *args, asignaturas=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,7 +60,79 @@ class AnotacionForm(BootstrapMixin, forms.ModelForm):
         datos = super().clean()
         if datos.get("tipo") != Anotacion.Tipo.NEGATIVA:
             datos["gravedad"] = ""
+        if datos.get("gravedad") in Anotacion.GRAVEDADES_QUE_SE_DERIVAN:
+            datos["derivada"] = True
         return datos
+
+    def save(self, commit=True):
+        anotacion = super().save(commit=False)
+        if anotacion.derivada and not anotacion.estado_derivacion:
+            anotacion.estado_derivacion = "PENDIENTE"
+        if commit:
+            anotacion.save()
+        return anotacion
+
+
+class DerivacionForm(BootstrapMixin, forms.ModelForm):
+    """Convivencia Escolar registra la gestión de una anotación derivada."""
+
+    class Meta:
+        model = Anotacion
+        fields = ["derivada", "estado_derivacion", "protocolo", "seguimiento"]
+        widgets = {"seguimiento": forms.Textarea(attrs={"rows": 5})}
+        help_texts = {"protocolo": "Deje vacío si no fue necesario activar un protocolo."}
+
+    def clean(self):
+        datos = super().clean()
+        if datos.get("derivada") and not datos.get("estado_derivacion"):
+            datos["estado_derivacion"] = "PENDIENTE"
+        if not datos.get("derivada"):
+            datos["estado_derivacion"], datos["protocolo"] = "", ""
+        return datos
+
+
+_FECHA = {"type": "date"}
+
+
+class RedApoyoForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = RedApoyo
+        fields = ["institucion", "programa", "profesional", "telefono", "fecha_inicio", "fecha_termino", "vigente",
+                  "observaciones"]
+        widgets = {"fecha_inicio": forms.DateInput(attrs=_FECHA, format="%Y-%m-%d"),
+                   "fecha_termino": forms.DateInput(attrs=_FECHA, format="%Y-%m-%d"),
+                   "observaciones": forms.Textarea(attrs={"rows": 3})}
+
+
+class EntrevistaForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = Entrevista
+        fields = ["tipo", "fecha", "hora", "protocolo", "anotacion", "entrevistado", "parentesco", "rut_entrevistado",
+                  "otros_asistentes", "motivo", "desarrollo", "acuerdos", "compromisos_apoderado",
+                  "compromisos_estudiante", "compromisos_establecimiento", "derivaciones", "fecha_seguimiento"]
+        widgets = {
+            "fecha": forms.DateInput(attrs=_FECHA, format="%Y-%m-%d"),
+            "fecha_seguimiento": forms.DateInput(attrs=_FECHA, format="%Y-%m-%d"),
+            "hora": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            **{c: forms.Textarea(attrs={"rows": 3}) for c in (
+                "motivo", "acuerdos", "compromisos_apoderado", "compromisos_estudiante",
+                "compromisos_establecimiento", "derivaciones")},
+            "desarrollo": forms.Textarea(attrs={"rows": 7}),
+        }
+
+    def __init__(self, *args, estudiante=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["anotacion"].queryset = estudiante.anotaciones.all() if estudiante else Anotacion.objects.none()
+        self.fields["anotacion"].label_from_instance = lambda a: (
+            f"{a.fecha:%d-%m-%Y} · {a.get_tipo_display()}{' ' + a.get_gravedad_display() if a.gravedad else ''}: "
+            f"{a.descripcion[:60]}")
+
+    def clean_rut_entrevistado(self):
+        rut = self.cleaned_data.get("rut_entrevistado", "").strip()
+        if rut:
+            validar_rut(rut)
+            rut = normalizar_rut(rut)
+        return rut
 
 
 class EvaluacionForm(BootstrapMixin, forms.ModelForm):

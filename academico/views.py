@@ -13,16 +13,17 @@ from . import exportacion, importacion
 from .calculos import resumen_curso
 from .forms import (
     AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm,
-    AgregarAsignaturaCursoForm,
+    AgregarAsignaturaCursoForm, DerivacionForm, EntrevistaForm, RedApoyoForm,
 )
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Establecimiento, Estudiante, Evaluacion,
-    Funcionario, SolicitudCambio, anio_actual,
+    Entrevista, Funcionario, RedApoyo, SolicitudCambio, anio_actual,
 )
 from .permisos import (
     asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
     es_solo_lectura, gestiona_convivencia, puede_anotar, puede_editar_contacto, puede_eliminar_anotacion,
     puede_solicitar_cambio, puede_ver_funcionarios, ve_todo, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
+    puede_editar_entrevista, puede_registrar_entrevista, ve_datos_sensibles,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -223,6 +224,11 @@ def estudiante_detalle(request, pk):
         "solicitudes": (est.solicitudes.select_related("solicitante", "revisor")[:10]
                         if es_gestion(request.user) or puede_solicitar_cambio(request.user, est) else []),
         "puede_anotar": puede_anotar(request.user, est),
+        "sensibles": ve_datos_sensibles(request.user, est),
+        "redes": est.redes_apoyo.all() if ve_datos_sensibles(request.user, est) else [],
+        "entrevistas": (est.entrevistas.select_related("entrevistador", "anotacion")
+                        if ve_datos_sensibles(request.user, est) else []),
+        "puede_entrevistar": puede_registrar_entrevista(request.user, est),
         "form_anotacion": AnotacionForm(asignaturas=_asignaturas_para_anotar(request.user, est)),
     })
 
@@ -373,14 +379,128 @@ def convivencia(request):
         qs = qs.filter(estudiante__curso=curso)
     if tipo in Anotacion.Tipo.values:
         qs = qs.filter(tipo=tipo)
+    derivadas = request.GET.get("derivadas", "")
+    if derivadas == "1":
+        qs = qs.filter(derivada=True)
+    elif derivadas in ("PENDIENTE", "EN_PROCESO", "CERRADA"):
+        qs = qs.filter(derivada=True, estado_derivacion=derivadas)
+    elif derivadas == "PROTOCOLO":
+        qs = qs.exclude(protocolo="")
     if request.GET.get("exportar") == "excel":
         return _descarga(exportacion.excel_anotaciones(qs, str(curso or "Todos los cursos visibles")),
                          _nombre_archivo("anotaciones", curso, ext="xlsx"), XLSX)
     return render(request, "academico/convivencia.html", {
         "anotaciones": qs[:300], "total": qs.count(), "curso_id": curso_id, "tipo": tipo,
-        "tipos": Anotacion.Tipo.choices,
+        "tipos": Anotacion.Tipo.choices, "derivadas": derivadas,
         "cursos": cursos_visibles(request.user).filter(anio=anio_actual()).select_related("nivel"),
+        "ve_protocolos": gestiona_convivencia(request.user),
+        "pendientes": qs.model.objects.filter(estudiante__in=estudiantes_visibles(request.user), derivada=True,
+                                              estado_derivacion="PENDIENTE").count(),
+        "entrevistas": (Entrevista.objects.filter(estudiante__in=estudiantes_visibles(request.user))
+                        .select_related("estudiante__curso__nivel", "entrevistador")[:10]
+                        if gestiona_convivencia(request.user) else []),
+        "redes_vigentes": (RedApoyo.objects.filter(vigente=True, estudiante__in=estudiantes_visibles(request.user))
+                           .select_related("estudiante__curso__nivel")
+                           if gestiona_convivencia(request.user) else []),
     })
+
+
+# --------------------------------------------------------------------------- Convivencia: derivaciones, redes, entrevistas
+
+@login_required
+def anotacion_derivacion(request, pk):
+    """Convivencia Escolar registra si se activó un protocolo y el seguimiento de la derivación."""
+    anotacion = get_object_or_404(Anotacion.objects.select_related("estudiante__curso"), pk=pk)
+    exigir(gestiona_convivencia(request.user) and not es_solo_lectura(request.user))
+    form = DerivacionForm(request.POST or None, instance=anotacion)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Derivación actualizada.")
+        return redirect("estudiante_detalle", pk=anotacion.estudiante_id)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"Derivación a Convivencia · {anotacion.estudiante}",
+        "ayuda": f"Anotación del {anotacion.fecha:%d-%m-%Y} ({anotacion.get_tipo_display()}"
+                 f"{' ' + anotacion.get_gravedad_display() if anotacion.gravedad else ''}): {anotacion.descripcion}",
+        "volver": ("estudiante_detalle", anotacion.estudiante_id),
+    })
+
+
+@login_required
+def red_apoyo_form(request, est_pk=None, pk=None):
+    red = get_object_or_404(RedApoyo.objects.select_related("estudiante"), pk=pk) if pk else None
+    est = red.estudiante if red else get_object_or_404(Estudiante, pk=est_pk)
+    exigir(gestiona_convivencia(request.user) and not es_solo_lectura(request.user))
+    form = RedApoyoForm(request.POST or None, instance=red)
+    if request.method == "POST":
+        if request.POST.get("eliminar") and red:
+            red.delete()
+            messages.success(request, "Red de apoyo eliminada.")
+            return redirect("estudiante_detalle", pk=est.pk)
+        if form.is_valid():
+            red = form.save(commit=False)
+            red.estudiante = est
+            if not red.registrada_por_id:
+                red.registrada_por = request.user
+            red.save()
+            messages.success(request, "Red de apoyo guardada.")
+            return redirect("estudiante_detalle", pk=est.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"Red de apoyo externa · {est}",
+        "ayuda": "Información sensible: solo la ven Dirección, UTP, Inspectoría, Convivencia y el profesor(a) jefe.",
+        "volver": ("estudiante_detalle", est.pk),
+        "eliminar_red": bool(red),
+    })
+
+
+@login_required
+def entrevista_form(request, est_pk=None, pk=None):
+    entrevista = get_object_or_404(Entrevista.objects.select_related("estudiante__curso"), pk=pk) if pk else None
+    est = entrevista.estudiante if entrevista else get_object_or_404(Estudiante.objects.select_related("curso"), pk=est_pk)
+    if entrevista:
+        exigir(puede_editar_entrevista(request.user, entrevista) and not es_solo_lectura(request.user))
+    else:
+        exigir(puede_registrar_entrevista(request.user, est))
+    inicial = {}
+    if not entrevista:
+        inicial = {"entrevistado": est.apoderado_nombre, "rut_entrevistado": est.apoderado_rut,
+                   "parentesco": "Apoderado(a)" if est.apoderado_nombre else ""}
+        if (request.GET.get("anotacion") or "").isdigit():
+            a = est.anotaciones.filter(pk=request.GET["anotacion"]).first()
+            if a:
+                inicial.update({"anotacion": a, "protocolo": a.protocolo, "motivo": a.descripcion,
+                                "tipo": Entrevista.Tipo.PROTOCOLO if a.protocolo else Entrevista.Tipo.APODERADO})
+    form = EntrevistaForm(request.POST or None, instance=entrevista, initial=inicial, estudiante=est)
+    if request.method == "POST" and form.is_valid():
+        entrevista = form.save(commit=False)
+        entrevista.estudiante = est
+        if not entrevista.entrevistador_id:
+            entrevista.entrevistador = request.user
+        entrevista.save()
+        messages.success(request, "Entrevista registrada. Puede descargarla en PDF para firmarla.")
+        return redirect("estudiante_detalle", pk=est.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"{'Editar' if entrevista else 'Registrar'} entrevista · {est}",
+        "ayuda": "Registro confidencial. Después de guardar, descargue el PDF para que los participantes lo firmen.",
+        "volver": ("estudiante_detalle", est.pk),
+    })
+
+
+@login_required
+def entrevista_pdf(request, pk):
+    entrevista = get_object_or_404(Entrevista.objects.select_related("estudiante__curso__nivel", "entrevistador"), pk=pk)
+    exigir(ve_datos_sensibles(request.user, entrevista.estudiante))
+    return _descarga(exportacion.pdf_entrevista(entrevista.estudiante, entrevista),
+                     _nombre_archivo("entrevista", entrevista.estudiante.rut, entrevista.fecha, ext="pdf"),
+                     "application/pdf")
+
+
+@login_required
+def entrevista_formato_pdf(request, est_pk):
+    """Formato de entrevista en blanco (con los datos del estudiante) para completar a mano."""
+    est = get_object_or_404(Estudiante.objects.select_related("curso__nivel"), pk=est_pk)
+    exigir(ve_datos_sensibles(request.user, est))
+    return _descarga(exportacion.pdf_entrevista(est, None),
+                     _nombre_archivo("formato_entrevista", est.rut, ext="pdf"), "application/pdf")
 
 
 # --------------------------------------------------------------------------- Importación

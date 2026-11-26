@@ -288,6 +288,28 @@ class Calificacion(models.Model):
         return f"{self.estudiante} – {self.evaluacion}: {self.nota}"
 
 
+class Protocolo(models.TextChoices):
+    """Protocolos de actuación exigidos por la Superintendencia de Educación (Circular 482 y 860)."""
+    VULNERACION = "VULNERACION", "Vulneración de derechos"
+    ABUSO_SEXUAL = "ABUSO_SEXUAL", "Agresiones sexuales y hechos de connotación sexual"
+    MALTRATO_ESTUDIANTES = "MALTRATO_ESTUDIANTES", "Maltrato, acoso escolar o violencia entre estudiantes"
+    MALTRATO_ADULTO = "MALTRATO_ADULTO", "Maltrato de adulto a estudiante"
+    MALTRATO_A_FUNCIONARIO = "MALTRATO_A_FUNCIONARIO", "Maltrato a funcionario(a) de la comunidad"
+    DROGAS_ALCOHOL = "DROGAS_ALCOHOL", "Consumo o porte de drogas y alcohol"
+    ACCIDENTE = "ACCIDENTE", "Accidente escolar"
+    AUTOLESION = "AUTOLESION", "Conducta autolesiva o riesgo suicida"
+    DESREGULACION = "DESREGULACION", "Desregulación emocional y conductual"
+    EMBARAZO = "EMBARAZO", "Retención de estudiantes embarazadas, madres y padres"
+    AULA_SEGURA = "AULA_SEGURA", "Ley Aula Segura (expulsión o cancelación de matrícula)"
+    OTRO = "OTRO", "Otro protocolo del Reglamento Interno"
+
+
+class EstadoDerivacion(models.TextChoices):
+    PENDIENTE = "PENDIENTE", "Pendiente de revisión"
+    EN_PROCESO = "EN_PROCESO", "En proceso"
+    CERRADA = "CERRADA", "Cerrada"
+
+
 class Anotacion(models.Model):
     class Tipo(models.TextChoices):
         POSITIVA = "POSITIVA", "Positiva"
@@ -309,8 +331,17 @@ class Anotacion(models.Model):
     asignatura = models.ForeignKey(Asignatura, on_delete=models.SET_NULL, null=True, blank=True)
     descripcion = models.TextField("descripción")
     medida = models.TextField("medida o acción tomada", blank=True)
+    # Derivación a Convivencia Escolar (datos sensibles)
+    derivada = models.BooleanField("derivada a Convivencia Escolar", default=False)
+    protocolo = models.CharField("protocolo activado", max_length=30, choices=Protocolo.choices, blank=True)
+    estado_derivacion = models.CharField("estado de la derivación", max_length=20, choices=EstadoDerivacion.choices,
+                                         blank=True)
+    seguimiento = models.TextField("seguimiento de Convivencia", blank=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     creada = models.DateTimeField(auto_now_add=True)
+
+    # Sugerencia: según el Reglamento Interno, las faltas graves y gravísimas se derivan a Convivencia
+    GRAVEDADES_QUE_SE_DERIVAN = ("GRAVE", "GRAVISIMA")
 
     class Meta:
         verbose_name = "anotación"
@@ -498,3 +529,84 @@ class Funcionario(models.Model):
             return None, None, None
         lectivas = (self.horas_contrato * pct / 100).quantize(Decimal("0.01"))
         return pct, lectivas, self.horas_contrato - lectivas
+
+
+class RedApoyo(models.Model):
+    """Programa o institución externa que atiende al estudiante (dato sensible)."""
+
+    class Institucion(models.TextChoices):
+        MEJOR_NINEZ = "MEJOR_NINEZ", "Servicio Mejor Niñez"
+        SENAME = "SENAME", "SENAME (antecedente histórico)"
+        OLN = "OLN", "Oficina Local de la Niñez (OLN)"
+        OPD = "OPD", "Oficina de Protección de Derechos (OPD)"
+        TRIBUNAL = "TRIBUNAL", "Tribunal de Familia (medida de protección)"
+        CESFAM = "CESFAM", "CESFAM / Salud primaria"
+        COSAM = "COSAM", "COSAM / Salud mental"
+        SENDA = "SENDA", "SENDA Previene"
+        FISCALIA = "FISCALIA", "Fiscalía / Programa de víctimas"
+        HPV = "HPV", "Habilidades para la Vida (JUNAEB)"
+        OTRA = "OTRA", "Otra institución"
+
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="redes_apoyo")
+    institucion = models.CharField("institución", max_length=20, choices=Institucion.choices)
+    programa = models.CharField("programa o detalle", max_length=150, blank=True,
+                                help_text="Ej.: PPF Chillán, PIE, PRM, DAM, residencia, causa RIT P-123-2026.")
+    profesional = models.CharField("profesional de contacto", max_length=150, blank=True)
+    telefono = models.CharField("teléfono / correo de contacto", max_length=100, blank=True)
+    fecha_inicio = models.DateField("desde", null=True, blank=True)
+    fecha_termino = models.DateField("hasta", null=True, blank=True)
+    vigente = models.BooleanField(default=True)
+    observaciones = models.TextField(blank=True)
+    registrada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "red de apoyo externa"
+        verbose_name_plural = "redes de apoyo externas"
+        ordering = ["-vigente", "-fecha_inicio", "-creada"]
+
+    def __str__(self):
+        return f"{self.get_institucion_display()} – {self.estudiante}"
+
+
+class Entrevista(models.Model):
+    """Registro de entrevista (apoderado/a, estudiante o activación de protocolo)."""
+
+    class Tipo(models.TextChoices):
+        APODERADO = "APODERADO", "Entrevista con apoderado(a)"
+        ESTUDIANTE = "ESTUDIANTE", "Entrevista con estudiante"
+        PROTOCOLO = "PROTOCOLO", "Activación de protocolo"
+        OTRA = "OTRA", "Otra entrevista"
+
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="entrevistas")
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.APODERADO)
+    fecha = models.DateField(default=timezone.localdate)
+    hora = models.TimeField(null=True, blank=True)
+    anotacion = models.ForeignKey(Anotacion, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name="entrevistas", verbose_name="anotación relacionada")
+    protocolo = models.CharField("protocolo", max_length=30, choices=Protocolo.choices, blank=True)
+    entrevistado = models.CharField("nombre de la persona entrevistada", max_length=150, blank=True)
+    parentesco = models.CharField("parentesco o relación con el estudiante", max_length=80, blank=True)
+    rut_entrevistado = models.CharField("RUT de la persona entrevistada", max_length=15, blank=True)
+    otros_asistentes = models.CharField("otros asistentes", max_length=250, blank=True)
+    motivo = models.TextField("motivo de la entrevista")
+    desarrollo = models.TextField("desarrollo / relato", blank=True,
+                                  help_text="Registre los hechos de forma objetiva, con las palabras de los participantes.")
+    acuerdos = models.TextField("acuerdos", blank=True)
+    compromisos_apoderado = models.TextField("compromisos del apoderado(a)", blank=True)
+    compromisos_estudiante = models.TextField("compromisos del estudiante", blank=True)
+    compromisos_establecimiento = models.TextField("compromisos del establecimiento", blank=True)
+    derivaciones = models.TextField("derivaciones realizadas", blank=True,
+                                    help_text="Ej.: derivación a OLN, denuncia a Fiscalía/Carabineros/PDI, CESFAM.")
+    fecha_seguimiento = models.DateField("fecha de seguimiento", null=True, blank=True)
+    entrevistador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+                                      related_name="entrevistas_realizadas")
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "entrevista"
+        verbose_name_plural = "entrevistas"
+        ordering = ["-fecha", "-creada"]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} – {self.estudiante} ({self.fecha:%d-%m-%Y})"

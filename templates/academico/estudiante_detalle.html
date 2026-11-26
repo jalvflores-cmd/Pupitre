@@ -79,6 +79,8 @@
       <div class="col-md-3"><label class="form-label small">Asignatura</label>{{ form_anotacion.asignatura }}</div>
       <div class="col-md-7"><label class="form-label small">Descripción *</label>{{ form_anotacion.descripcion }}</div>
       <div class="col-md-5"><label class="form-label small">Medida o acción tomada</label>{{ form_anotacion.medida }}</div>
+      <div class="col-12"><div class="form-check">{{ form_anotacion.derivada }} <label class="form-check-label" for="{{ form_anotacion.derivada.id_for_label }}">Derivar a Convivencia Escolar</label>
+        <span class="form-text ms-1">Las faltas graves y gravísimas se derivan automáticamente.</span></div></div>
       <div class="col-12"><button class="btn btn-primary btn-sm">Registrar</button></div>
     </form>
   </div>
@@ -87,10 +89,59 @@
     {% for a in anotaciones %}
     <tr><td class="small">{{ a.fecha|date:"d-m-Y" }}</td>
       <td><span class="badge {% if a.tipo == 'POSITIVA' %}bg-success{% elif a.tipo == 'NEGATIVA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ a.get_tipo_display }}</span>{% if a.gravedad %} <span class="small">{{ a.get_gravedad_display }}</span>{% endif %}</td>
-      <td>{{ a.descripcion|linebreaksbr }}{% if a.medida %}<div class="small text-muted">Medida: {{ a.medida }}</div>{% endif %}</td>
+      <td>{{ a.descripcion|linebreaksbr }}{% if a.medida %}<div class="small text-muted">Medida: {{ a.medida }}</div>{% endif %}
+        {% if a.derivada %}<div class="mt-1"><span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-arrow-right-circle"></i> Derivada a Convivencia{% if sensibles and a.estado_derivacion %} · {{ a.get_estado_derivacion_display }}{% endif %}</span>
+          {% if sensibles and a.protocolo %}<span class="badge bg-danger-subtle text-danger-emphasis"><i class="bi bi-shield-exclamation"></i> Protocolo: {{ a.get_protocolo_display }}</span>{% endif %}
+          {% if sensibles and a.seguimiento %}<div class="small text-muted mt-1">Seguimiento: {{ a.seguimiento|linebreaksbr }}</div>{% endif %}</div>{% endif %}
+        {% if sensibles %}<div class="mt-1 small">
+          {% if gestiona_convivencia and not solo_lectura %}<a href="{% url 'anotacion_derivacion' a.pk %}">{% if a.derivada %}Gestionar derivación{% else %}Derivar / activar protocolo{% endif %}</a>{% endif %}
+          {% if puede_entrevistar %}{% if gestiona_convivencia and not solo_lectura %} · {% endif %}<a href="{% url 'entrevista_crear' est.pk %}?anotacion={{ a.pk }}">Registrar entrevista</a>{% endif %}
+        </div>{% endif %}</td>
       <td class="small">{{ a.asignatura|default:"" }}</td><td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td>
       <td>{% if gestiona_convivencia or a.autor_id == user.id %}<form method="post" action="{% url 'anotacion_eliminar' a.pk %}" onsubmit="return confirm('¿Eliminar esta anotación?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>
     {% empty %}<tr><td colspan="6" class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
   </table>
 </div>
+{% if sensibles %}
+<div class="row g-4 mt-0">
+  <div class="col-xl-5">
+    <div class="card p-3 p-lg-4 h-100">
+      <div class="d-flex justify-content-between align-items-start"><div><h5 class="mb-0">Redes de apoyo externas</h5>
+        <div class="small text-muted mb-2"><i class="bi bi-lock"></i> Confidencial</div></div>
+        {% if gestiona_convivencia and not solo_lectura %}<a class="btn btn-sm btn-outline-primary" href="{% url 'red_crear' est.pk %}"><i class="bi bi-plus-lg"></i> Agregar</a>{% endif %}</div>
+      {% for r in redes %}
+      <div class="border rounded-3 p-2 mb-2{% if not r.vigente %} opacity-75{% endif %}">
+        <div class="d-flex justify-content-between"><b class="small">{{ r.get_institucion_display }}</b>
+          <span class="badge {% if r.vigente %}bg-success-subtle text-success-emphasis{% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">{% if r.vigente %}Vigente{% else %}Finalizada{% endif %}</span></div>
+        {% if r.programa %}<div class="small">{{ r.programa }}</div>{% endif %}
+        <div class="small text-muted">{% if r.fecha_inicio %}Desde {{ r.fecha_inicio|date:"d-m-Y" }}{% endif %}{% if r.fecha_termino %} hasta {{ r.fecha_termino|date:"d-m-Y" }}{% endif %}{% if r.profesional %} · {{ r.profesional }}{% endif %}{% if r.telefono %} · {{ r.telefono }}{% endif %}</div>
+        {% if r.observaciones %}<div class="small mt-1">{{ r.observaciones|linebreaksbr }}</div>{% endif %}
+        {% if gestiona_convivencia and not solo_lectura %}<a class="small" href="{% url 'red_editar' r.pk %}">Editar</a>{% endif %}
+      </div>
+      {% empty %}<p class="text-muted small mb-0">No hay redes externas registradas (Mejor Niñez, OLN, OPD, Tribunal de Familia, CESFAM, etc.).</p>{% endfor %}
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <div class="card p-3 p-lg-4 h-100">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2"><div><h5 class="mb-0">Entrevistas</h5>
+        <div class="small text-muted mb-2"><i class="bi bi-lock"></i> Confidencial · apoderado(a), estudiante o activación de protocolo</div></div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'entrevista_formato_pdf' est.pk %}"><i class="bi bi-printer"></i> Formato en blanco</a>
+          {% if puede_entrevistar %}<a class="btn btn-sm btn-primary" href="{% url 'entrevista_crear' est.pk %}"><i class="bi bi-plus-lg"></i> Registrar entrevista</a>{% endif %}
+        </div></div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Entrevistado(a)</th><th>Por</th><th></th></tr></thead>
+        {% for e in entrevistas %}
+        <tr><td class="small text-nowrap">{{ e.fecha|date:"d-m-Y" }}</td>
+          <td class="small">{{ e.get_tipo_display }}{% if e.protocolo %}<div class="text-danger-emphasis">{{ e.get_protocolo_display }}</div>{% endif %}</td>
+          <td class="small">{{ e.entrevistado|default:"—" }}{% if e.parentesco %} <span class="text-muted">({{ e.parentesco }})</span>{% endif %}</td>
+          <td class="small">{{ e.entrevistador.get_full_name|default:e.entrevistador.username }}</td>
+          <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{% url 'entrevista_pdf' e.pk %}"><i class="bi bi-file-pdf"></i> PDF</a>
+            {% if not solo_lectura and gestiona_convivencia or e.entrevistador_id == user.id %}<a class="btn btn-sm btn-link" href="{% url 'entrevista_editar' e.pk %}">Editar</a>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted small">Sin entrevistas registradas.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
