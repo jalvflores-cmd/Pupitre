@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card p-4">
+  <h4 class="mb-3">{{ titulo }}</h4>
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="row">
+    {% for f in form %}
+      <div class="col-md-6 mb-3">
+        {% if f.field.widget.input_type == "checkbox" %}
+          <div class="form-check mt-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
+        {% else %}
+          <label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} *{% endif %}</label>{{ f }}
+        {% endif %}
+        {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+        {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    </div>
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+    {% if volver.1 %}<a class="btn btn-link" href="{% url volver.0 volver.1 %}">Cancelar</a>{% else %}<a class="btn btn-link" href="{% url volver.0 %}">Cancelar</a>{% endif %}
+  </form>
+  {% if eliminar %}
+  <form method="post" action="{% url eliminar.0 eliminar.1 %}" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar esta evaluación y todas sus notas?');">{% csrf_token %}
+    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+  </form>
+  {% endif %}
+</div></div></div>
+{% endblock %}

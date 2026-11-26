@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Cursos{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Cursos {{ anio }}</h3>
+  <form class="d-flex gap-2"><select name="anio" class="form-select form-select-sm" onchange="this.form.submit()">
+    {% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></form>
+</div>
+{% for nivel, lista in por_nivel.items %}
+  <h6 class="text-muted mt-3">{{ nivel }}</h6>
+  <div class="row g-3">
+  {% for c in lista %}
+    <div class="col-sm-6 col-md-4 col-xl-3">
+      <a href="{% url 'curso_detalle' c.pk %}" class="card p-3 text-decoration-none text-dark h-100">
+        <div class="fs-5 fw-bold">{{ c.nombre_corto }}</div>
+        <div class="small text-muted">{{ c.n_est }} estudiantes · Jefe: {{ c.profesor_jefe.get_full_name|default:"sin asignar" }}</div>
+      </a>
+    </div>
+  {% endfor %}
+  </div>
+{% empty %}
+  <p class="text-muted">No hay cursos visibles para este año.{% if es_gestion %} Créelos en <a href="{% url 'admin:academico_curso_add' %}">Configuración › Cursos</a> o importando estudiantes desde Excel.{% endif %}</p>
+{% endfor %}
+{% endblock %}

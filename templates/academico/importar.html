@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Importar desde Excel{% endblock %}
+{% block contenido %}
+<h3 class="mb-1">Importar desde Excel</h3>
+<p class="text-muted">Descargue la plantilla, complétela y súbala. Si alguna fila tiene errores no se guarda nada y se muestra el detalle para corregir.</p>
+<div class="row g-4">
+  {% if es_gestion %}
+  <div class="col-lg-4"><div class="card p-3 h-100">
+    <h5><i class="bi bi-people"></i> Estudiantes</h5>
+    <p class="small">RUT, nombres, curso, dirección, teléfonos y apoderado. Si el RUT ya existe se actualizan sus datos. Los cursos que no existan se crean.</p>
+    <a href="{% url 'plantilla' 'estudiantes' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>
+    <form method="post" enctype="multipart/form-data" action="{% url 'importar_estudiantes' %}">{% csrf_token %}
+      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+      <button class="btn btn-primary btn-sm">Importar estudiantes</button>
+    </form>
+  </div></div>
+  {% endif %}
+  <div class="col-lg-4"><div class="card p-3 h-100">
+    <h5><i class="bi bi-123"></i> Notas</h5>
+    <p class="small">La plantilla de cada asignatura trae la lista del curso y las evaluaciones existentes. Puede agregar columnas para nuevas evaluaciones.</p>
+    {% if asignaturas %}
+    <form method="post" enctype="multipart/form-data" id="form-notas">{% csrf_token %}
+      <select class="form-select form-select-sm mb-2" id="sel-ac" required>
+        <option value="">Elija asignatura y curso…</option>
+        {% for ac in asignaturas %}<option value="{{ ac.pk }}">{{ ac.asignatura }} – {{ ac.curso.nombre_corto }}</option>{% endfor %}
+      </select>
+      <a href="#" id="link-plantilla" class="small d-none mb-2"><i class="bi bi-download"></i> Descargar plantilla de esta asignatura</a>
+      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm my-2" required>
+      <button class="btn btn-primary btn-sm">Importar notas</button>
+    </form>
+    {% else %}<p class="text-muted small">No tiene asignaturas a su cargo este año.</p>{% endif %}
+  </div></div>
+  <div class="col-lg-4"><div class="card p-3 h-100">
+    <h5><i class="bi bi-journal-text"></i> Anotaciones</h5>
+    <p class="small">RUT, fecha, tipo (positiva/negativa/observación), gravedad, asignatura y descripción.</p>
+    <a href="{% url 'plantilla' 'anotaciones' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>
+    <form method="post" enctype="multipart/form-data" action="{% url 'importar_anotaciones' %}">{% csrf_token %}
+      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+      <button class="btn btn-primary btn-sm">Importar anotaciones</button>
+    </form>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+var sel = document.getElementById('sel-ac');
+if (sel) sel.addEventListener('change', function () {
+  var link = document.getElementById('link-plantilla'), form = document.getElementById('form-notas');
+  if (!sel.value) { link.classList.add('d-none'); return; }
+  link.href = '{% url "plantilla_notas" "notas" 0 %}'.replace('/0/', '/' + sel.value + '/');
+  form.action = '{% url "importar_notas" 0 %}'.replace('/0/', '/' + sel.value + '/');
+  link.classList.remove('d-none'); link.classList.add('d-block');
+});
+</script>
+{% endblock %}

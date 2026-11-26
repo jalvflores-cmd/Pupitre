@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Convivencia{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Convivencia escolar <span class="text-muted fs-6">({{ total }} anotaciones)</span></h3>
+  <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-3"><select name="curso" class="form-select"><option value="">Todos los cursos</option>
+    {% for c in cursos %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == curso_id %}selected{% endif %}>{{ c.nombre_corto }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><select name="tipo" class="form-select"><option value="">Todos los tipos</option>
+    {% for v, t in tipos %}<option value="{{ v }}" {% if v == tipo %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+  <div class="col-md-1"><button class="btn btn-secondary">Filtrar</button></div>
+</form>
+<p class="small text-muted">Para registrar una anotación, abra la ficha del estudiante. Para cargar varias, use <a href="{% url 'importar' %}">Importar Excel</a>.</p>
+<div class="card p-2"><table class="table table-sm mb-0">
+  <thead><tr><th>Fecha</th><th>Estudiante</th><th>Curso</th><th>Tipo</th><th>Descripción</th><th>Por</th></tr></thead>
+  {% for a in anotaciones %}
+  <tr><td class="small">{{ a.fecha|date:"d-m-Y" }}</td><td><a href="{% url 'estudiante_detalle' a.estudiante_id %}">{{ a.estudiante }}</a></td><td class="small">{{ a.estudiante.curso.nombre_corto }}</td>
+    <td><span class="badge {% if a.tipo == 'POSITIVA' %}bg-success{% elif a.tipo == 'NEGATIVA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ a.get_tipo_display }}</span> <span class="small">{{ a.get_gravedad_display }}</span></td>
+    <td class="small">{{ a.descripcion|truncatechars:140 }}</td><td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

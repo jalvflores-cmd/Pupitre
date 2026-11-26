@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h3 class="mb-4">Hola, {{ user.first_name|default:user.username }}</h3>
+{% if es_gestion %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Cursos este año</div><div class="fs-2 fw-bold">{{ n_cursos }}</div><a href="{% url 'cursos' %}" class="small">Ver cursos</a></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Estudiantes activos</div><div class="fs-2 fw-bold">{{ n_estudiantes }}</div><a href="{% url 'estudiantes' %}" class="small">Ver estudiantes</a></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Asignaturas</div><div class="fs-2 fw-bold">{{ n_asignaturas }}</div><a href="{% url 'admin:academico_asignaturacurso_changelist' %}" class="small">Carga académica</a></div></div>
+</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card p-3">
+      <h5><i class="bi bi-book"></i> Mis asignaturas</h5>
+      {% if mis_asignaturas %}
+      <div class="list-group list-group-flush">
+        {% for ac in mis_asignaturas %}
+        <a href="{% url 'libro_notas' ac.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+          <span><b>{{ ac.asignatura }}</b> · {{ ac.curso.nombre_corto }}</span><span class="text-muted small">{{ ac.n_eval }} evaluaciones</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}<p class="text-muted mb-0">No tiene asignaturas asignadas este año.{% if es_gestion %} Como Dirección/UTP puede ver todos los cursos desde <a href="{% url 'cursos' %}">Cursos</a>.{% endif %}</p>{% endif %}
+    </div>
+    {% if mis_jefaturas %}
+    <div class="card p-3 mt-4">
+      <h5><i class="bi bi-star"></i> Profesor(a) jefe de</h5>
+      {% for c in mis_jefaturas %}<a class="btn btn-outline-primary me-2" href="{% url 'curso_detalle' c.pk %}">{{ c.nombre_corto }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if es_gestion %}
+  <div class="col-lg-6">
+    <div class="card p-3">
+      <h5><i class="bi bi-journal-text"></i> Últimas anotaciones</h5>
+      <table class="table table-sm mb-0">
+        {% for a in ultimas_anotaciones %}
+        <tr><td class="small text-muted">{{ a.fecha|date:"d-m-Y" }}</td>
+          <td><a href="{% url 'estudiante_detalle' a.estudiante_id %}">{{ a.estudiante }}</a> <span class="text-muted small">{{ a.estudiante.curso.nombre_corto }}</span></td>
+          <td><span class="badge {% if a.tipo == 'POSITIVA' %}bg-success{% elif a.tipo == 'NEGATIVA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ a.get_tipo_display }}</span></td></tr>
+        {% empty %}<tr><td class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

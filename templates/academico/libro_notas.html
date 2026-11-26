@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Notas {{ ac }}{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h3 class="mb-0">{{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</h3>
+    <div class="text-muted">Profesor(a): {{ ac.profesor.get_full_name|default:"sin asignar" }} · Año {{ ac.curso.anio }} · <a href="{% url 'curso_detalle' ac.curso.pk %}">Ver curso</a></div></div>
+  <div class="d-flex gap-2">
+    {% if editable %}<a class="btn btn-primary btn-sm" href="{% url 'evaluacion_crear' ac.pk %}"><i class="bi bi-plus-lg"></i> Nueva evaluación</a>
+    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#excel"><i class="bi bi-file-earmark-arrow-up"></i> Cargar desde Excel</button>{% endif %}
+    <a class="btn btn-outline-success btn-sm" href="{% url 'informe_asignatura_excel' ac.pk %}"><i class="bi bi-file-excel"></i> Exportar</a>
+  </div>
+</div>
+{% if editable %}
+<div class="collapse mb-3" id="excel"><div class="card p-3">
+  <p class="mb-2">1. Descargue la <a href="{% url 'plantilla_notas' 'notas' ac.pk %}">plantilla de notas de este curso</a> (incluye la lista de estudiantes y las evaluaciones ya creadas). 2. Complete las notas y súbala aquí.</p>
+  <form method="post" enctype="multipart/form-data" action="{% url 'importar_notas' ac.pk %}" class="d-flex gap-2">{% csrf_token %}
+    <input type="hidden" name="volver" value="{{ request.path }}">
+    <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" required>
+    <button class="btn btn-sm btn-primary">Importar</button>
+  </form>
+</div></div>
+{% endif %}
+{% if not evaluaciones %}
+  <div class="alert alert-info">Aún no hay evaluaciones. {% if editable %}Cree la primera con «Nueva evaluación» o cargue un Excel.{% endif %}</div>
+{% endif %}
+<form method="post">{% csrf_token %}
+<div class="card p-2">
+<div class="table-responsive">
+<table class="table table-sm table-bordered tabla-notas mb-0">
+  <thead class="table-light">
+    <tr><th rowspan="2" class="sticky-col">Estudiante</th>
+      {% if evs_s1 %}<th colspan="{{ evs_s1|length|add:1 }}" class="text-center">1er semestre</th>{% endif %}
+      {% if evs_s2 %}<th colspan="{{ evs_s2|length|add:1 }}" class="text-center">2do semestre</th>{% endif %}
+      <th rowspan="2" class="text-center col-prom">Final</th></tr>
+    <tr>
+      {% for e in evs_s1 %}<th class="text-center small">{% if editable %}<a href="{% url 'evaluacion_editar' e.pk %}" title="Editar evaluación">{{ e.nombre }}</a>{% else %}{{ e.nombre }}{% endif %}<br><span class="text-muted fw-normal">{{ e.fecha|date:"d/m"|default:"" }} · p{{ e.ponderacion|floatformat:"-2" }}</span></th>{% endfor %}
+      {% if evs_s1 %}<th class="text-center col-prom">Prom. S1</th>{% endif %}
+      {% for e in evs_s2 %}<th class="text-center small">{% if editable %}<a href="{% url 'evaluacion_editar' e.pk %}">{{ e.nombre }}</a>{% else %}{{ e.nombre }}{% endif %}<br><span class="text-muted fw-normal">{{ e.fecha|date:"d/m"|default:"" }} · p{{ e.ponderacion|floatformat:"-2" }}</span></th>{% endfor %}
+      {% if evs_s2 %}<th class="text-center col-prom">Prom. S2</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for est, p in filas %}
+    <tr><td class="sticky-col"><a href="{% url 'estudiante_detalle' est.pk %}">{{ est.nombre_completo }}</a></td>
+      {% for e in evs_s1 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota }}" inputmode="decimal">{% else %}<span class="{{ n|clase_nota }}">{{ n|nota }}</span>{% endif %}</td>{% endwith %}{% endfor %}
+      {% if evs_s1 %}<td class="text-center col-prom {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td>{% endif %}
+      {% for e in evs_s2 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota }}" inputmode="decimal">{% else %}<span class="{{ n|clase_nota }}">{{ n|nota }}</span>{% endif %}</td>{% endwith %}{% endfor %}
+      {% if evs_s2 %}<td class="text-center col-prom {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>{% endif %}
+      <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}</td></tr>
+  {% empty %}<tr><td class="text-muted" colspan="30">El curso no tiene estudiantes.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+{% if editable and evaluaciones and filas %}
+<div class="mt-3 d-flex align-items-center gap-3">
+  <button class="btn btn-primary"><i class="bi bi-save"></i> Guardar notas</button>
+  <span class="text-muted small">Notas de 1,0 a 7,0 (puede escribir 5,5 · 5.5 · 55). Deje vacío para borrar una nota.</span>
+</div>
+{% endif %}
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.nota-input').forEach(function (inp) {
+  inp.addEventListener('input', function () {
+    var v = inp.value.trim().replace(',', '.');
+    if (v === '') { inp.classList.remove('invalida', 'nota-roja', 'nota-azul'); return; }
+    var n = parseFloat(v);
+    if (Number.isInteger(n) && n >= 10 && n <= 70) n = n / 10;
+    var ok = !isNaN(n) && n >= 1 && n <= 7 && /^\d+(\.\d)?$/.test(v);
+    inp.classList.toggle('invalida', !ok);
+    inp.classList.toggle('nota-roja', ok && n < 4);
+    inp.classList.toggle('nota-azul', ok && n >= 4);
+  });
+  inp.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') {  // Enter baja a la fila siguiente, como en una planilla
+      ev.preventDefault();
+      var celda = inp.closest('td'), fila = celda.parentElement.nextElementSibling;
+      if (fila) { var sig = fila.children[celda.cellIndex].querySelector('input'); if (sig) { sig.focus(); sig.select(); } }
+    }
+  });
+});
+</script>
+{% endblock %}

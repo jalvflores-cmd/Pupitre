@@ -1,0 +1,32 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("", views.inicio, name="inicio"),
+    path("cursos/", views.cursos, name="cursos"),
+    path("cursos/<int:pk>/", views.curso_detalle, name="curso_detalle"),
+    path("notas/<int:pk>/", views.libro_notas, name="libro_notas"),
+    path("notas/<int:ac_pk>/evaluacion/nueva/", views.evaluacion_form, name="evaluacion_crear"),
+    path("evaluaciones/<int:pk>/editar/", views.evaluacion_form, name="evaluacion_editar"),
+    path("evaluaciones/<int:pk>/eliminar/", views.evaluacion_eliminar, name="evaluacion_eliminar"),
+    path("estudiantes/", views.estudiantes, name="estudiantes"),
+    path("estudiantes/nuevo/", views.estudiante_form, name="estudiante_crear"),
+    path("estudiantes/<int:pk>/", views.estudiante_detalle, name="estudiante_detalle"),
+    path("estudiantes/<int:pk>/editar/", views.estudiante_form, name="estudiante_editar"),
+    path("estudiantes/<int:est_pk>/anotacion/", views.anotacion_crear, name="anotacion_crear"),
+    path("anotaciones/<int:pk>/eliminar/", views.anotacion_eliminar, name="anotacion_eliminar"),
+    path("convivencia/", views.convivencia, name="convivencia"),
+    path("importar/", views.importar, name="importar"),
+    path("importar/estudiantes/", views.importar_estudiantes, name="importar_estudiantes"),
+    path("importar/notas/<int:pk>/", views.importar_notas, name="importar_notas"),
+    path("importar/anotaciones/", views.importar_anotaciones, name="importar_anotaciones"),
+    path("plantillas/<str:tipo>/", views.plantilla, name="plantilla"),
+    path("plantillas/<str:tipo>/<int:pk>/", views.plantilla, name="plantilla_notas"),
+    path("informes/", views.informes, name="informes"),
+    path("informes/asignatura/<int:pk>/excel/", views.informe_notas_asignatura, name="informe_asignatura_excel"),
+    path("informes/curso/<int:pk>/notas.pdf", views.informe_notas_pdf, name="informe_notas_pdf"),
+    path("informes/curso/<int:pk>/final.pdf", views.informe_final_pdf, name="informe_final_pdf"),
+    path("informes/curso/<int:pk>/final.xlsx", views.informe_final_excel, name="informe_final_excel"),
+    path("informes/curso/<int:pk>/acta.pdf", views.acta_final_pdf, name="acta_final_pdf"),
+]

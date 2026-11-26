@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}{{ est.nombre_completo }}{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h3 class="mb-0">{{ est.nombres }} {{ est.apellido_paterno }} {{ est.apellido_materno }}{% if not est.activo %} <span class="badge bg-secondary fs-6">Retirado</span>{% endif %}</h3>
+    <div class="text-muted">RUT {{ est.rut_formateado }} · {% if est.curso %}<a href="{% url 'curso_detalle' est.curso.pk %}">{{ est.curso }}</a>{% else %}Sin curso{% endif %}</div></div>
+  <div class="d-flex gap-2">
+    {% if informes %}
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_notas_pdf' est.curso.pk %}?estudiante={{ est.pk }}"><i class="bi bi-file-pdf"></i> Informe de notas</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_final_pdf' est.curso.pk %}?estudiante={{ est.pk }}"><i class="bi bi-file-pdf"></i> Informe final</a>
+    {% endif %}
+    {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'estudiante_editar' est.pk %}"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card p-3">
+      <h5>Datos personales y contacto</h5>
+      <dl class="row small mb-0">
+        <dt class="col-5">Fecha nacimiento</dt><dd class="col-7">{{ est.fecha_nacimiento|date:"d-m-Y"|default:"—" }}</dd>
+        <dt class="col-5">Dirección</dt><dd class="col-7">{{ est.direccion|default:"—" }}{% if est.comuna %}, {{ est.comuna }}{% endif %}</dd>
+        <dt class="col-5">Teléfono</dt><dd class="col-7">{{ est.telefono|default:"—" }}</dd>
+        <dt class="col-5">Email</dt><dd class="col-7">{{ est.email|default:"—" }}</dd>
+        <dt class="col-5 border-top pt-2">Apoderado(a)</dt><dd class="col-7 border-top pt-2">{{ est.apoderado_nombre|default:"—" }}{% if est.apoderado_rut %}<br><span class="text-muted">{{ est.apoderado_rut|rut }}</span>{% endif %}</dd>
+        <dt class="col-5">Tel. apoderado</dt><dd class="col-7">{{ est.apoderado_telefono|default:"—" }}</dd>
+        <dt class="col-5">Emergencia</dt><dd class="col-7">{{ est.contacto_emergencia|default:"—" }} {{ est.telefono_emergencia }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card p-3">
+      <h5>Calificaciones</h5>
+      {% if resumen %}
+      <table class="table table-sm tabla-notas mb-0">
+        <thead><tr><th>Asignatura</th><th class="text-center">S1</th><th class="text-center">S2</th><th class="text-center col-prom">Final</th></tr></thead>
+        <tbody>
+        {% for p in resumen.asignaturas %}
+          <tr><td><a href="{% url 'libro_notas' p.asignatura_curso.pk %}">{{ p.asignatura_curso.asignatura }}</a></td>
+            <td class="text-center {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td><td class="text-center {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>
+            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}</td></tr>
+        {% endfor %}
+        </tbody>
+        {% if informes %}<tfoot><tr class="fw-bold"><td>Promedio general</td><td class="text-center">{{ resumen.promedio_s1|nota }}</td><td class="text-center">{{ resumen.promedio_s2|nota }}</td><td class="text-center col-prom">{{ resumen.promedio_general|nota }}</td></tr>
+        <tr><td colspan="4" class="small">Situación: <b>{{ resumen.situacion }}</b></td></tr></tfoot>{% endif %}
+      </table>
+      {% else %}<p class="text-muted mb-0">Sin calificaciones.</p>{% endif %}
+    </div>
+  </div>
+</div>
+<div class="card p-3 mt-4">
+  <div class="d-flex justify-content-between"><h5>Convivencia escolar (anotaciones)</h5>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nueva"><i class="bi bi-plus-lg"></i> Nueva anotación</button></div>
+  <div class="collapse" id="nueva">
+    <form method="post" action="{% url 'anotacion_crear' est.pk %}" class="row g-2 border rounded p-2 my-2">{% csrf_token %}
+      <div class="col-md-3"><label class="form-label small">Fecha</label>{{ form_anotacion.fecha }}</div>
+      <div class="col-md-3"><label class="form-label small">Tipo</label>{{ form_anotacion.tipo }}</div>
+      <div class="col-md-3"><label class="form-label small">Gravedad (si es negativa)</label>{{ form_anotacion.gravedad }}</div>
+      <div class="col-md-3"><label class="form-label small">Asignatura</label>{{ form_anotacion.asignatura }}</div>
+      <div class="col-md-7"><label class="form-label small">Descripción *</label>{{ form_anotacion.descripcion }}</div>
+      <div class="col-md-5"><label class="form-label small">Medida o acción tomada</label>{{ form_anotacion.medida }}</div>
+      <div class="col-12"><button class="btn btn-primary btn-sm">Registrar</button></div>
+    </form>
+  </div>
+  <table class="table table-sm mt-2 mb-0">
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Asignatura</th><th>Registrada por</th><th></th></tr></thead>
+    {% for a in anotaciones %}
+    <tr><td class="small">{{ a.fecha|date:"d-m-Y" }}</td>
+      <td><span class="badge {% if a.tipo == 'POSITIVA' %}bg-success{% elif a.tipo == 'NEGATIVA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ a.get_tipo_display }}</span>{% if a.gravedad %} <span class="small">{{ a.get_gravedad_display }}</span>{% endif %}</td>
+      <td>{{ a.descripcion|linebreaksbr }}{% if a.medida %}<div class="small text-muted">Medida: {{ a.medida }}</div>{% endif %}</td>
+      <td class="small">{{ a.asignatura|default:"" }}</td><td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td>
+      <td>{% if es_gestion or a.autor_id == user.id %}<form method="post" action="{% url 'anotacion_eliminar' a.pk %}" onsubmit="return confirm('¿Eliminar esta anotación?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

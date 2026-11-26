@@ -1,0 +1,408 @@
+from collections import defaultdict
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Count, Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.text import slugify
+from django.views.decorators.http import require_POST
+
+from . import exportacion, importacion
+from .calculos import resumen_curso
+from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm
+from .models import Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Estudiante, Evaluacion, anio_actual
+from .permisos import (
+    asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
+    puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
+)
+
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _descarga(contenido, nombre, tipo):
+    respuesta = HttpResponse(contenido, content_type=tipo)
+    respuesta["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return respuesta
+
+
+def _nombre_archivo(*partes, ext):
+    return "_".join(slugify(str(p)) for p in partes if p) + f".{ext}"
+
+
+# --------------------------------------------------------------------------- Inicio y cursos
+
+@login_required
+def inicio(request):
+    user = request.user
+    contexto = {"mis_asignaturas": AsignaturaCurso.objects.filter(profesor=user, curso__anio=anio_actual())
+                .select_related("curso__nivel", "asignatura").annotate(n_eval=Count("evaluaciones")),
+                "mis_jefaturas": Curso.objects.filter(profesor_jefe=user, anio=anio_actual()).select_related("nivel")}
+    if es_gestion(user):
+        contexto.update({
+            "n_cursos": Curso.objects.filter(anio=anio_actual()).count(),
+            "n_estudiantes": Estudiante.objects.filter(activo=True).count(),
+            "n_asignaturas": Asignatura.objects.count(),
+            "ultimas_anotaciones": Anotacion.objects.select_related("estudiante__curso__nivel")[:8],
+        })
+    return render(request, "academico/inicio.html", contexto)
+
+
+@login_required
+def cursos(request):
+    visibles = cursos_visibles(request.user)
+    anios = sorted(set(visibles.values_list("anio", flat=True)), reverse=True) or [anio_actual()]
+    try:
+        anio = int(request.GET.get("anio") or anio_actual())
+    except ValueError:
+        anio = anio_actual()
+    lista = (visibles.filter(anio=anio).select_related("nivel", "profesor_jefe")
+             .annotate(n_est=Count("estudiantes", filter=Q(estudiantes__activo=True), distinct=True)))
+    por_nivel = defaultdict(list)
+    for c in lista:
+        por_nivel[c.nivel].append(c)
+    return render(request, "academico/cursos.html", {"por_nivel": dict(por_nivel), "anios": anios, "anio": anio})
+
+
+@login_required
+def curso_detalle(request, pk):
+    curso = get_object_or_404(Curso.objects.select_related("nivel", "profesor_jefe"), pk=pk)
+    exigir(puede_ver_curso(request.user, curso))
+    asignaturas = [ac for ac in curso.asignaturas_curso.select_related("asignatura", "profesor")
+                   if puede_ver_asignatura_curso(request.user, ac)]
+    _, _, resumenes = resumen_curso(curso, asignaturas)
+    return render(request, "academico/curso_detalle.html", {
+        "curso": curso, "asignaturas": asignaturas, "resumenes": resumenes,
+        "informes": puede_ver_informe_curso(request.user, curso),
+        "n_anotaciones": Anotacion.objects.filter(estudiante__curso=curso).count(),
+    })
+
+
+# --------------------------------------------------------------------------- Libro de notas
+
+@login_required
+def libro_notas(request, pk):
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura", "profesor"), pk=pk)
+    exigir(puede_ver_asignatura_curso(request.user, ac))
+    editable = puede_editar_notas(request.user, ac)
+    evaluaciones = list(ac.evaluaciones.all())
+    estudiantes = list(ac.curso.estudiantes.filter(activo=True))
+
+    if request.method == "POST":
+        exigir(editable)
+        errores, cambios = [], 0
+        existentes = {(c.estudiante_id, c.evaluacion_id): c
+                      for c in Calificacion.objects.filter(evaluacion__in=evaluaciones)}
+        with transaction.atomic():
+            for est in estudiantes:
+                for ev in evaluaciones:
+                    campo = f"n_{est.id}_{ev.id}"
+                    if campo not in request.POST:
+                        continue
+                    try:
+                        nota = importacion.leer_nota(request.POST[campo].strip())
+                    except ValueError as e:
+                        errores.append(f"{est.nombre_completo} – {ev.nombre}: {e}")
+                        continue
+                    actual = existentes.get((est.id, ev.id))
+                    if nota is None and actual:
+                        actual.delete()
+                        cambios += 1
+                    elif nota is not None and (actual is None or actual.nota != nota):
+                        Calificacion.objects.update_or_create(evaluacion=ev, estudiante=est, defaults={"nota": nota})
+                        cambios += 1
+            if errores:
+                transaction.set_rollback(True)
+        if errores:
+            for e in errores[:15]:
+                messages.error(request, e)
+            messages.warning(request, "No se guardó ningún cambio. Corrija las notas marcadas e intente de nuevo.")
+        else:
+            messages.success(request, f"Notas guardadas ({cambios} cambios).")
+            return redirect("libro_notas", pk=ac.pk)
+
+    _, _, resumenes = resumen_curso(ac.curso, [ac], estudiantes)
+    filas = [(r.estudiante, r.asignaturas[0]) for r in resumenes]
+    return render(request, "academico/libro_notas.html", {
+        "ac": ac, "evaluaciones": evaluaciones, "filas": filas, "editable": editable,
+        "evs_s1": [e for e in evaluaciones if e.semestre == 1], "evs_s2": [e for e in evaluaciones if e.semestre == 2],
+    })
+
+
+@login_required
+def evaluacion_form(request, ac_pk=None, pk=None):
+    if pk:
+        evaluacion = get_object_or_404(Evaluacion, pk=pk)
+        ac = evaluacion.asignatura_curso
+    else:
+        ac = get_object_or_404(AsignaturaCurso, pk=ac_pk)
+        evaluacion = Evaluacion(asignatura_curso=ac)
+    exigir(puede_editar_notas(request.user, ac))
+    form = EvaluacionForm(request.POST or None, instance=evaluacion)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Evaluación guardada.")
+        return redirect("libro_notas", pk=ac.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": f"{'Editar' if pk else 'Nueva'} evaluación – {ac}",
+        "volver": ("libro_notas", ac.pk),
+        "eliminar": ("evaluacion_eliminar", pk) if pk else None,
+    })
+
+
+@login_required
+@require_POST
+def evaluacion_eliminar(request, pk):
+    evaluacion = get_object_or_404(Evaluacion, pk=pk)
+    ac = evaluacion.asignatura_curso
+    exigir(puede_editar_notas(request.user, ac))
+    evaluacion.delete()
+    messages.success(request, f"Evaluación «{evaluacion.nombre}» eliminada junto con sus notas.")
+    return redirect("libro_notas", pk=ac.pk)
+
+
+# --------------------------------------------------------------------------- Estudiantes
+
+@login_required
+def estudiantes(request):
+    qs = estudiantes_visibles(request.user).select_related("curso__nivel")
+    q = request.GET.get("q", "").strip()
+    curso_id = request.GET.get("curso", "")
+    inactivos = request.GET.get("inactivos") == "1"
+    if q:
+        limpio = q.replace(".", "")
+        qs = qs.filter(Q(rut__icontains=limpio) | Q(nombres__icontains=q) | Q(apellido_paterno__icontains=q)
+                       | Q(apellido_materno__icontains=q))
+    if curso_id.isdigit():
+        qs = qs.filter(curso_id=curso_id)
+    if not inactivos:
+        qs = qs.filter(activo=True)
+    if request.GET.get("exportar") == "excel":
+        return _descarga(exportacion.excel_estudiantes(qs), "estudiantes.xlsx", XLSX)
+    return render(request, "academico/estudiantes.html", {
+        "estudiantes": qs[:500], "total": qs.count(), "q": q, "curso_id": curso_id, "inactivos": inactivos,
+        "cursos": cursos_visibles(request.user).filter(anio=anio_actual()).select_related("nivel"),
+    })
+
+
+@login_required
+def estudiante_detalle(request, pk):
+    est = get_object_or_404(Estudiante.objects.select_related("curso__nivel", "curso__profesor_jefe"), pk=pk)
+    exigir(puede_ver_estudiante(request.user, est))
+    resumen, informes = None, False
+    if est.curso:
+        acs = [ac for ac in est.curso.asignaturas_curso.select_related("asignatura", "profesor")
+               if puede_ver_asignatura_curso(request.user, ac)]
+        _, evaluaciones, resumenes = resumen_curso(est.curso, acs, [est])
+        resumen = resumenes[0] if resumenes else None
+        informes = puede_ver_informe_curso(request.user, est.curso)
+    return render(request, "academico/estudiante_detalle.html", {
+        "est": est, "resumen": resumen, "informes": informes,
+        "anotaciones": est.anotaciones.select_related("asignatura", "autor"),
+        "form_anotacion": AnotacionForm(asignaturas=_asignaturas_para_anotar(request.user, est)),
+    })
+
+
+@login_required
+@solo_gestion
+def estudiante_form(request, pk=None):
+    est = get_object_or_404(Estudiante, pk=pk) if pk else Estudiante()
+    form = EstudianteForm(request.POST or None, instance=est)
+    form.fields["curso"].queryset = Curso.objects.select_related("nivel").filter(anio__gte=anio_actual() - 1)
+    if request.method == "POST" and form.is_valid():
+        est = form.save()
+        messages.success(request, f"Estudiante {est} guardado.")
+        return redirect("estudiante_detalle", pk=est.pk)
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": "Editar estudiante" if pk else "Nuevo estudiante",
+        "volver": ("estudiante_detalle", pk) if pk else ("estudiantes", None),
+    })
+
+
+# --------------------------------------------------------------------------- Convivencia
+
+def _asignaturas_para_anotar(user, est):
+    if es_gestion(user) or not est.curso:
+        return Asignatura.objects.all()
+    return Asignatura.objects.filter(cursos__curso=est.curso, cursos__profesor=user)
+
+
+@login_required
+@require_POST
+def anotacion_crear(request, est_pk):
+    est = get_object_or_404(Estudiante, pk=est_pk)
+    exigir(puede_ver_estudiante(request.user, est))
+    form = AnotacionForm(request.POST, asignaturas=_asignaturas_para_anotar(request.user, est))
+    if form.is_valid():
+        anotacion = form.save(commit=False)
+        anotacion.estudiante, anotacion.autor = est, request.user
+        anotacion.save()
+        messages.success(request, "Anotación registrada.")
+    else:
+        for campo, errs in form.errors.items():
+            messages.error(request, f"{campo}: {', '.join(errs)}")
+    return redirect("estudiante_detalle", pk=est.pk)
+
+
+@login_required
+@require_POST
+def anotacion_eliminar(request, pk):
+    anotacion = get_object_or_404(Anotacion, pk=pk)
+    exigir(es_gestion(request.user) or anotacion.autor_id == request.user.id)
+    anotacion.delete()
+    messages.success(request, "Anotación eliminada.")
+    return redirect("estudiante_detalle", pk=anotacion.estudiante_id)
+
+
+@login_required
+def convivencia(request):
+    qs = Anotacion.objects.filter(estudiante__in=estudiantes_visibles(request.user)).select_related(
+        "estudiante__curso__nivel", "asignatura", "autor")
+    curso_id, tipo = request.GET.get("curso", ""), request.GET.get("tipo", "")
+    curso = None
+    if curso_id.isdigit():
+        curso = get_object_or_404(Curso, pk=curso_id)
+        qs = qs.filter(estudiante__curso=curso)
+    if tipo in Anotacion.Tipo.values:
+        qs = qs.filter(tipo=tipo)
+    if request.GET.get("exportar") == "excel":
+        return _descarga(exportacion.excel_anotaciones(qs, str(curso or "Todos los cursos visibles")),
+                         _nombre_archivo("anotaciones", curso, ext="xlsx"), XLSX)
+    return render(request, "academico/convivencia.html", {
+        "anotaciones": qs[:300], "total": qs.count(), "curso_id": curso_id, "tipo": tipo,
+        "tipos": Anotacion.Tipo.choices,
+        "cursos": cursos_visibles(request.user).filter(anio=anio_actual()).select_related("nivel"),
+    })
+
+
+# --------------------------------------------------------------------------- Importación
+
+@login_required
+def importar(request):
+    return render(request, "academico/importar.html", {
+        "form": ArchivoExcelForm(),
+        "asignaturas": [ac for ac in asignaturas_curso_visibles(request.user).filter(curso__anio=anio_actual())
+                        if puede_editar_notas(request.user, ac)],
+    })
+
+
+def _procesar_importacion(request, funcion, *args):
+    form = ArchivoExcelForm(request.POST, request.FILES)
+    if not form.is_valid():
+        for errs in form.errors.values():
+            messages.error(request, " ".join(errs))
+        return None
+    try:
+        return funcion(form.cleaned_data["archivo"], *args)
+    except importacion.ErrorImportacion as e:
+        for err in e.errores[:25]:
+            messages.error(request, err)
+        if len(e.errores) > 25:
+            messages.error(request, f"… y {len(e.errores) - 25} errores más.")
+        messages.warning(request, "No se importó nada. Corrija el archivo y vuelva a intentarlo.")
+    except Exception:  # archivo dañado o con formato inesperado
+        messages.error(request, "No se pudo leer el archivo. Verifique que sea un Excel .xlsx válido.")
+    return None
+
+
+@login_required
+@solo_gestion
+@require_POST
+def importar_estudiantes(request):
+    r = _procesar_importacion(request, importacion.importar_estudiantes)
+    if r:
+        messages.success(request, f"Importación lista: {r['creados']} estudiantes nuevos, {r['actualizados']} actualizados.")
+    return redirect("importar")
+
+
+@login_required
+@require_POST
+def importar_notas(request, pk):
+    ac = get_object_or_404(AsignaturaCurso, pk=pk)
+    exigir(puede_editar_notas(request.user, ac))
+    r = _procesar_importacion(request, importacion.importar_notas, ac)
+    if r:
+        messages.success(request, f"Se importaron {r['notas']} notas en {r['evaluaciones']} evaluaciones.")
+        return redirect("libro_notas", pk=ac.pk)
+    return redirect(request.POST.get("volver") or "importar")
+
+
+@login_required
+@require_POST
+def importar_anotaciones(request):
+    r = _procesar_importacion(request, importacion.importar_anotaciones,
+                              estudiantes_visibles(request.user), request.user)
+    if r:
+        messages.success(request, f"Se registraron {r['creadas']} anotaciones.")
+    return redirect("importar")
+
+
+@login_required
+def plantilla(request, tipo, pk=None):
+    if tipo == "estudiantes":
+        exigir(es_gestion(request.user))
+        return _descarga(importacion.plantilla_estudiantes(), "plantilla_estudiantes.xlsx", XLSX)
+    if tipo == "anotaciones":
+        return _descarga(importacion.plantilla_anotaciones(), "plantilla_anotaciones.xlsx", XLSX)
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura"), pk=pk)
+    exigir(puede_editar_notas(request.user, ac))
+    return _descarga(importacion.plantilla_notas(ac),
+                     _nombre_archivo("notas", ac.asignatura, ac.curso.nombre_corto, ext="xlsx"), XLSX)
+
+
+# --------------------------------------------------------------------------- Informes
+
+@login_required
+def informes(request):
+    visibles = cursos_visibles(request.user).filter(anio=anio_actual()).select_related("nivel")
+    return render(request, "academico/informes.html", {
+        "cursos_completos": [c for c in visibles if puede_ver_informe_curso(request.user, c)],
+        "asignaturas": asignaturas_curso_visibles(request.user).filter(curso__anio=anio_actual()),
+    })
+
+
+@login_required
+def informe_notas_asignatura(request, pk):
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura", "profesor"), pk=pk)
+    exigir(puede_ver_asignatura_curso(request.user, ac))
+    return _descarga(exportacion.excel_notas_asignatura(ac),
+                     _nombre_archivo("notas", ac.asignatura, ac.curso.nombre_corto, ac.curso.anio, ext="xlsx"), XLSX)
+
+
+def _curso_y_estudiantes(request, pk):
+    curso = get_object_or_404(Curso.objects.select_related("nivel", "profesor_jefe"), pk=pk)
+    exigir(puede_ver_informe_curso(request.user, curso))
+    estudiantes_qs = curso.estudiantes.filter(activo=True)
+    est_id = request.GET.get("estudiante", "")
+    if est_id.isdigit():
+        estudiantes_qs = curso.estudiantes.filter(pk=est_id)
+    return curso, list(estudiantes_qs), (estudiantes_qs[0] if est_id.isdigit() and estudiantes_qs else None)
+
+
+@login_required
+def informe_notas_pdf(request, pk):
+    curso, ests, uno = _curso_y_estudiantes(request, pk)
+    nombre = _nombre_archivo("informe_notas", uno.rut if uno else curso.nombre_corto, curso.anio, ext="pdf")
+    return _descarga(exportacion.pdf_informe_notas(curso, ests), nombre, "application/pdf")
+
+
+@login_required
+def informe_final_pdf(request, pk):
+    curso, ests, uno = _curso_y_estudiantes(request, pk)
+    nombre = _nombre_archivo("informe_final", uno.rut if uno else curso.nombre_corto, curso.anio, ext="pdf")
+    return _descarga(exportacion.pdf_informe_final(curso, ests), nombre, "application/pdf")
+
+
+@login_required
+def informe_final_excel(request, pk):
+    curso, _, _ = _curso_y_estudiantes(request, pk)
+    return _descarga(exportacion.excel_informe_final_curso(curso),
+                     _nombre_archivo("informe_final", curso.nombre_corto, curso.anio, ext="xlsx"), XLSX)
+
+
+@login_required
+def acta_final_pdf(request, pk):
+    curso, _, _ = _curso_y_estudiantes(request, pk)
+    return _descarga(exportacion.pdf_acta_final_curso(curso),
+                     _nombre_archivo("acta_final", curso.nombre_corto, curso.anio, ext="pdf"), "application/pdf")

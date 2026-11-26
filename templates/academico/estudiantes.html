@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Estudiantes{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Estudiantes <span class="text-muted fs-6">({{ total }})</span></h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+    {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'estudiante_crear' %}"><i class="bi bi-person-plus"></i> Nuevo estudiante</a>{% endif %}
+  </div>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-5"><input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por RUT o nombre"></div>
+  <div class="col-md-3"><select name="curso" class="form-select"><option value="">Todos los cursos</option>
+    {% for c in cursos %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == curso_id %}selected{% endif %}>{{ c.nombre_corto }}</option>{% endfor %}</select></div>
+  <div class="col-md-2 form-check mt-2 ms-2"><input type="checkbox" class="form-check-input" name="inactivos" value="1" id="inac" {% if inactivos %}checked{% endif %}><label for="inac" class="form-check-label">Incluir retirados</label></div>
+  <div class="col-md-1"><button class="btn btn-secondary w-100"><i class="bi bi-search"></i></button></div>
+</form>
+<div class="card p-2"><table class="table table-sm table-hover mb-0">
+  <thead><tr><th>RUT</th><th>Estudiante</th><th>Curso</th><th>Teléfono</th><th>Apoderado</th><th>Tel. apoderado</th></tr></thead>
+  <tbody>
+  {% for e in estudiantes %}
+    <tr class="{% if not e.activo %}text-muted{% endif %}"><td>{{ e.rut_formateado }}</td><td><a href="{% url 'estudiante_detalle' e.pk %}">{{ e.nombre_completo }}</a>{% if not e.activo %} <span class="badge bg-secondary">Retirado</span>{% endif %}</td>
+      <td>{{ e.curso.nombre_corto|default:"—" }}</td><td>{{ e.telefono }}</td><td>{{ e.apoderado_nombre }}</td><td>{{ e.apoderado_telefono }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-muted">No se encontraron estudiantes.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% if total > 500 %}<p class="small text-muted mt-2">Mostrando los primeros 500. Use la búsqueda o el filtro por curso.</p>{% endif %}
+{% endblock %}

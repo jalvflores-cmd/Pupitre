@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}{{ curso.nombre_corto }}{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h3 class="mb-0">{{ curso }}</h3>
+    <div class="text-muted">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · {{ resumenes|length }} estudiantes · <a href="{% url 'convivencia' %}?curso={{ curso.pk }}">{{ n_anotaciones }} anotaciones</a></div></div>
+  {% if informes %}
+  <div class="btn-group">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_notas_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Informes de notas</a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_final_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Informes finales</a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'acta_final_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Acta final</a>
+    <a class="btn btn-outline-success btn-sm" href="{% url 'informe_final_excel' curso.pk %}"><i class="bi bi-file-excel"></i> Excel final</a>
+  </div>
+  {% endif %}
+</div>
+<div class="card p-3 mb-4">
+  <h5>Asignaturas</h5>
+  <div class="d-flex flex-wrap gap-2">
+  {% for ac in asignaturas %}
+    <a class="btn btn-light border" href="{% url 'libro_notas' ac.pk %}"><b>{{ ac.asignatura }}</b><br><span class="small text-muted">{{ ac.profesor.get_full_name|default:"sin profesor" }}</span></a>
+  {% empty %}<span class="text-muted">Sin asignaturas visibles.</span>{% endfor %}
+  </div>
+</div>
+<div class="card p-3">
+  <h5>Promedios finales</h5>
+  <div class="table-responsive">
+  <table class="table table-sm table-hover tabla-notas">
+    <thead><tr><th>#</th><th>RUT</th><th class="sticky-col">Estudiante</th>
+      {% for ac in asignaturas %}<th class="text-center small" style="white-space:normal;min-width:5.5rem">{{ ac.asignatura }}</th>{% endfor %}
+      <th class="text-center col-prom">Promedio</th>{% if informes %}<th>Situación</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in resumenes %}
+      <tr><td class="text-muted">{{ forloop.counter }}</td><td class="small">{{ r.estudiante.rut_formateado }}</td>
+        <td class="sticky-col"><a href="{% url 'estudiante_detalle' r.estudiante.pk %}">{{ r.estudiante.nombre_completo }}</a></td>
+        {% for p in r.asignaturas %}<td class="text-center {{ p.final|clase_nota }}">{{ p.final|nota }}</td>{% endfor %}
+        <td class="text-center col-prom {{ r.promedio_general|clase_nota }}">{{ r.promedio_general|nota }}</td>
+        {% if informes %}<td class="small">{{ r.situacion }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="20" class="text-muted">No hay estudiantes en este curso.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}
