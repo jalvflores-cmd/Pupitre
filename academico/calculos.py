@@ -48,10 +48,15 @@ class PromedioAsignatura:
     s1: Decimal | None = None
     s2: Decimal | None = None
     final: Decimal | None = None
+    aplica: bool = True  # False: Religión de otro credo
 
     @property
     def incide(self):
-        return self.asignatura_curso.asignatura.incide_en_promedio
+        return self.aplica and self.asignatura_curso.asignatura.incide_en_promedio
+
+    @property
+    def con_concepto(self):
+        return self.asignatura_curso.asignatura.con_concepto
 
     @property
     def aprobada(self):
@@ -131,6 +136,9 @@ def resumen_curso(curso, asignaturas_curso=None, estudiantes=None):
     for est in estudiantes:
         filas = []
         for ac in asignaturas_curso:
+            if not est.cursa(ac.asignatura):
+                filas.append(PromedioAsignatura(ac, {}, aplica=False))
+                continue
             notas_ac = notas[(est.id, ac.id)]
             s1, s2, final = calcular_promedios(evaluaciones[ac.id], notas_ac)
             filas.append(PromedioAsignatura(ac, notas_ac, s1, s2, final))

@@ -11,7 +11,7 @@
         <thead><tr><th style="width:1rem"></th><th>Curso</th><th>Profesor(a)</th><th class="text-center">Horas/sem.</th><th></th><th></th></tr></thead>
         {% for t in talleres %}
         {% ifchanged t.asignatura_id %}<tr><td colspan="6" class="pt-3 border-0"><span class="fw-semibold">{{ t.asignatura }}</span>
-          <span class="badge {% if t.asignatura.incide_en_promedio %}bg-warning{% else %}bg-secondary{% endif %} ms-1">{% if t.asignatura.incide_en_promedio %}Incide en promedio{% else %}Se evalúa con concepto{% endif %}</span></td></tr>{% endifchanged %}
+          <span class="badge {% if t.asignatura.incide_en_promedio %}bg-warning{% else %}bg-secondary{% endif %} ms-1">{% if t.asignatura.incide_en_promedio %}Incide en promedio{% else %}No incide en promedio{% endif %}</span></td></tr>{% endifchanged %}
         <tr><td></td><td class="text-nowrap">{{ t.curso.nombre_corto }}</td>
           <td>{{ t.profesor.get_full_name|default:"Sin asignar" }}</td>
           <td class="text-center">{{ t.horas_semanales|floatformat:"-1"|default:"—" }}</td>

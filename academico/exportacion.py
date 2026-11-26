@@ -74,6 +74,7 @@ def excel_notas_asignatura(ac):
         titulos += [f"{e.nombre} (S{s})" for e in evs if e.semestre == s] + [f"Promedio S{s}"]
     titulos.append("Promedio final")
     _xl_encabezado(hoja, 5, titulos)
+    resumenes = [r for r in resumenes if r.asignaturas[0].aplica]
     for i, r in enumerate(resumenes, start=1):
         pa = r.asignaturas[0]
         fila = [i, r.estudiante.rut_formateado, r.estudiante.nombre_completo]
@@ -99,7 +100,8 @@ def excel_informe_final_curso(curso):
                    + ["Promedio general", "Situación final"])
     for i, r in enumerate(resumenes, start=1):
         hoja.append([i, r.estudiante.rut_formateado, r.estudiante.nombre_completo]
-                    + [_xl_nota(p.final) if p.incide else concepto(p.final) for p in r.asignaturas]
+                    + [(concepto(p.final) if p.con_concepto else _xl_nota(p.final)) if p.aplica else None
+                       for p in r.asignaturas]
                     + [_xl_nota(r.promedio_general), r.situacion])
     _xl_pintar_notas(hoja, 6, 4)
     hoja.row_dimensions[5].height = 45
@@ -332,7 +334,7 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
         historia.append(Spacer(1, 10))
         datos = [["Asignatura", "Calificaciones 1er semestre", "Prom.\n1er sem.", "Calificaciones 2do semestre",
                   "Prom.\n2do sem.", "Prom.\nfinal"]]
-        for pa in r.asignaturas:
+        for pa in [p for p in r.asignaturas if p.aplica]:
             evs = evaluaciones[pa.asignatura_curso.id]
             notas_sem = []
             for sem in (1, 2):
@@ -343,7 +345,7 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
                         txt = formato_nota(n)
                         partes.append(f'<font color="#C00000">{txt}</font>' if n < NOTA_APROBACION else txt)
                 notas_sem.append(Paragraph("&nbsp;&nbsp;".join(partes) or "", E_CELDA_C))
-            final = formato_nota(pa.final) if pa.incide else (f"{concepto(pa.final)}" if pa.final is not None else "")
+            final = concepto(pa.final) if pa.con_concepto else formato_nota(pa.final)
             nombre = str(pa.asignatura_curso.asignatura) + ("" if pa.incide else " *")
             datos.append([Paragraph(nombre, E_CELDA), notas_sem[0], formato_nota(pa.s1),
                           notas_sem[1], formato_nota(pa.s2), final])
@@ -354,9 +356,10 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
         historia += [t, Spacer(1, 8)]
         historia.append(_tabla_datos([("Asistencia", _asistencia_txt(e), "Escala", "1,0 a 7,0 · aprobación 4,0")],
                                      [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
-        if any(not pa.incide for pa in r.asignaturas):
-            historia.append(Paragraph("* No incide en el promedio ni en la promoción; se informa con concepto: "
-                                      "MB muy bueno, B bueno, S suficiente, I insuficiente.", E_MINI))
+        if any(pa.aplica and not pa.incide for pa in r.asignaturas):
+            historia.append(Paragraph("* No incide en el promedio general ni en la promoción (Decreto 67/2018).", E_MINI))
+        if any(pa.aplica and pa.con_concepto for pa in r.asignaturas):
+            historia.append(Paragraph("Conceptos: MB muy bueno, B bueno, S suficiente, I insuficiente.", E_MINI))
         historia.append(Spacer(1, 6))
         historia.append(Paragraph("Observaciones: ____________________________________________________________"
                                   "______________________________", E_NORMAL))
@@ -393,7 +396,7 @@ def pdf_informe_final(curso, estudiantes=None):
         datos = [["Asignatura", "Calificación", "En palabras"]]
         for pa in [p for p in r.asignaturas if p.incide]:
             datos.append([str(pa.asignatura_curso.asignatura), formato_nota(pa.final), nota_en_palabras(pa.final)])
-        conceptuales = [p for p in r.asignaturas if not p.incide]
+        conceptuales = [p for p in r.asignaturas if p.aplica and not p.incide]
         datos.append(["PROMEDIO GENERAL", formato_nota(r.promedio_general), nota_en_palabras(r.promedio_general)])
         datos.append(["PORCENTAJE DE ASISTENCIA", _asistencia_txt(e), ""])
         t = Table(datos, colWidths=[8 * cm, 3 * cm, 6 * cm], repeatRows=1)
@@ -402,9 +405,12 @@ def pdf_informe_final(curso, estudiantes=None):
         t.setStyle(estilo)
         historia += [t, Spacer(1, 8)]
         if conceptuales:
-            filas_c = [["Asignaturas y talleres sin incidencia en el promedio", "Concepto", ""]]
+            filas_c = [["Sin incidencia en el promedio ni en la promoción", "Calificación", "En palabras"]]
             for pa in conceptuales:
-                filas_c.append([str(pa.asignatura_curso.asignatura), concepto(pa.final), concepto(pa.final, largo=True)])
+                if pa.con_concepto:
+                    filas_c.append([str(pa.asignatura_curso.asignatura), concepto(pa.final), concepto(pa.final, largo=True)])
+                else:
+                    filas_c.append([str(pa.asignatura_curso.asignatura), formato_nota(pa.final), nota_en_palabras(pa.final)])
             tc = Table(filas_c, colWidths=[8 * cm, 3 * cm, 6 * cm])
             estilo_c = _estilo_oficial(filas_c, 1)
             estilo_c.add("ALIGN", (2, 1), (2, -1), "LEFT")
@@ -431,17 +437,29 @@ ABREVIATURAS = {
     "Historia, Geografía y Cs. Sociales": "Historia", "Ciencias Naturales": "Ciencias", "Inglés": "Inglés",
     "Artes Visuales": "Artes", "Música": "Música", "Educación Física y Salud": "Ed. Física",
     "Tecnología": "Tecnol.", "Orientación": "Orient.", "Religión": "Religión",
+    "Religión Católica": "Rel. Católica", "Religión Evangélica": "Rel. Evang.",
+    "Taller de Arte y Folclor": "T. Arte Folclor", "Taller de Robótica": "T. Robótica", "Taller de Deportes": "T. Deportes",
 }
 
 
+def _celda_acta(p):
+    if not p.aplica:
+        return ""
+    return concepto(p.final) if p.con_concepto else formato_nota(p.final)
+
+
 def _abreviatura(asignatura):
-    return asignatura.codigo or ABREVIATURAS.get(asignatura.nombre, asignatura.nombre)
+    nombre = asignatura.nombre
+    if nombre not in ABREVIATURAS and nombre.lower().startswith("taller de "):
+        return "T. " + nombre[10:]
+    return asignatura.codigo or ABREVIATURAS.get(nombre, nombre)
 
 
 def pdf_acta_final_curso(curso):
     """Acta de Calificaciones Finales y Promoción Escolar (incluye retirados)."""
     estudiantes = list(curso.estudiantes.all())
-    del_plan = [ac for ac in curso.asignaturas_curso.select_related("asignatura", "profesor") if ac.asignatura.tipo != "TALLER"]
+    del_plan = [ac for ac in curso.asignaturas_curso.select_related("asignatura", "profesor")
+                if ac.asignatura.tipo != "TALLER" or ac.asignatura.incide_en_promedio]  # talleres con nota que cuenta
     asigs, _, resumenes = resumen_curso(curso, del_plan, estudiantes)
     est = Establecimiento.actual()
     nivel = curso.nivel
@@ -467,7 +485,7 @@ def pdf_acta_final_curso(curso):
             conteo[(sit, e.genero)] += 1
         nombre = " ".join(p for p in [e.apellido_paterno, e.apellido_materno, e.nombres] if p).upper()
         datos.append([str(i), e.rut_formateado, Paragraph(nombre, E_CELDA), e.genero or ""]
-                     + ([formato_nota(p.final) if p.incide else concepto(p.final) for p in r.asignaturas]
+                     + ([_celda_acta(p) for p in r.asignaturas]
                         if sit != "Y" else [""] * len(asigs))
                      + [formato_nota(r.promedio_general) if sit != "Y" else "", _asistencia_txt(e).replace(" %", ""), sit])
     ancho = landscape(letter)[0] - 4 * cm

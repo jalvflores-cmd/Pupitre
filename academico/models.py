@@ -133,6 +133,12 @@ class Curso(models.Model):
         return f"{self.nivel} {self.letra}"
 
 
+class Religion(models.TextChoices):
+    CATOLICA = "CATOLICA", "Católica"
+    EVANGELICA = "EVANGELICA", "Evangélica"
+    NO_OPTA = "NO_OPTA", "No opta (eximido de Religión)"
+
+
 class Asignatura(models.Model):
     class Tipo(models.TextChoices):
         ASIGNATURA = "ASIGNATURA", "Asignatura del plan de estudios"
@@ -144,7 +150,13 @@ class Asignatura(models.Model):
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.ASIGNATURA)
     incide_en_promedio = models.BooleanField(
         "incide en el promedio y la promoción", default=True,
-        help_text="Desmarcar para Religión, Orientación o talleres evaluados con concepto (Decreto 67/2018).")
+        help_text="Desmarcar para Religión u Orientación (Decreto 67/2018).")
+    con_concepto = models.BooleanField(
+        "se informa con concepto", default=False,
+        help_text="Marcar si en los informes se muestra concepto (MB, B, S, I) en vez de nota.")
+    religion = models.CharField(
+        "credo", max_length=20, choices=[c for c in Religion.choices if c[0] != "NO_OPTA"], blank=True,
+        help_text="Solo para Religión: la cursan únicamente los estudiantes de este credo.")
 
     class Meta:
         ordering = ["orden", "nombre"]
@@ -202,6 +214,8 @@ class Estudiante(models.Model):
     telefono_emergencia = models.CharField("teléfono de emergencia", max_length=30, blank=True)
     contacto_emergencia = models.CharField("contacto de emergencia", max_length=200, blank=True)
     genero = models.CharField("género", max_length=1, choices=[("F", "Femenino"), ("M", "Masculino")], blank=True)
+    religion = models.CharField("clase de Religión", max_length=20, choices=Religion.choices, blank=True,
+                                help_text="Según la encuesta de opción de Religión que firma el apoderado.")
     porcentaje_asistencia = models.DecimalField(
         "% de asistencia", max_digits=5, decimal_places=1, null=True, blank=True,
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
@@ -223,6 +237,10 @@ class Estudiante(models.Model):
     @property
     def nombre_completo(self):
         return " ".join(p for p in [self.apellido_paterno, self.apellido_materno] if p) + f", {self.nombres}"
+
+    def cursa(self, asignatura):
+        """False si la asignatura es Religión de otro credo (o el estudiante no opta por Religión)."""
+        return not asignatura.religion or self.religion == asignatura.religion
 
     @property
     def rut_formateado(self):

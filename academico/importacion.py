@@ -113,7 +113,7 @@ COLUMNAS_ESTUDIANTES = [
     ("Dirección", "direccion"), ("Comuna", "comuna"), ("Teléfono", "telefono"), ("Email", "email"),
     ("Apoderado", "apoderado_nombre"), ("RUT apoderado", "apoderado_rut"),
     ("Teléfono apoderado", "apoderado_telefono"), ("Contacto emergencia", "contacto_emergencia"),
-    ("Teléfono emergencia", "telefono_emergencia"),
+    ("Teléfono emergencia", "telefono_emergencia"), ("Religión", "religion"),
 ]
 _ALIAS_ESTUDIANTES = {_clave(t): c for t, c in COLUMNAS_ESTUDIANTES}
 _ALIAS_ESTUDIANTES.update({
@@ -167,6 +167,10 @@ def importar_estudiantes(archivo, cursos_permitidos=None):
                     errores.append(f"Fila {n}: RUT de apoderado «{rut_apod}» no válido")
                     continue
                 valores["apoderado_rut"] = normalizar_rut(rut_apod)
+            if _texto(datos.get("religion")):
+                clave_rel = _clave(datos.get("religion"))
+                valores["religion"] = ("CATOLICA" if clave_rel.startswith("catol") else
+                                       "EVANGELICA" if clave_rel.startswith("evang") else "NO_OPTA")
             nivel_txt, letra = _texto(datos.get("nivel")), _texto(datos.get("letra")).upper()
             if nivel_txt and letra:
                 try:
@@ -379,7 +383,7 @@ def importar_notas(archivo, asignatura_curso):
     errores = []
     columnas = []  # (indice_columna, evaluacion)
     evaluaciones = {(e.nombre.strip().lower(), e.semestre): e for e in asignatura_curso.evaluaciones.all()}
-    estudiantes = {e.rut: e for e in asignatura_curso.curso.estudiantes.all()}
+    estudiantes = {e.rut: e for e in asignatura_curso.curso.estudiantes.all() if e.cursa(asignatura_curso.asignatura)}
     guardadas = 0
     with transaction.atomic():
         for col in range(3, max_col + 1):
@@ -556,7 +560,7 @@ def plantilla_notas(asignatura_curso):
         (c.estudiante_id, c.evaluacion_id): float(c.nota)
         for c in Calificacion.objects.filter(evaluacion__in=[e for e in evaluaciones if e.pk])
     }
-    for est in asignatura_curso.curso.estudiantes.filter(activo=True):
+    for est in [e for e in asignatura_curso.curso.estudiantes.filter(activo=True) if e.cursa(asignatura_curso.asignatura)]:
         hoja.append([est.rut_formateado, est.nombre_completo] + [notas.get((est.id, e.pk)) for e in evaluaciones])
     hoja.column_dimensions["A"].width = 16
     hoja.column_dimensions["B"].width = 38

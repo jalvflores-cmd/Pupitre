@@ -15,7 +15,7 @@ from django.db import transaction
 from academico.models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Funcionario,
     Nivel,
-    Perfil, anio_actual,
+    Perfil, Religion, anio_actual,
 )
 from academico.importacion import reordenar_niveles
 from academico.rut import calcular_dv
@@ -154,10 +154,14 @@ class Command(BaseCommand):
                         descripcion=("Destaca por su participación en clases." if tipo == "POSITIVA"
                                      else "No trae materiales de trabajo."),
                         fecha=date(anio, 5, random.randint(1, 28)), autor=jefe)
+        # Solo estudiantes ficticios de la demo (RUT 21.xxx.xxx); nunca se inventa el credo de estudiantes reales
+        for est in Estudiante.objects.filter(religion="", rut__regex=r"^21[0-9]{6}-[0-9K]$"):
+            est.religion = random.choices([Religion.CATOLICA, Religion.EVANGELICA, Religion.NO_OPTA], [65, 25, 10])[0]
+            est.save(update_fields=["religion"])
         self.completar_plan(anio, {"Lenguaje y Comunicación": leng, "Lengua y Literatura": leng, "Matemática": mate,
                                    "Ciencias Naturales": cien, "Tecnología": cien, "Historia, Geografía y Cs. Sociales": hist,
                                    "Inglés": ingl, "Artes Visuales": arte, "Música": arte, "Educación Física y Salud": edfi,
-                                   "Religión": reli},
+                                   "Religión Católica": reli, "Religión Evangélica": reli},
                             {"Taller de Deportes": edfi, "Taller de Robótica": cien, "Taller de Arte y Folclor": arte})
         reordenar_niveles()
         for nivel in Nivel.objects.filter(decreto_plan_estudios=""):
@@ -180,33 +184,50 @@ class Command(BaseCommand):
     PLAN = {
         "1-4": [("Lenguaje y Comunicación", 8), ("Inglés", 2), ("Matemática", 6),
                 ("Historia, Geografía y Cs. Sociales", 3), ("Ciencias Naturales", 3), ("Artes Visuales", 2),
-                ("Música", 2), ("Educación Física y Salud", 4), ("Tecnología", 1), ("Orientación", 0.5), ("Religión", 2)],
+                ("Música", 2), ("Educación Física y Salud", 4), ("Tecnología", 1), ("Orientación", 0.5), ("Religión Católica", 2), ("Religión Evangélica", 2)],
         "5-6": [("Lenguaje y Comunicación", 6), ("Inglés", 3), ("Matemática", 6),
                 ("Historia, Geografía y Cs. Sociales", 4), ("Ciencias Naturales", 4), ("Artes Visuales", 1.5),
-                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión", 2)],
+                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión Católica", 2), ("Religión Evangélica", 2)],
         "7-8": [("Lengua y Literatura", 6), ("Inglés", 3), ("Matemática", 6),
                 ("Historia, Geografía y Cs. Sociales", 4), ("Ciencias Naturales", 4), ("Artes Visuales", 1.5),
-                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión", 2)],
+                ("Música", 1.5), ("Educación Física y Salud", 2), ("Tecnología", 1), ("Orientación", 1), ("Religión Católica", 2), ("Religión Evangélica", 2)],
     }
     ORDEN = ["Lenguaje y Comunicación", "Lengua y Literatura", "Inglés", "Matemática",
              "Historia, Geografía y Cs. Sociales", "Ciencias Naturales", "Artes Visuales", "Música",
-             "Educación Física y Salud", "Tecnología", "Orientación", "Religión"]
+             "Educación Física y Salud", "Tecnología", "Orientación", "Religión Católica", "Religión Evangélica"]
 
     def completar_plan(self, anio, profes, talleres):
         """Agrega las asignaturas del plan oficial y talleres JEC que falten (sin tocar lo existente)."""
         asignaturas = {}
+        # Si ya existe Religión Evangélica, la actualización de talleres ya se hizo y no se vuelve a tocar
+        self.talleres_revisados = Asignatura.objects.filter(nombre="Religión Evangélica").exists()
         orden_demo_antiguo = {"Lenguaje y Comunicación": 0, "Matemática": 1, "Ciencias Naturales": 2,
                               "Historia, Geografía y Cs. Sociales": 3, "Inglés": 4, "Educación Física y Salud": 5}
+        # La antigua asignatura "Religión" pasa a ser Religión Católica (conserva sus notas)
+        antigua_religion = Asignatura.objects.filter(nombre="Religión").first()
+        if antigua_religion and not Asignatura.objects.filter(nombre="Religión Católica").exists():
+            antigua_religion.nombre = "Religión Católica"
+            antigua_religion.religion = Religion.CATOLICA
+            antigua_religion.save(update_fields=["nombre", "religion"])
+        credos = {"Religión Católica": Religion.CATOLICA, "Religión Evangélica": Religion.EVANGELICA}
         for i, nombre in enumerate(self.ORDEN):
             asig, _ = Asignatura.objects.get_or_create(nombre=nombre, defaults={
-                "orden": i, "incide_en_promedio": nombre not in ("Orientación", "Religión")})
+                "orden": i, "incide_en_promedio": nombre != "Orientación" and nombre not in credos,
+                "con_concepto": nombre == "Orientación", "religion": credos.get(nombre, "")})
             if orden_demo_antiguo.get(nombre) == asig.orden and asig.orden != i:
                 asig.orden = i
                 asig.save(update_fields=["orden"])
+            if nombre == "Orientación" and not self.talleres_revisados and not asig.con_concepto:
+                asig.con_concepto = True  # se mantenía con concepto antes de esta actualización
+                asig.save(update_fields=["con_concepto"])
             asignaturas[nombre] = asig
         for nombre in talleres:
-            asignaturas[nombre], _ = Asignatura.objects.get_or_create(nombre=nombre, defaults={
-                "orden": 90, "tipo": Asignatura.Tipo.TALLER, "incide_en_promedio": False})
+            asignaturas[nombre], creado = Asignatura.objects.get_or_create(nombre=nombre, defaults={
+                "orden": 90, "tipo": Asignatura.Tipo.TALLER, "incide_en_promedio": True})
+            if not creado and not asignaturas[nombre].incide_en_promedio and not self.talleres_revisados:
+                # Los talleres de la demo se crearon antes sin incidencia; ahora se califican con nota
+                asignaturas[nombre].incide_en_promedio = True
+                asignaturas[nombre].save(update_fields=["incide_en_promedio"])
         for curso in Curso.objects.filter(anio=anio, nivel__nombre__iregex=r"^[1-8]° básico$").select_related("nivel"):
             grado = int(curso.nivel.nombre[0])
             plan = self.PLAN["1-4" if grado <= 4 else "5-6" if grado <= 6 else "7-8"]
@@ -231,7 +252,7 @@ class Command(BaseCommand):
                     self.poblar_notas(ac, anio)
 
     def poblar_notas(self, ac, anio):
-        estudiantes = list(ac.curso.estudiantes.filter(activo=True))
+        estudiantes = [e for e in ac.curso.estudiantes.filter(activo=True) if e.cursa(ac.asignatura)]
         if not estudiantes:
             return
         notas = []

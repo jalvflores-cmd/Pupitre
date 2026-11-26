@@ -491,7 +491,42 @@ class TalleresYConceptosTests(BaseDatos):
         r = resumenes[0]
         self.assertEqual(r.promedio_general, Decimal("6.0"))  # solo Matemática
         self.assertEqual(r.situacion, "Promovido(a)")
-        self.assertEqual([p.concepto for p in r.asignaturas if not p.incide], ["I"])
+        no_incide = [p for p in r.asignaturas if not p.incide]
+        self.assertEqual([p.final for p in no_incide], [Decimal("2.0")])  # se califica con nota
+        self.assertFalse(no_incide[0].con_concepto)
+
+    def test_religion_segun_credo(self):
+        from .calculos import resumen_curso
+        from .models import Religion
+        cat = AsignaturaCurso.objects.create(curso=self.curso, profesor=self.profe_mat, asignatura=Asignatura.objects.create(
+            nombre="Religión Católica", incide_en_promedio=False, religion=Religion.CATOLICA))
+        evg = AsignaturaCurso.objects.create(curso=self.curso, profesor=self.profe_mat, asignatura=Asignatura.objects.create(
+            nombre="Religión Evangélica", incide_en_promedio=False, religion=Religion.EVANGELICA))
+        self.est.religion = Religion.EVANGELICA
+        self.est.save()
+        Calificacion.objects.create(evaluacion=Evaluacion.objects.create(asignatura_curso=evg, nombre="E1"),
+                                    estudiante=self.est, nota=Decimal("6.5"))
+        self.assertTrue(self.est.cursa(evg.asignatura))
+        self.assertFalse(self.est.cursa(cat.asignatura))
+        _, _, resumenes = resumen_curso(self.curso)
+        filas = {p.asignatura_curso.asignatura.nombre: p for p in resumenes[0].asignaturas}
+        self.assertFalse(filas["Religión Católica"].aplica)
+        self.assertEqual(filas["Religión Evangélica"].final, Decimal("6.5"))
+        self.client.force_login(self.director)
+        for nombre in ("informe_final_pdf", "acta_final_pdf", "informe_notas_pdf"):
+            self.assertEqual(self.client.get(reverse(nombre, args=[self.curso.pk])).status_code, 200)
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("libro_notas", args=[cat.pk]))
+        self.assertNotContains(r, "Ana")
+
+    def test_taller_con_nota_incide(self):
+        from .calculos import resumen_curso
+        taller = AsignaturaCurso.objects.create(curso=self.curso, profesor=self.profe_mat, asignatura=Asignatura.objects.create(
+            nombre="Taller de Robótica", tipo=Asignatura.Tipo.TALLER, incide_en_promedio=True))
+        Calificacion.objects.create(evaluacion=Evaluacion.objects.create(asignatura_curso=taller, nombre="T1"),
+                                    estudiante=self.est, nota=Decimal("7.0"))
+        _, _, resumenes = resumen_curso(self.curso)
+        self.assertEqual(resumenes[0].promedio_general, Decimal("6.5"))
 
     def test_crear_taller_jec(self):
         self.client.force_login(self.utp)

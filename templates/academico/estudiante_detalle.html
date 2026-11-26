@@ -21,6 +21,7 @@
       <h5>Datos personales y contacto</h5>
       <dl class="row small mb-0">
         <dt class="col-5">Fecha nacimiento</dt><dd class="col-7">{{ est.fecha_nacimiento|date:"d-m-Y"|default:"—" }}</dd>
+        <dt class="col-5">Religión</dt><dd class="col-7">{{ est.get_religion_display|default:"—" }}</dd>
         <dt class="col-5">Género</dt><dd class="col-7">{{ est.get_genero_display|default:"—" }}</dd>
         <dt class="col-5">Asistencia</dt><dd class="col-7">{% if est.porcentaje_asistencia is not None %}{{ est.porcentaje_asistencia }} %{% else %}—{% endif %}</dd>
         <dt class="col-5">Incorporación</dt><dd class="col-7">{{ est.fecha_incorporacion|date:"d-m-Y"|default:"—" }}{% if est.fecha_retiro %}<br><span class="text-danger">Retiro: {{ est.fecha_retiro|date:"d-m-Y" }}</span>{% endif %}</dd>
@@ -40,11 +41,11 @@
       <table class="table table-sm tabla-notas mb-0">
         <thead><tr><th>Asignatura</th><th class="text-center">S1</th><th class="text-center">S2</th><th class="text-center col-prom">Final</th></tr></thead>
         <tbody>
-        {% for p in resumen.asignaturas %}
+        {% for p in resumen.asignaturas %}{% if p.aplica %}
           <tr><td><a href="{% url 'libro_notas' p.asignatura_curso.pk %}">{{ p.asignatura_curso.asignatura }}</a></td>
             <td class="text-center {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td><td class="text-center {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>
-            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}{% if not p.incide %} <span class="badge bg-secondary">{{ p.concepto }}</span>{% endif %}</td></tr>
-        {% endfor %}
+            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}{% if p.con_concepto %} <span class="badge bg-secondary">{{ p.concepto }}</span>{% endif %}{% if not p.incide %} <span class="small text-muted" title="No incide en el promedio">*</span>{% endif %}</td></tr>
+        {% endif %}{% endfor %}
         </tbody>
         {% if informes %}<tfoot><tr class="fw-bold"><td>Promedio general</td><td class="text-center">{{ resumen.promedio_s1|nota }}</td><td class="text-center">{{ resumen.promedio_s2|nota }}</td><td class="text-center col-prom">{{ resumen.promedio_general|nota }}</td></tr>
         <tr><td colspan="4" class="small">Situación: <b>{{ resumen.situacion }}</b></td></tr></tfoot>{% endif %}

@@ -93,7 +93,9 @@ def libro_notas(request, pk):
     exigir(puede_ver_asignatura_curso(request.user, ac))
     editable = puede_editar_notas(request.user, ac)
     evaluaciones = list(ac.evaluaciones.all())
-    estudiantes = list(ac.curso.estudiantes.filter(activo=True))
+    estudiantes = [e for e in ac.curso.estudiantes.filter(activo=True) if e.cursa(ac.asignatura)]
+    sin_religion = (ac.curso.estudiantes.filter(activo=True, religion="").count()
+                    if ac.asignatura.religion else 0)
 
     if request.method == "POST":
         exigir(editable)
@@ -131,7 +133,7 @@ def libro_notas(request, pk):
     _, _, resumenes = resumen_curso(ac.curso, [ac], estudiantes)
     filas = [(r.estudiante, r.asignaturas[0]) for r in resumenes]
     return render(request, "academico/libro_notas.html", {
-        "ac": ac, "evaluaciones": evaluaciones, "filas": filas, "editable": editable,
+        "ac": ac, "evaluaciones": evaluaciones, "filas": filas, "editable": editable, "sin_religion": sin_religion,
         "evs_s1": [e for e in evaluaciones if e.semestre == 1], "evs_s2": [e for e in evaluaciones if e.semestre == 2],
     })
 

@@ -22,6 +22,10 @@
   </form>
 </div></div>
 {% endif %}
+{% if ac.asignatura.religion %}
+  <div class="alert alert-info py-2 small">Solo aparecen los estudiantes que optaron por Religión {{ ac.asignatura.get_religion_display }}.{% if sin_religion %} Hay {{ sin_religion }} estudiante(s) del curso sin opción de Religión registrada: indíquela en su ficha.{% endif %}</div>
+{% endif %}
+{% if not ac.asignatura.incide_en_promedio %}<div class="alert alert-secondary py-2 small">Esta asignatura no incide en el promedio general ni en la promoción.</div>{% endif %}
 {% if not evaluaciones %}
   <div class="alert alert-info">Aún no hay evaluaciones. {% if editable %}Cree la primera con «Nueva evaluación» o cargue un Excel.{% endif %}</div>
 {% endif %}

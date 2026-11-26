@@ -33,7 +33,7 @@
     {% for r in resumenes %}
       <tr><td class="text-muted">{{ forloop.counter }}</td><td class="small">{{ r.estudiante.rut_formateado }}</td>
         <td class="sticky-col"><a href="{% url 'estudiante_detalle' r.estudiante.pk %}">{{ r.estudiante.nombre_completo }}</a></td>
-        {% for p in r.asignaturas %}<td class="text-center {% if p.incide %}{{ p.final|clase_nota }}{% else %}text-muted{% endif %}">{% if p.incide %}{{ p.final|nota }}{% else %}{{ p.concepto }}{% endif %}</td>{% endfor %}
+        {% for p in r.asignaturas %}<td class="text-center {% if p.incide %}{{ p.final|clase_nota }}{% else %}text-muted{% endif %}">{% if not p.aplica %}<span class="text-muted small">·</span>{% elif p.con_concepto %}{{ p.concepto }}{% else %}{{ p.final|nota }}{% endif %}</td>{% endfor %}
         <td class="text-center col-prom {{ r.promedio_general|clase_nota }}">{{ r.promedio_general|nota }}</td>
         {% if informes %}<td class="small">{{ r.situacion }}</td>{% endif %}</tr>
     {% empty %}<tr><td colspan="20" class="text-muted">No hay estudiantes en este curso.</td></tr>{% endfor %}

@@ -22,7 +22,7 @@ class EstudianteForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Estudiante
         fields = [
-            "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento", "genero", "curso",
+            "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento", "genero", "curso", "religion",
             "direccion", "comuna", "codigo_comuna", "telefono", "celular", "email",
             "apoderado_nombre", "apoderado_rut", "apoderado_telefono",
             "contacto_emergencia", "telefono_emergencia", "codigo_etnia", "fecha_incorporacion",
@@ -156,8 +156,9 @@ class TallerForm(BootstrapMixin, forms.Form):
     horas_semanales = forms.DecimalField(label="Horas semanales", max_digits=4, decimal_places=1, min_value=0,
                                          required=False)
     incide_en_promedio = forms.BooleanField(
-        label="La nota incide en el promedio", required=False,
-        help_text="Por defecto los talleres se informan con concepto y no inciden en el promedio ni en la promoción.")
+        label="La nota incide en el promedio", required=False, initial=True,
+        help_text="Los talleres se califican con nota. Desmarque si el taller no debe contar para el promedio "
+                  "ni para la promoción.")
 
     def __init__(self, *args, cursos=None, profesores=None, **kwargs):
         super().__init__(*args, **kwargs)
