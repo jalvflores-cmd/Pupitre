@@ -17,7 +17,7 @@
   <p class="mb-2">1. Descargue la <a href="{% url 'plantilla_notas' 'notas' ac.pk %}">plantilla de notas de este curso</a> (incluye la lista de estudiantes y las evaluaciones ya creadas). 2. Complete las notas y súbala aquí.</p>
   <form method="post" enctype="multipart/form-data" action="{% url 'importar_notas' ac.pk %}" class="d-flex gap-2">{% csrf_token %}
     <input type="hidden" name="volver" value="{{ request.path }}">
-    <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" required>
+    <input type="file" name="archivo" accept=".xlsx,.xls,.csv,.txt,.html,.htm,.docx" class="form-control form-control-sm" required>
     <button class="btn btn-sm btn-primary">Importar</button>
   </form>
 </div></div>

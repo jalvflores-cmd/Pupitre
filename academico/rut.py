@@ -30,7 +30,7 @@ def rut_es_valido(rut) -> bool:
     if len(limpio) < 2:
         return False
     cuerpo, dv = limpio[:-1], limpio[-1]
-    if not cuerpo.isdigit() or not (1 <= len(cuerpo) <= 8):
+    if not cuerpo.isdigit() or not (1 <= len(cuerpo) <= 9):  # 9 dígitos: IPE de estudiantes extranjeros
         return False
     return calcular_dv(cuerpo) == dv
 

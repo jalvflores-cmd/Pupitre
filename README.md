@@ -13,8 +13,9 @@ de un establecimiento educacional chileno, con carga desde Excel y emisión de i
 | **Calificaciones** | Libro de notas por asignatura: evaluaciones por semestre con ponderación, ingreso tipo planilla (escala 1,0 – 7,0; notas bajo 4,0 en rojo), promedios semestrales y final automáticos. |
 | **Funcionarios** | Ficha de docentes y asistentes: título, mención, tipo de contrato (titular/contrata), horas de contrato y distribución lectiva/no lectiva según la Ley 20.903 (65/35, o 60/40 para docentes de pre-kínder a 4° básico con 80 % o más de alumnos prioritarios; se puede fijar a mano). |
 | **Convivencia** | Anotaciones positivas, negativas u observaciones, con gravedad (leve/grave/gravísima), asignatura, descripción y medida tomada. |
+| **Carga de datos** | Acepta Excel (.xlsx/.xls), CSV, Word (.docx, primera tabla) y la **nómina de estudiantes descargada desde SIGE tal como viene** (se reconoce sola: RUN/IPE, curso, género, contacto, asistencia, fechas de incorporación y retiro, código de etnia; valida que el RBD sea el del establecimiento). El profesor(a) jefe puede subir la nómina SIGE de su curso. |
 | **Carga desde Excel** | Plantillas descargables para estudiantes, notas (por asignatura y curso) y anotaciones. Cada importación es *todo o nada*: si hay errores se informa fila por fila y no se guarda nada. |
-| **Informes** | Informe de notas por estudiante (PDF), informe final con situación de promoción (PDF), acta de calificaciones finales del curso (PDF horizontal), informe final del curso (Excel), notas por asignatura (Excel), listados de estudiantes y anotaciones (Excel). |
+| **Informes** | En formato oficial (membrete República de Chile / Ministerio de Educación, RBD, Decreto 67/2018): Informe de Calificaciones (PDF), Certificado Anual de Estudios con notas en palabras y asistencia (PDF), Acta de Calificaciones Finales y Promoción Escolar con resumen por sexo (PDF horizontal), informe final del curso (Excel), notas por asignatura (Excel), listados de estudiantes y anotaciones (Excel). |
 
 ### Reglas de cálculo
 

@@ -2,15 +2,15 @@
 {% block titulo %}Importar desde Excel{% endblock %}
 {% block contenido %}
 <div class="p-encabezado"><div><h3>Importar desde Excel</h3></div></div>
-<p class="text-muted">Descargue la plantilla, complétela y súbala. Si alguna fila tiene errores no se guarda nada y se muestra el detalle para corregir.</p>
+<p class="text-muted">Se aceptan archivos Excel (.xlsx y .xls), CSV, Word (.docx, primera tabla) y la nómina tal como se descarga desde SIGE. Descargue la plantilla, complétela y súbala. Si alguna fila tiene errores no se guarda nada y se muestra el detalle para corregir.</p>
 <div class="row g-4">
-  {% if es_gestion %}
+  {% if puede_importar_estudiantes %}
   <div class="col-lg-4"><div class="card p-3 p-lg-4 h-100">
     <h5><i class="bi bi-people"></i> Estudiantes</h5>
-    <p class="small">RUT, nombres, curso, dirección, teléfonos y apoderado. Si el RUT ya existe se actualizan sus datos. Los cursos que no existan se crean.</p>
-    <a href="{% url 'plantilla' 'estudiantes' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>
+    <p class="small">Suba la <b>nómina de SIGE</b> tal como se descarga (nomina_excel.xls) o la plantilla de Pupitre. Si el RUT ya existe se actualizan sus datos; los cursos que no existan se crean. Desde SIGE también se cargan género, % de asistencia y retiros.</p>
+    {% if es_gestion %}<a href="{% url 'plantilla' 'estudiantes' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>{% else %}<p class="small text-muted">Como profesor(a) jefe puede subir la nómina SIGE de su curso.</p>{% endif %}
     <form method="post" enctype="multipart/form-data" action="{% url 'importar_estudiantes' %}">{% csrf_token %}
-      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+      <input type="file" name="archivo" accept=".xlsx,.xls,.csv,.txt,.html,.htm,.docx" class="form-control form-control-sm mb-2" required>
       <button class="btn btn-primary btn-sm">Importar estudiantes</button>
     </form>
   </div></div>
@@ -25,7 +25,7 @@
         {% for ac in asignaturas %}<option value="{{ ac.pk }}">{{ ac.asignatura }} – {{ ac.curso.nombre_corto }}</option>{% endfor %}
       </select>
       <a href="#" id="link-plantilla" class="small d-none mb-2"><i class="bi bi-download"></i> Descargar plantilla de esta asignatura</a>
-      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm my-2" required>
+      <input type="file" name="archivo" accept=".xlsx,.xls,.csv,.txt,.html,.htm,.docx" class="form-control form-control-sm my-2" required>
       <button class="btn btn-primary btn-sm">Importar notas</button>
     </form>
     {% else %}<p class="text-muted small">No tiene asignaturas a su cargo este año.</p>{% endif %}
@@ -35,7 +35,7 @@
     <p class="small">RUT, fecha, tipo (positiva/negativa/observación), gravedad, asignatura y descripción.</p>
     <a href="{% url 'plantilla' 'anotaciones' %}" class="small mb-2"><i class="bi bi-download"></i> Descargar plantilla</a>
     <form method="post" enctype="multipart/form-data" action="{% url 'importar_anotaciones' %}">{% csrf_token %}
-      <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+      <input type="file" name="archivo" accept=".xlsx,.xls,.csv,.txt,.html,.htm,.docx" class="form-control form-control-sm mb-2" required>
       <button class="btn btn-primary btn-sm">Importar anotaciones</button>
     </form>
   </div></div>

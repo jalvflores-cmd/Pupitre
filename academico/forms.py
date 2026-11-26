@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Anotacion, Estudiante, Evaluacion, Funcionario
+from .lectores import EXTENSIONES
 from .rut import normalizar_rut
 
 
@@ -21,12 +22,15 @@ class EstudianteForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Estudiante
         fields = [
-            "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento", "curso",
-            "direccion", "comuna", "telefono", "email",
+            "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento", "genero", "curso",
+            "direccion", "comuna", "codigo_comuna", "telefono", "celular", "email",
             "apoderado_nombre", "apoderado_rut", "apoderado_telefono",
-            "contacto_emergencia", "telefono_emergencia", "activo",
+            "contacto_emergencia", "telefono_emergencia", "codigo_etnia", "fecha_incorporacion",
+            "porcentaje_asistencia", "fecha_retiro", "activo",
         ]
-        widgets = {"fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
+        widgets = {"fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+                   "fecha_incorporacion": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+                   "fecha_retiro": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 
     def clean_rut(self):
         rut = normalizar_rut(self.cleaned_data["rut"])
@@ -67,20 +71,21 @@ class EvaluacionForm(BootstrapMixin, forms.ModelForm):
 
 class ArchivoExcelForm(BootstrapMixin, forms.Form):
     archivo = forms.FileField(
-        label="Archivo Excel (.xlsx)",
-        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+        label="Archivo (Excel, CSV, Word o nómina SIGE)",
+        widget=forms.ClearableFileInput(attrs={"accept": ",".join(EXTENSIONES)}),
     )
 
     def clean_archivo(self):
         archivo = self.cleaned_data["archivo"]
-        if not archivo.name.lower().endswith(".xlsx"):
-            raise forms.ValidationError("El archivo debe estar en formato .xlsx (Excel 2007 o superior).")
+        if not archivo.name.lower().endswith(EXTENSIONES):
+            raise forms.ValidationError(
+                "Formato no aceptado. Use Excel (.xlsx o .xls), CSV, Word (.docx) o la nómina exportada desde SIGE.")
         return archivo
 
 
 CAMPOS_SOLICITABLES = [
     "rut", "nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento",
-    "direccion", "comuna", "telefono", "email",
+    "direccion", "comuna", "telefono", "celular", "email",
     "apoderado_nombre", "apoderado_rut", "apoderado_telefono",
     "contacto_emergencia", "telefono_emergencia",
 ]
@@ -122,7 +127,7 @@ def _serializar(valor):
 class ContactoEstudianteForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Estudiante
-        fields = ["direccion", "comuna", "telefono", "email", "apoderado_nombre", "apoderado_rut",
+        fields = ["direccion", "comuna", "telefono", "celular", "email", "apoderado_nombre", "apoderado_rut",
                   "apoderado_telefono", "contacto_emergencia", "telefono_emergencia"]
 
 

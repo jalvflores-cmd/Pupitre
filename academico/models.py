@@ -26,6 +26,10 @@ class Establecimiento(models.Model):
     telefono = models.CharField("teléfono", max_length=50, blank=True)
     director = models.CharField("nombre del director(a)", max_length=200, blank=True)
     jefe_utp = models.CharField("nombre del jefe(a) de UTP", max_length=200, blank=True)
+    region = models.CharField("región", max_length=100, blank=True)
+    resolucion_reconocimiento = models.CharField(
+        "decreto o resolución de reconocimiento oficial", max_length=200, blank=True,
+        help_text="Ej.: Resolución Exenta N° 1234 de 1981. Aparece en el certificado anual de estudios.")
     alta_concentracion = models.BooleanField(
         "establecimiento con 80 % o más de alumnos prioritarios", default=False,
         help_text="Si se marca, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
@@ -53,7 +57,7 @@ class Perfil(models.Model):
 
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="perfil")
     rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.PROFESOR)
-    rut = models.CharField("RUT", max_length=12, blank=True, validators=[validar_rut])
+    rut = models.CharField("RUT", max_length=15, blank=True, validators=[validar_rut])
 
     class Meta:
         verbose_name = "perfil"
@@ -88,8 +92,17 @@ class Perfil(models.Model):
 
 
 class Nivel(models.Model):
+    class Ensenanza(models.TextChoices):
+        PARVULARIA = "PARVULARIA", "Educación Parvularia"
+        BASICA = "BASICA", "Enseñanza Básica"
+        MEDIA = "MEDIA", "Enseñanza Media"
+
     nombre = models.CharField(max_length=50, unique=True, help_text="Ej.: 1° Básico, III Medio")
     orden = models.PositiveSmallIntegerField(default=0, help_text="Para ordenar los niveles de menor a mayor")
+    ensenanza = models.CharField("tipo de enseñanza", max_length=20, choices=Ensenanza.choices, blank=True)
+    decreto_plan_estudios = models.CharField(
+        "decreto del plan de estudios", max_length=200, blank=True,
+        help_text="Aparece en el certificado anual de estudios. Ej.: Decreto Exento N° 2960 de 2012.")
 
     class Meta:
         ordering = ["orden", "nombre"]
@@ -153,7 +166,7 @@ class AsignaturaCurso(models.Model):
 
 
 class Estudiante(models.Model):
-    rut = models.CharField("RUT", max_length=12, unique=True, validators=[validar_rut])
+    rut = models.CharField("RUT", max_length=15, unique=True, validators=[validar_rut])
     nombres = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)
@@ -162,14 +175,28 @@ class Estudiante(models.Model):
     # Contacto
     direccion = models.CharField("dirección", max_length=200, blank=True)
     comuna = models.CharField(max_length=100, blank=True)
+    codigo_comuna = models.CharField("código comuna (SIGE)", max_length=10, blank=True)
     telefono = models.CharField("teléfono", max_length=30, blank=True)
+    celular = models.CharField(max_length=30, blank=True)
     email = models.EmailField("correo electrónico", blank=True)
+    # Datos de la nómina SIGE
+    codigo_etnia = models.CharField("código etnia (SIGE)", max_length=5, blank=True,
+                                    help_text="0 = no pertenece a pueblo originario.")
+    fecha_incorporacion = models.DateField("fecha de incorporación al curso", null=True, blank=True)
+    fecha_retiro = models.DateField("fecha de retiro", null=True, blank=True)
+    promedio_sige = models.DecimalField("promedio final informado en SIGE", max_digits=2, decimal_places=1,
+                                        null=True, blank=True)
     # Apoderado y emergencias
     apoderado_nombre = models.CharField("nombre del apoderado(a)", max_length=200, blank=True)
-    apoderado_rut = models.CharField("RUT del apoderado(a)", max_length=12, blank=True, validators=[validar_rut])
+    apoderado_rut = models.CharField("RUT del apoderado(a)", max_length=15, blank=True, validators=[validar_rut])
     apoderado_telefono = models.CharField("teléfono del apoderado(a)", max_length=30, blank=True)
     telefono_emergencia = models.CharField("teléfono de emergencia", max_length=30, blank=True)
     contacto_emergencia = models.CharField("contacto de emergencia", max_length=200, blank=True)
+    genero = models.CharField("género", max_length=1, choices=[("F", "Femenino"), ("M", "Masculino")], blank=True)
+    porcentaje_asistencia = models.DecimalField(
+        "% de asistencia", max_digits=5, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
+        help_text="Asistencia anual; se puede cargar desde la nómina SIGE.")
     activo = models.BooleanField(default=True, help_text="Desmarcar si el estudiante se retiró")
 
     class Meta:
@@ -383,7 +410,7 @@ class Funcionario(models.Model):
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="funcionario", verbose_name="usuario de la plataforma",
                                    help_text="Opcional: vincula la ficha con su cuenta de acceso.")
-    rut = models.CharField("RUT", max_length=12, unique=True, validators=[validar_rut])
+    rut = models.CharField("RUT", max_length=15, unique=True, validators=[validar_rut])
     nombres = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)

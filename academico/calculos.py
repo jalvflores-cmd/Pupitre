@@ -77,9 +77,19 @@ class ResumenEstudiante:
     situacion: str = ""
 
 
-def situacion_final(promedio_general, reprobadas):
+ASISTENCIA_MINIMA = Decimal("85")
+
+
+def situacion_final(promedio_general, reprobadas, asistencia=None, activo=True):
+    if not activo:
+        return "Retirado(a)"
     if promedio_general is None:
         return "Sin calificaciones"
+    if asistencia is not None and asistencia < ASISTENCIA_MINIMA:
+        n = len(reprobadas)
+        academico = n == 0 or (n == 1 and promedio_general >= Decimal("4.5")) or (n == 2 and promedio_general >= Decimal("5.0"))
+        if academico:
+            return "Revisar asistencia (< 85 %)"
     n = len(reprobadas)
     if n == 0:
         return "Promovido(a)"
@@ -87,7 +97,7 @@ def situacion_final(promedio_general, reprobadas):
         return "Promovido(a)"
     if n == 2 and promedio_general >= Decimal("5.0"):
         return "Promovido(a)"
-    return "No promovido(a)"
+    return "Reprobado(a)"
 
 
 def resumen_curso(curso, asignaturas_curso=None, estudiantes=None):
@@ -126,7 +136,7 @@ def resumen_curso(curso, asignaturas_curso=None, estudiantes=None):
                 promedio_s2=promedio_simple([f.s2 for f in filas]),
                 promedio_general=prom_general,
                 reprobadas=reprobadas,
-                situacion=situacion_final(prom_general, reprobadas),
+                situacion=situacion_final(prom_general, reprobadas, est.porcentaje_asistencia, est.activo),
             )
         )
     return asignaturas_curso, evaluaciones, resumenes
@@ -137,3 +147,14 @@ def formato_nota(valor):
     if valor is None or valor == "":
         return ""
     return f"{Decimal(valor):.1f}".replace(".", ",")
+
+
+_UNIDADES = ["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"]
+
+
+def nota_en_palabras(valor):
+    """Decimal('6.5') -> 'seis coma cinco' (como se escribe en los certificados)."""
+    if valor is None:
+        return ""
+    entero, decimal = f"{Decimal(valor):.1f}".split(".")
+    return f"{_UNIDADES[int(entero)]} coma {_UNIDADES[int(decimal)]}"

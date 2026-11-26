@@ -11,7 +11,7 @@ from io import BytesIO
 
 from django.db import transaction
 from django.db.models import Max
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -19,6 +19,7 @@ from .models import (
     NOTA_MAXIMA, NOTA_MINIMA, Anotacion, Asignatura, Calificacion, Curso, Estudiante, Evaluacion, Nivel,
     anio_actual,
 )
+from .lectores import FormatoNoSoportado, leer_filas
 from .rut import normalizar_rut, rut_es_valido
 
 
@@ -74,11 +75,21 @@ def leer_nota(valor):
     return nota
 
 
-def _filas_con_encabezado(archivo, columnas):
-    """Lee la primera hoja y devuelve [(n_fila, {campo: valor})] según el mapa de columnas."""
-    libro = load_workbook(archivo, data_only=True, read_only=True)
-    hoja = libro.worksheets[0]
-    filas = hoja.iter_rows(values_only=True)
+def _leer(archivo):
+    try:
+        return leer_filas(archivo)
+    except FormatoNoSoportado as e:
+        raise ErrorImportacion([str(e)])
+
+
+def _entero(valor):
+    """'1', 1, 1.0 o '1.0' -> 1."""
+    return int(float(_texto(valor).replace(",", ".")))
+
+
+def _filas_con_encabezado(archivo, columnas, filas=None):
+    """Lee la primera tabla y devuelve [(n_fila, {campo: valor})] según el mapa de columnas."""
+    filas = iter(filas if filas is not None else _leer(archivo))
     encabezado = next(filas, None) or []
     indices = {}
     for i, titulo in enumerate(encabezado):
@@ -90,7 +101,6 @@ def _filas_con_encabezado(archivo, columnas):
         if not fila or all(v in (None, "") for v in fila):
             continue
         resultado.append((n, {c: (fila[i] if i < len(fila) else None) for c, i in indices.items()}))
-    libro.close()
     return indices, resultado
 
 
@@ -117,8 +127,13 @@ CAMPOS_TEXTO_ESTUDIANTE = [
 ]
 
 
-def importar_estudiantes(archivo):
-    indices, filas = _filas_con_encabezado(archivo, _ALIAS_ESTUDIANTES)
+def importar_estudiantes(archivo, cursos_permitidos=None):
+    tabla = _leer(archivo)
+    if tabla and es_nomina_sige(tabla[0]):
+        return importar_nomina_sige(tabla, cursos_permitidos)
+    if cursos_permitidos is not None:
+        raise ErrorImportacion(["Como profesor(a) jefe solo puede subir la nómina descargada desde SIGE."])
+    indices, filas = _filas_con_encabezado(archivo, _ALIAS_ESTUDIANTES, tabla)
     faltantes = [c for c in ("rut", "nombres", "apellido_paterno") if c not in indices]
     if faltantes:
         raise ErrorImportacion([f"Falta la columna obligatoria: {', '.join(faltantes)}"])
@@ -155,7 +170,7 @@ def importar_estudiantes(archivo):
             nivel_txt, letra = _texto(datos.get("nivel")), _texto(datos.get("letra")).upper()
             if nivel_txt and letra:
                 try:
-                    anio = int(_texto(datos.get("anio")) or anio_actual())
+                    anio = _entero(datos.get("anio") or anio_actual())
                 except ValueError:
                     errores.append(f"Fila {n}: año «{datos.get('anio')}» no válido")
                     continue
@@ -170,6 +185,166 @@ def importar_estudiantes(archivo):
             transaction.set_rollback(True)
             raise ErrorImportacion(errores)
     return {"creados": creados, "actualizados": actualizados}
+
+
+# --------------------------------------------------------------------------- Nómina SIGE
+
+_COLUMNAS_SIGE = {
+    "ano": "anio", "anio": "anio", "codtipoensenanza": "cod_tipo", "codgrado": "cod_grado", "descgrado": "desc_grado",
+    "letracurso": "letra", "run": "run", "digitover": "dv", "digitoverificador": "dv", "genero": "genero",
+    "nombres": "nombres", "apellidopaterno": "apellido_paterno", "apellidomaterno": "apellido_materno",
+    "direccion": "direccion", "comunaresidencia": "comuna", "email": "email", "telefono": "telefono",
+    "celular": "celular", "fechanacimiento": "fecha_nacimiento", "fecharetiro": "fecha_retiro",
+    "asistenca": "asistencia", "asistencia": "asistencia", "rbd": "rbd", "codigocomunaresidencia": "codigo_comuna",
+    "codigoetnia": "codigo_etnia", "fechaincorporacioncurso": "fecha_incorporacion", "promediofinal": "promedio",
+}
+_MINUSCULAS = {"de", "del", "la", "las", "los", "y", "e", "van", "von", "da", "di"}
+_ROMANOS = {1: "I", 2: "II", 3: "III", 4: "IV"}
+
+
+def es_nomina_sige(encabezado):
+    claves = {_clave(c) for c in encabezado}
+    return {"run", "descgrado", "letracurso"} <= claves and ("digitover" in claves or "digitoverificador" in claves)
+
+
+def nombre_propio(texto):
+    """'JUAN DE LA CRUZ' -> 'Juan de la Cruz'."""
+    palabras = _texto(texto).lower().split()
+    return " ".join(p if (i and p in _MINUSCULAS) else p[:1].upper() + p[1:] for i, p in enumerate(palabras))
+
+
+def nivel_canonico(cod_tipo, cod_grado, descripcion):
+    """(nombre, orden, enseñanza) a partir de los códigos SIGE."""
+    from .models import Nivel as N
+
+    try:
+        tipo, grado = _entero(cod_tipo), _entero(cod_grado)
+    except ValueError:
+        return descripcion, None, ""
+    if tipo == 10:
+        nombres = {1: "Sala Cuna Menor", 2: "Sala Cuna Mayor", 3: "Medio Menor", 4: "Pre-kínder", 5: "Kínder"}
+        if grado in (4, 5):
+            return nombres[grado], grado - 3, N.Ensenanza.PARVULARIA
+        return descripcion, None, N.Ensenanza.PARVULARIA
+    if 110 <= tipo < 300:
+        return f"{grado}° Básico", grado + 2, N.Ensenanza.BASICA
+    if tipo >= 300 and grado in _ROMANOS:
+        return f"{_ROMANOS[grado]} Medio", grado + 10, N.Ensenanza.MEDIA
+    return descripcion, None, ""
+
+
+def reordenar_niveles():
+    """Asigna el orden oficial a los niveles con nombres reconocibles (Pre-kínder, Kínder, 1° Básico…)."""
+    import re
+
+    for nivel in Nivel.objects.all():
+        clave = _clave(nivel.nombre)
+        orden = ensenanza = None
+        if clave in ("prekinder", "nt1"):
+            orden, ensenanza = 1, Nivel.Ensenanza.PARVULARIA
+        elif clave in ("kinder", "nt2"):
+            orden, ensenanza = 2, Nivel.Ensenanza.PARVULARIA
+        elif m := re.fullmatch(r"(\d)basico", clave):
+            orden, ensenanza = int(m.group(1)) + 2, Nivel.Ensenanza.BASICA
+        elif m := re.fullmatch(r"(i|ii|iii|iv)medio", clave):
+            orden, ensenanza = {"i": 1, "ii": 2, "iii": 3, "iv": 4}[m.group(1)] + 10, Nivel.Ensenanza.MEDIA
+        if orden is not None and (nivel.orden != orden or nivel.ensenanza != ensenanza):
+            nivel.orden, nivel.ensenanza = orden, ensenanza
+            nivel.save(update_fields=["orden", "ensenanza"])
+
+
+def importar_nomina_sige(tabla, cursos_permitidos=None):
+    """Importa la nómina de estudiantes tal como la exporta SIGE (Ministerio de Educación).
+
+    cursos_permitidos: si se indica (profesor jefe), solo se aceptan estudiantes de esos cursos.
+    """
+    from .models import Establecimiento
+
+    indices, filas = _filas_con_encabezado(None, _COLUMNAS_SIGE, tabla)
+    errores, creados, actualizados, retirados = [], 0, 0, 0
+    cursos = {}
+    rbd_propio = _texto(Establecimiento.actual().rbd).split("-")[0].strip()
+    with transaction.atomic():
+        for n, d in filas:
+            run, dv = _texto(d.get("run")), _texto(d.get("dv"))
+            if not rut_es_valido(f"{run}-{dv}"):
+                errores.append(f"Fila {n}: RUN «{run}-{dv}» no válido")
+                continue
+            rbd = _texto(d.get("rbd")).split("-")[0].strip()
+            if rbd_propio and rbd and rbd != rbd_propio:
+                errores.append(f"Fila {n}: el RBD {rbd} no corresponde a este establecimiento (RBD {rbd_propio})")
+                continue
+            try:
+                anio = _entero(d.get("anio") or anio_actual())
+                nacimiento = _fecha(d.get("fecha_nacimiento"))
+                retiro = _fecha(d.get("fecha_retiro"))
+                incorporacion = _fecha(d.get("fecha_incorporacion"))
+            except ValueError as e:
+                errores.append(f"Fila {n}: {e}")
+                continue
+            if retiro is not None and retiro.year <= 1900:
+                retiro = None
+            if incorporacion is not None and incorporacion.year <= 1900:
+                incorporacion = None
+            clave_curso = (_texto(d.get("cod_tipo")), _texto(d.get("cod_grado")), _texto(d.get("desc_grado")),
+                           _texto(d.get("letra")).upper(), anio)
+            if clave_curso not in cursos:
+                nombre, orden, ensenanza = nivel_canonico(*clave_curso[:3])
+                nivel = Nivel.objects.filter(nombre__iexact=nombre).first()
+                if nivel is None:
+                    if orden is None:
+                        orden = (Nivel.objects.aggregate(m=Max("orden"))["m"] or 0) + 1
+                    nivel = Nivel.objects.create(nombre=nombre, orden=orden, ensenanza=ensenanza)
+                cursos[clave_curso], _ = Curso.objects.get_or_create(nivel=nivel, letra=clave_curso[3] or "A", anio=anio)
+            asistencia = None
+            try:
+                valor = Decimal(_texto(d.get("asistencia")).replace(",", ".") or "0")
+                asistencia = valor if 0 < valor <= 100 else None
+            except InvalidOperation:
+                pass
+            if cursos_permitidos is not None and cursos[clave_curso] not in cursos_permitidos:
+                errores.append(f"Fila {n}: el curso {cursos[clave_curso].nombre_corto} no es de su jefatura")
+                continue
+            activo = retiro is None
+            try:
+                promedio = Decimal(_texto(d.get("promedio")).replace(",", ".") or "0")
+                promedio = promedio if Decimal("1") <= promedio <= Decimal("7") else None
+            except InvalidOperation:
+                promedio = None
+            valores = {
+                "nombres": nombre_propio(d.get("nombres")),
+                "apellido_paterno": nombre_propio(d.get("apellido_paterno")),
+                "apellido_materno": nombre_propio(d.get("apellido_materno")),
+                "fecha_nacimiento": nacimiento, "curso": cursos[clave_curso], "activo": activo,
+                "genero": _texto(d.get("genero")).upper()[:1] if _texto(d.get("genero")).upper()[:1] in ("F", "M") else "",
+            }
+            valores.update({"fecha_retiro": retiro, "fecha_incorporacion": incorporacion,
+                            "codigo_etnia": _texto(d.get("codigo_etnia")), "promedio_sige": promedio})
+            if _texto(d.get("codigo_comuna")):
+                valores["codigo_comuna"] = _texto(d.get("codigo_comuna"))
+            for campo, origen in (("direccion", "direccion"), ("email", "email")):
+                if _texto(d.get(origen)):
+                    valores[campo] = nombre_propio(d.get(origen)) if campo == "direccion" else _texto(d.get(origen)).lower()
+            if _texto(d.get("comuna")):
+                valores["comuna"] = nombre_propio(d.get("comuna"))
+            for campo in ("telefono", "celular"):
+                if _texto(d.get(campo)) not in ("", "0"):
+                    valores[campo] = _texto(d.get(campo))
+            if asistencia is not None:
+                valores["porcentaje_asistencia"] = asistencia
+            if not valores["nombres"] or not valores["apellido_paterno"]:
+                errores.append(f"Fila {n}: faltan nombres o apellido paterno")
+                continue
+            _, creado = Estudiante.objects.update_or_create(rut=normalizar_rut(f"{run}-{dv}"), defaults=valores)
+            creados += creado
+            actualizados += not creado
+            retirados += not activo
+        if errores:
+            transaction.set_rollback(True)
+            raise ErrorImportacion(errores)
+        reordenar_niveles()
+    return {"creados": creados, "actualizados": actualizados, "cursos": len(set(cursos.values())),
+            "retirados": retirados, "sige": True}
 
 
 def _obtener_curso(nivel_txt, letra, anio):
@@ -193,27 +368,33 @@ def importar_notas(archivo, asignatura_curso):
     fila 3: Ponderación | | peso ...
     fila 4 en adelante: rut | nombre | notas
     """
-    libro = load_workbook(archivo, data_only=True)
-    hoja = libro.worksheets[0]
+    tabla = _leer(archivo)
+
+    def celda(fila, col):  # fila y columna desde 1, como en Excel
+        if fila - 1 < len(tabla) and col - 1 < len(tabla[fila - 1]):
+            return tabla[fila - 1][col - 1]
+        return None
+
+    max_col = max((len(f) for f in tabla), default=0)
     errores = []
     columnas = []  # (indice_columna, evaluacion)
     evaluaciones = {(e.nombre.strip().lower(), e.semestre): e for e in asignatura_curso.evaluaciones.all()}
     estudiantes = {e.rut: e for e in asignatura_curso.curso.estudiantes.all()}
     guardadas = 0
     with transaction.atomic():
-        for col in range(3, hoja.max_column + 1):
-            nombre = _texto(hoja.cell(1, col).value)
+        for col in range(3, max_col + 1):
+            nombre = _texto(celda(1, col))
             if not nombre:
                 continue
             try:
-                semestre = int(_texto(hoja.cell(FILA_SEMESTRE, col).value) or 1)
+                semestre = _entero(celda(FILA_SEMESTRE, col) or 1)
                 if semestre not in (1, 2):
                     raise ValueError
             except ValueError:
                 errores.append(f"Columna «{nombre}»: el semestre debe ser 1 o 2")
                 continue
             try:
-                ponderacion = Decimal(_texto(hoja.cell(FILA_PONDERACION, col).value).replace(",", ".") or "1")
+                ponderacion = Decimal(_texto(celda(FILA_PONDERACION, col)).replace(",", ".") or "1")
                 if ponderacion <= 0:
                     raise InvalidOperation
             except InvalidOperation:
@@ -230,8 +411,8 @@ def importar_notas(archivo, asignatura_curso):
                 ev.save(update_fields=["ponderacion"])
             columnas.append((col, ev))
 
-        for fila in range(PRIMERA_FILA_ESTUDIANTE, hoja.max_row + 1):
-            rut = _texto(hoja.cell(fila, 1).value)
+        for fila in range(PRIMERA_FILA_ESTUDIANTE, len(tabla) + 1):
+            rut = _texto(celda(fila, 1))
             if not rut:
                 continue
             est = estudiantes.get(normalizar_rut(rut)) if rut_es_valido(rut) else None
@@ -240,7 +421,7 @@ def importar_notas(archivo, asignatura_curso):
                 continue
             for col, ev in columnas:
                 try:
-                    nota = leer_nota(hoja.cell(fila, col).value)
+                    nota = leer_nota(celda(fila, col))
                 except ValueError as e:
                     errores.append(f"Fila {fila}, «{ev.nombre}»: {e}")
                     continue

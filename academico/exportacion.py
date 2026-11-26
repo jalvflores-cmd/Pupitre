@@ -11,7 +11,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from .calculos import formato_nota, resumen_curso
+from .calculos import formato_nota, nota_en_palabras, resumen_curso
 from .models import NOTA_APROBACION, Establecimiento
 
 AZUL = colors.HexColor("#1F4E79")
@@ -127,18 +127,22 @@ def excel_estudiantes(estudiantes):
     libro = Workbook()
     hoja = libro.active
     hoja.title = "Estudiantes"
-    titulos = ["RUT", "Apellido paterno", "Apellido materno", "Nombres", "Curso", "Fecha nacimiento",
-               "Dirección", "Comuna", "Teléfono", "Email", "Apoderado", "RUT apoderado", "Teléfono apoderado",
-               "Contacto emergencia", "Teléfono emergencia", "Activo"]
+    titulos = ["RUT", "Apellido paterno", "Apellido materno", "Nombres", "Curso", "Fecha nacimiento", "Género",
+               "Dirección", "Comuna", "Teléfono", "Celular", "Email", "Apoderado", "RUT apoderado",
+               "Teléfono apoderado", "Contacto emergencia", "Teléfono emergencia", "% asistencia",
+               "Fecha incorporación", "Fecha retiro", "Activo"]
     _xl_encabezado(hoja, 1, titulos)
     for e in estudiantes.select_related("curso__nivel"):
         hoja.append([
             e.rut_formateado, e.apellido_paterno, e.apellido_materno, e.nombres,
             e.curso.nombre_corto if e.curso else "", e.fecha_nacimiento.strftime("%d-%m-%Y") if e.fecha_nacimiento else "",
-            e.direccion, e.comuna, e.telefono, e.email, e.apoderado_nombre, e.apoderado_rut,
-            e.apoderado_telefono, e.contacto_emergencia, e.telefono_emergencia, "Sí" if e.activo else "No",
+            e.genero, e.direccion, e.comuna, e.telefono, e.celular, e.email, e.apoderado_nombre, e.apoderado_rut,
+            e.apoderado_telefono, e.contacto_emergencia, e.telefono_emergencia,
+            float(e.porcentaje_asistencia) if e.porcentaje_asistencia is not None else None,
+            e.fecha_incorporacion.strftime("%d-%m-%Y") if e.fecha_incorporacion else "",
+            e.fecha_retiro.strftime("%d-%m-%Y") if e.fecha_retiro else "", "Sí" if e.activo else "No",
         ])
-    for col in "ABCDEFGHIJKLMNOP":
+    for col in "ABCDEFGHIJKLMNOPQRSTU":
         hoja.column_dimensions[col].width = 18
     hoja.freeze_panes = "A2"
     return _bytes(libro)
@@ -163,57 +167,107 @@ def excel_anotaciones(anotaciones, titulo):
     return _bytes(libro)
 
 
-# --------------------------------------------------------------------------- PDF
+# --------------------------------------------------------------------------- PDF (formato oficial)
+#
+# Estructura basada en los documentos oficiales de Enseñanza Básica y Media:
+# Informe de Calificaciones, Certificado Anual de Estudios y Acta de Calificaciones Finales
+# y Promoción Escolar (Decreto 67/2018).
+
+NEGRO = colors.black
+GRIS_LINEA = colors.HexColor("#808080")
+GRIS_FONDO = colors.HexColor("#E7E7E7")
 
 _estilos = getSampleStyleSheet()
-E_TITULO = ParagraphStyle("titulo", parent=_estilos["Title"], fontSize=15, textColor=AZUL, spaceAfter=4)
-E_SUB = ParagraphStyle("sub", parent=_estilos["Normal"], fontSize=9, textColor=colors.grey, alignment=TA_CENTER)
-E_NORMAL = ParagraphStyle("normal", parent=_estilos["Normal"], fontSize=9, leading=11)
-E_CELDA = ParagraphStyle("celda", parent=E_NORMAL, fontSize=8, leading=10)
-E_FIRMA = ParagraphStyle("firma", parent=E_NORMAL, alignment=TA_CENTER)
+E_NORMAL = ParagraphStyle("normal", parent=_estilos["Normal"], fontName="Helvetica", fontSize=9.5, leading=12.5)
+E_JUSTO = ParagraphStyle("justo", parent=E_NORMAL, alignment=4, fontSize=10.5, leading=16)
+E_CELDA = ParagraphStyle("celda", parent=E_NORMAL, fontSize=8, leading=9.5)
+E_CELDA_C = ParagraphStyle("celdac", parent=E_CELDA, alignment=TA_CENTER)
+E_TITULO = ParagraphStyle("titulo", parent=E_NORMAL, fontName="Helvetica-Bold", fontSize=13, leading=16,
+                          alignment=TA_CENTER, spaceAfter=2)
+E_SUB = ParagraphStyle("sub", parent=E_NORMAL, fontSize=9, alignment=TA_CENTER)
+E_MINI = ParagraphStyle("mini", parent=E_NORMAL, fontSize=7, leading=8.5, textColor=colors.HexColor("#444444"))
+E_FIRMA = ParagraphStyle("firma", parent=E_NORMAL, fontSize=8.5, leading=10.5, alignment=TA_CENTER)
+
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
+         "noviembre", "diciembre"]
 
 
-def _encabezado_pdf(titulo, subtitulo=""):
+def _fecha_larga(fecha=None):
+    fecha = fecha or timezone.localdate()
+    return f"{fecha.day} de {MESES[fecha.month - 1]} de {fecha.year}"
+
+
+def _nombre_mayus(est):
+    return " ".join(p for p in [est.nombres, est.apellido_paterno, est.apellido_materno] if p).upper()
+
+
+def _descripcion_nivel(nivel):
+    """'5° Básico' -> '5° año de Enseñanza Básica'."""
+    nombre = nivel.nombre
+    if nivel.ensenanza == "BASICA" and "básico" in nombre.lower():
+        return nombre.lower().replace("básico", "").strip() + " año de Enseñanza Básica"
+    if nivel.ensenanza == "MEDIA" and "medio" in nombre.lower():
+        return nombre.split()[0] + " año de Enseñanza Media"
+    if nivel.ensenanza == "PARVULARIA":
+        return f"{nombre} (Educación Parvularia)"
+    return nombre
+
+
+def _tipo_ensenanza(nivel):
+    return nivel.get_ensenanza_display() if nivel.ensenanza else ""
+
+
+def _siguiente_nivel(nivel):
+    from .models import Nivel
+    return Nivel.objects.filter(orden__gt=nivel.orden).order_by("orden").first()
+
+
+def _membrete(titulo, subtitulo=""):
+    """Membrete oficial: República de Chile / Ministerio de Educación + datos del establecimiento."""
     est = Establecimiento.actual()
-    datos = " · ".join(x for x in [f"RBD {est.rbd}" if est.rbd else "", est.direccion, est.comuna] if x)
-    partes = [Paragraph(f"<b>{est.nombre}</b>", ParagraphStyle("est", parent=E_NORMAL, fontSize=11, leading=14, alignment=TA_CENTER))]
-    if datos:
-        partes.append(Paragraph(datos, E_SUB))
-    partes += [Spacer(1, 8), Paragraph(titulo, E_TITULO)]
+    izquierda = Paragraph(
+        "<b>REPÚBLICA DE CHILE</b><br/>MINISTERIO DE EDUCACIÓN<br/>"
+        + (f"REGIÓN DE {est.region.upper()}<br/>" if est.region and not est.region.lower().startswith("regi") else (f"{est.region.upper()}<br/>" if est.region else ""))
+        + "<font size=7>Decreto de Evaluación y Promoción N° 67 de 2018</font>", E_MINI)
+    datos = [f"<b>{est.nombre.upper()}</b>"]
+    if est.rbd:
+        datos.append(f"RBD {est.rbd}")
+    if est.comuna:
+        datos.append(f"Comuna de {est.comuna}")
+    derecha = Paragraph("<br/>".join(datos), ParagraphStyle("der", parent=E_MINI, alignment=2))
+    t = Table([[izquierda, derecha]], colWidths=["50%", "50%"])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                           ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    partes = [t, Spacer(1, 14), Paragraph(titulo.upper(), E_TITULO)]
     if subtitulo:
         partes.append(Paragraph(subtitulo, E_SUB))
     partes.append(Spacer(1, 10))
     return partes
 
 
-def _ficha_estudiante(est, curso):
-    jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else "—"
-    datos = [
-        ["Estudiante:", est.nombre_completo, "RUT:", est.rut_formateado],
-        ["Curso:", str(curso), "Profesor(a) jefe:", jefe],
-    ]
-    t = Table(datos, colWidths=[2.6 * cm, 7.4 * cm, 3.2 * cm, 5 * cm])
+def _tabla_datos(filas, anchos):
+    t = Table([[Paragraph(f"<b>{a}</b>", E_CELDA), Paragraph(str(b), E_CELDA), Paragraph(f"<b>{c}</b>", E_CELDA),
+                Paragraph(str(d), E_CELDA)] for a, b, c, d in filas], colWidths=anchos)
     t.setStyle(TableStyle([
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRIS_LINEA), ("BACKGROUND", (0, 0), (0, -1), GRIS_FONDO),
+        ("BACKGROUND", (2, 0), (2, -1), GRIS_FONDO), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]))
-    return [t, Spacer(1, 10)]
+    return t
 
 
-def _estilo_tabla(datos, col_notas_desde=1, encabezado_filas=1):
+def _estilo_oficial(datos, col_notas_desde=1, filas_encabezado=1, filas_pie=0):
     estilo = [
-        ("BACKGROUND", (0, 0), (-1, encabezado_filas - 1), AZUL),
-        ("TEXTCOLOR", (0, 0), (-1, encabezado_filas - 1), colors.white),
-        ("FONTNAME", (0, 0), (-1, encabezado_filas - 1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRIS_LINEA),
+        ("BACKGROUND", (0, 0), (-1, filas_encabezado - 1), GRIS_FONDO),
+        ("FONTNAME", (0, 0), (-1, filas_encabezado - 1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (col_notas_desde, 0), (-1, -1), "CENTER"),
-        ("ROWBACKGROUNDS", (0, encabezado_filas), (-1, -1), [colors.white, GRIS]),
     ]
-    for f, fila in enumerate(datos[encabezado_filas:], start=encabezado_filas):
+    if filas_pie:
+        estilo += [("BACKGROUND", (0, -filas_pie), (-1, -1), GRIS_FONDO),
+                   ("FONTNAME", (0, -filas_pie), (-1, -1), "Helvetica-Bold")]
+    for f, fila in enumerate(datos[filas_encabezado:], start=filas_encabezado):
         for c, valor in enumerate(fila):
             if c >= col_notas_desde and isinstance(valor, str) and _es_nota_roja(valor):
                 estilo.append(("TEXTCOLOR", (c, f), (c, f), ROJO))
@@ -227,23 +281,28 @@ def _es_nota_roja(texto):
         return False
 
 
-def _firmas(nombres):
-    celdas = [[Paragraph("_________________________<br/>" + n, E_FIRMA) for n in nombres]]
-    return [Spacer(1, 50), Table(celdas, colWidths=[18 * cm / len(nombres)] * len(nombres))]
+def _firmas(nombres, ancho_total=17 * cm, espacio=55):
+    celdas = [[Paragraph("_______________________________<br/>" + n, E_FIRMA) for n in nombres]]
+    t = Table(celdas, colWidths=[ancho_total / len(nombres)] * len(nombres))
+    return [Spacer(1, espacio), t]
 
 
-def _construir_pdf(historia, horizontal=False):
+def _asistencia_txt(est):
+    return f"{est.porcentaje_asistencia:.1f} %".replace(".", ",") if est.porcentaje_asistencia is not None else "—"
+
+
+def _construir_pdf(historia, horizontal=False, titulo="Documento"):
     salida = BytesIO()
     tam = landscape(letter) if horizontal else letter
-    doc = SimpleDocTemplate(salida, pagesize=tam, leftMargin=1.6 * cm, rightMargin=1.6 * cm,
-                            topMargin=1.4 * cm, bottomMargin=1.4 * cm,
-                            title="Informe de calificaciones", creator="Pupitre", author=Establecimiento.actual().nombre)
+    doc = SimpleDocTemplate(salida, pagesize=tam, leftMargin=2 * cm, rightMargin=2 * cm,
+                            topMargin=1.5 * cm, bottomMargin=1.5 * cm,
+                            title=titulo, creator="Pupitre", author=Establecimiento.actual().nombre)
 
     def pie(canvas, doc_):
         canvas.saveState()
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(colors.grey)
-        canvas.drawString(doc_.leftMargin, 0.8 * cm, f"Emitido el {timezone.localdate():%d-%m-%Y}")
+        canvas.drawString(doc_.leftMargin, 0.8 * cm, f"Emitido el {timezone.localdate():%d-%m-%Y} · Pupitre")
         canvas.drawRightString(tam[0] - doc_.rightMargin, 0.8 * cm, f"Página {doc_.page}")
         canvas.restoreState()
 
@@ -251,106 +310,156 @@ def _construir_pdf(historia, horizontal=False):
     return salida.getvalue()
 
 
+def _sin_estudiantes(titulo):
+    return _membrete(titulo) + [Paragraph("No hay estudiantes.", E_NORMAL)]
+
+
 def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
-    """Informe de notas parcial (todas las notas por semestre), una página por estudiante."""
+    """Informe de Calificaciones (parcial o semestral), una página por estudiante."""
     asigs, evaluaciones, resumenes = resumen_curso(curso, asignaturas_curso, estudiantes)
+    jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
     historia = []
     for i, r in enumerate(resumenes):
         if i:
             historia.append(PageBreak())
-        historia += _encabezado_pdf("Informe de calificaciones", f"Año académico {curso.anio}")
-        historia += _ficha_estudiante(r.estudiante, curso)
-        datos = [["Asignatura", "Notas 1er semestre", "Prom. S1", "Notas 2do semestre", "Prom. S2", "Prom. final"]]
+        e = r.estudiante
+        historia += _membrete("Informe de calificaciones", f"Año escolar {curso.anio}")
+        historia.append(_tabla_datos([
+            ("Estudiante", _nombre_mayus(e), "RUN", e.rut_formateado),
+            ("Curso", f"{curso.nombre_corto} · {_tipo_ensenanza(curso.nivel)}", "Profesor(a) jefe", jefe or "—"),
+        ], [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
+        historia.append(Spacer(1, 10))
+        datos = [["Asignatura", "Calificaciones 1er semestre", "Prom.\n1er sem.", "Calificaciones 2do semestre",
+                  "Prom.\n2do sem.", "Prom.\nfinal"]]
         for pa in r.asignaturas:
             evs = evaluaciones[pa.asignatura_curso.id]
             notas_sem = []
-            for s in (1, 2):
+            for sem in (1, 2):
                 partes = []
-                for e in evs:
-                    n = pa.notas.get(e.id)
-                    if e.semestre == s and n is not None:
+                for ev in evs:
+                    n = pa.notas.get(ev.id)
+                    if ev.semestre == sem and n is not None:
                         txt = formato_nota(n)
                         partes.append(f'<font color="#C00000">{txt}</font>' if n < NOTA_APROBACION else txt)
-                notas_sem.append(Paragraph("&nbsp;&nbsp;".join(partes) or "—", E_CELDA))
-            datos.append([Paragraph(str(pa.asignatura_curso.asignatura), E_CELDA), notas_sem[0],
-                          formato_nota(pa.s1), notas_sem[1], formato_nota(pa.s2), formato_nota(pa.final)])
+                notas_sem.append(Paragraph("&nbsp;&nbsp;".join(partes) or "", E_CELDA_C))
+            datos.append([Paragraph(str(pa.asignatura_curso.asignatura), E_CELDA), notas_sem[0], formato_nota(pa.s1),
+                          notas_sem[1], formato_nota(pa.s2), formato_nota(pa.final)])
         datos.append(["Promedio general", "", formato_nota(r.promedio_s1), "", formato_nota(r.promedio_s2),
                       formato_nota(r.promedio_general)])
-        t = Table(datos, colWidths=[4 * cm, 4.6 * cm, 1.7 * cm, 4.6 * cm, 1.7 * cm, 1.8 * cm], repeatRows=1)
-        estilo = _estilo_tabla(datos, col_notas_desde=1)
-        estilo.add("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold")
-        t.setStyle(estilo)
-        historia.append(t)
+        t = Table(datos, colWidths=[4.2 * cm, 4.4 * cm, 1.4 * cm, 4.4 * cm, 1.4 * cm, 1.4 * cm], repeatRows=1)
+        t.setStyle(_estilo_oficial(datos, 1, filas_pie=1))
+        historia += [t, Spacer(1, 8)]
+        historia.append(_tabla_datos([("Asistencia", _asistencia_txt(e), "Escala", "1,0 a 7,0 · aprobación 4,0")],
+                                     [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
         historia.append(Spacer(1, 6))
-        historia.append(Paragraph("Notas en rojo: calificación insuficiente (bajo 4,0).", E_SUB))
-        jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else "Profesor(a) jefe"
-        historia += _firmas([f"{jefe}<br/>Profesor(a) jefe"])
-    if not historia:
-        historia = _encabezado_pdf("Informe de calificaciones") + [Paragraph("No hay estudiantes.", E_NORMAL)]
-    return _construir_pdf(historia)
+        historia.append(Paragraph("Observaciones: ____________________________________________________________"
+                                  "______________________________", E_NORMAL))
+        historia += _firmas([f"{jefe}<br/>Profesor(a) jefe", "Apoderado(a)"])
+    return _construir_pdf(historia or _sin_estudiantes("Informe de calificaciones"), titulo="Informe de calificaciones")
 
 
 def pdf_informe_final(curso, estudiantes=None):
-    """Informe final (certificado anual) por estudiante, una página por estudiante."""
+    """Certificado Anual de Estudios, una página por estudiante."""
     asigs, _, resumenes = resumen_curso(curso, None, estudiantes)
     est = Establecimiento.actual()
+    nivel = curso.nivel
+    siguiente = _siguiente_nivel(nivel)
     historia = []
     for i, r in enumerate(resumenes):
         if i:
             historia.append(PageBreak())
-        historia += _encabezado_pdf("Informe final de calificaciones", f"Año académico {curso.anio}")
-        historia += _ficha_estudiante(r.estudiante, curso)
-        datos = [["Asignatura", "1er semestre", "2do semestre", "Promedio final", "Situación"]]
+        e = r.estudiante
+        historia += _membrete("Certificado anual de estudios", _tipo_ensenanza(nivel))
+        reconocimiento = (f", reconocido oficialmente por el Ministerio de Educación según {est.resolucion_reconocimiento}"
+                          if est.resolucion_reconocimiento else ", reconocido oficialmente por el Ministerio de Educación")
+        plan = f"Plan de Estudios aprobado por {nivel.decreto_plan_estudios}" if nivel.decreto_plan_estudios \
+            else "Plan de Estudios vigente"
+        region = f", Región de {est.region}" if est.region else ""
+        texto = (
+            f"{est.director or '____________________'}, Director(a) del establecimiento educacional "
+            f"<b>{est.nombre}</b>, RBD {est.rbd or '______'}, de la comuna de {est.comuna or '______'}{region}"
+            f"{reconocimiento}, certifica que <b>{_nombre_mayus(e)}</b>, RUN <b>{e.rut_formateado}</b>, "
+            f"cursó el <b>{_descripcion_nivel(nivel)}</b> durante el año escolar <b>{curso.anio}</b>, de acuerdo al "
+            f"{plan} y al Reglamento de Evaluación y Promoción Escolar (Decreto N° 67 de 2018), "
+            f"obteniendo las siguientes calificaciones finales:"
+        )
+        historia += [Paragraph(texto, E_JUSTO), Spacer(1, 10)]
+        datos = [["Asignatura", "Calificación", "En palabras"]]
         for pa in r.asignaturas:
-            situacion = "" if pa.final is None else ("Aprobada" if pa.aprobada else "Reprobada")
-            datos.append([str(pa.asignatura_curso.asignatura), formato_nota(pa.s1), formato_nota(pa.s2),
-                          formato_nota(pa.final), situacion])
-        datos.append(["Promedio general", formato_nota(r.promedio_s1), formato_nota(r.promedio_s2),
-                      formato_nota(r.promedio_general), ""])
-        t = Table(datos, colWidths=[6 * cm, 2.8 * cm, 2.8 * cm, 3 * cm, 3.4 * cm], repeatRows=1)
-        estilo = _estilo_tabla(datos, col_notas_desde=1)
-        estilo.add("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold")
+            datos.append([str(pa.asignatura_curso.asignatura), formato_nota(pa.final), nota_en_palabras(pa.final)])
+        datos.append(["PROMEDIO GENERAL", formato_nota(r.promedio_general), nota_en_palabras(r.promedio_general)])
+        datos.append(["PORCENTAJE DE ASISTENCIA", _asistencia_txt(e), ""])
+        t = Table(datos, colWidths=[8 * cm, 3 * cm, 6 * cm], repeatRows=1)
+        estilo = _estilo_oficial(datos, 1, filas_pie=2)
+        estilo.add("ALIGN", (2, 1), (2, -1), "LEFT")
         t.setStyle(estilo)
-        historia.append(t)
-        historia.append(Spacer(1, 14))
-        color = "#1F4E79" if r.situacion.startswith("Promovido") else "#C00000"
-        historia.append(Paragraph(
-            f'Situación final: <font color="{color}"><b>{r.situacion}</b></font>',
-            ParagraphStyle("sit", parent=E_NORMAL, fontSize=11)))
-        historia.append(Spacer(1, 4))
-        historia.append(Paragraph(
-            "La situación final considera solo el rendimiento académico (Decreto 67/2018); "
-            "la asistencia debe verificarse por separado.", E_SUB))
-        jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
-        historia += _firmas([f"{jefe}<br/>Profesor(a) jefe", f"{est.director}<br/>Director(a)"])
-    if not historia:
-        historia = _encabezado_pdf("Informe final de calificaciones") + [Paragraph("No hay estudiantes.", E_NORMAL)]
-    return _construir_pdf(historia)
+        historia += [t, Spacer(1, 12)]
+        if r.situacion.startswith("Promovido"):
+            destino = f" a {_descripcion_nivel(siguiente)}" if siguiente else ""
+            resultado = f"En consecuencia, el (la) estudiante es <b>PROMOVIDO(A){destino}</b>."
+        elif r.situacion.startswith("Reprobado"):
+            resultado = f"En consecuencia, el (la) estudiante <b>REPRUEBA</b> el {_descripcion_nivel(nivel)}."
+        else:
+            resultado = f"Situación final: <b>{r.situacion.upper()}</b>."
+        historia += [Paragraph(resultado, E_JUSTO), Spacer(1, 6),
+                     Paragraph("Se extiende el presente certificado para los fines que estime conveniente.", E_JUSTO),
+                     Spacer(1, 8),
+                     Paragraph(f"{est.comuna or '__________'}, {_fecha_larga()}.", ParagraphStyle("fecha", parent=E_JUSTO, alignment=2))]
+        historia += _firmas([f"{est.director}<br/>Director(a)<br/>Firma y timbre"], ancho_total=8 * cm, espacio=60)
+    return _construir_pdf(historia or _sin_estudiantes("Certificado anual de estudios"),
+                          titulo="Certificado anual de estudios")
 
 
 def pdf_acta_final_curso(curso):
-    """Resumen final del curso en una tabla (hoja horizontal)."""
-    asigs, _, resumenes = resumen_curso(curso)
-    jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else "—"
-    historia = _encabezado_pdf(f"Acta de calificaciones finales – {curso}", f"Profesor(a) jefe: {jefe}")
-    encabezado = ["N°", "RUT", "Estudiante"] + [
-        Paragraph(f"<b>{a.asignatura}</b>", ParagraphStyle("h", parent=E_CELDA, textColor=colors.white,
-                                                            alignment=TA_CENTER, fontSize=7))
-        for a in asigs
-    ] + ["Prom.", "Situación"]
-    datos = [encabezado]
-    for i, r in enumerate(resumenes, start=1):
-        datos.append([str(i), r.estudiante.rut_formateado, Paragraph(r.estudiante.nombre_completo, E_CELDA)]
-                     + [formato_nota(p.final) for p in r.asignaturas]
-                     + [formato_nota(r.promedio_general), r.situacion])
-    ancho_disponible = landscape(letter)[0] - 3.2 * cm
-    fijos = [0.8 * cm, 2.2 * cm, 5.2 * cm]
-    finales = [1.3 * cm, 2.6 * cm]
-    ancho_asig = max(1.1 * cm, (ancho_disponible - sum(fijos) - sum(finales)) / max(len(asigs), 1))
-    t = Table(datos, colWidths=fijos + [ancho_asig] * len(asigs) + finales, repeatRows=1)
-    t.setStyle(_estilo_tabla(datos, col_notas_desde=3))
-    historia.append(t)
+    """Acta de Calificaciones Finales y Promoción Escolar (incluye retirados)."""
+    estudiantes = list(curso.estudiantes.all())
+    asigs, _, resumenes = resumen_curso(curso, None, estudiantes)
     est = Establecimiento.actual()
-    historia += _firmas([f"{jefe}<br/>Profesor(a) jefe", f"{est.jefe_utp}<br/>Jefe(a) de UTP",
-                         f"{est.director}<br/>Director(a)"])
-    return _construir_pdf(historia, horizontal=True)
+    nivel = curso.nivel
+    jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
+    historia = _membrete("Acta de calificaciones finales y promoción escolar", f"Año escolar {curso.anio}")
+    historia.append(_tabla_datos([
+        ("Establecimiento", f"{est.nombre} · RBD {est.rbd or '—'}", "Comuna / Región", f"{est.comuna or '—'} / {est.region or '—'}"),
+        ("Curso", f"{_descripcion_nivel(nivel)} {curso.letra}", "Tipo de enseñanza", _tipo_ensenanza(nivel) or "—"),
+        ("Plan de estudios", nivel.decreto_plan_estudios or "—", "Evaluación y promoción", "Decreto N° 67 de 2018"),
+        ("Profesor(a) jefe", jefe or "—", "Reconocimiento oficial", est.resolucion_reconocimiento or "—"),
+    ], [3.2 * cm, 8.8 * cm, 3.8 * cm, 8 * cm]))
+    historia.append(Spacer(1, 8))
+    encabezado = ["N°", "RUN", "Nombre del estudiante", "Sexo"] + [
+        Paragraph(f"<b>{a.asignatura}</b>", ParagraphStyle("h", parent=E_CELDA_C, fontSize=6.5, leading=7.5))
+        for a in asigs] + ["Prom.\ngral.", "%\nasist.", "Sit.\nfinal"]
+    datos = [encabezado]
+    codigo = {"Promovido(a)": "P", "Reprobado(a)": "R", "Retirado(a)": "Y"}
+    conteo = {(c, g): 0 for c in "PRY" for g in "MF"}
+    for i, r in enumerate(resumenes, start=1):
+        e = r.estudiante
+        sit = codigo.get(r.situacion, "—")
+        if sit in "PRY" and e.genero in ("M", "F"):
+            conteo[(sit, e.genero)] += 1
+        nombre = " ".join(p for p in [e.apellido_paterno, e.apellido_materno, e.nombres] if p).upper()
+        datos.append([str(i), e.rut_formateado, Paragraph(nombre, E_CELDA), e.genero or ""]
+                     + ([formato_nota(p.final) for p in r.asignaturas] if sit != "Y" else [""] * len(asigs))
+                     + [formato_nota(r.promedio_general) if sit != "Y" else "", _asistencia_txt(e).replace(" %", ""), sit])
+    ancho = landscape(letter)[0] - 4 * cm
+    fijos = [0.7 * cm, 2.1 * cm, 5.6 * cm, 0.9 * cm]
+    finales = [1.1 * cm, 1.1 * cm, 1 * cm]
+    ancho_asig = max(1 * cm, (ancho - sum(fijos) - sum(finales)) / max(len(asigs), 1))
+    t = Table(datos, colWidths=fijos + [ancho_asig] * len(asigs) + finales, repeatRows=1)
+    estilo = _estilo_oficial(datos, 3)
+    estilo.add("FONTSIZE", (0, 1), (-1, -1), 7.5)
+    t.setStyle(estilo)
+    historia += [t, Spacer(1, 10)]
+    resumen = [["Resumen", "Hombres", "Mujeres", "Total"]]
+    for nombre, c in (("Promovidos (P)", "P"), ("Reprobados (R)", "R"), ("Retirados (Y)", "Y")):
+        resumen.append([nombre, conteo[(c, "M")], conteo[(c, "F")], conteo[(c, "M")] + conteo[(c, "F")]])
+    tr = Table(resumen, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm])
+    tr.setStyle(_estilo_oficial(resumen, 1))
+    nota = Paragraph("P: promovido(a) · R: reprobado(a) · Y: retirado(a) · —: pendiente (asistencia bajo 85 % o sin notas). Asistencia mínima para la promoción: 85 % "
+                     "(Decreto 67/2018, art. 10), salvo autorización del Director(a).", E_MINI)
+    historia.append(Table([[tr, nota]], colWidths=[10 * cm, ancho - 10 * cm],
+                          style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    historia += _firmas([f"{jefe}<br/>Profesor(a) jefe", f"{est.director}<br/>Director(a)<br/>Firma y timbre"],
+                        ancho_total=ancho, espacio=45)
+    historia.append(Spacer(1, 4))
+    historia.append(Paragraph(f"{est.comuna or ''}, {_fecha_larga()}.", ParagraphStyle("f", parent=E_NORMAL, alignment=2)))
+    return _construir_pdf(historia, horizontal=True, titulo="Acta de calificaciones finales")

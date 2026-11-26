@@ -17,6 +17,7 @@ from academico.models import (
     Nivel,
     Perfil, anio_actual,
 )
+from academico.importacion import reordenar_niveles
 from academico.rut import calcular_dv
 
 NOMBRES = ["Sofía", "Benjamín", "Isidora", "Agustín", "Florencia", "Vicente", "Emilia", "Matías", "Antonella",
@@ -34,7 +35,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opciones):
         random.seed(42)
         anio = anio_actual()
-        datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán",
+        datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán", "region": "Ñuble",
                          "director": "Ana Valenzuela Rojas", "jefe_utp": "Pedro Castillo Mena"}
         escuela = Establecimiento.objects.first()
         if escuela is None:
@@ -43,6 +44,9 @@ class Command(BaseCommand):
             for campo, valor in datos_escuela.items():
                 setattr(escuela, campo, valor)
             escuela.save()
+        elif not escuela.region:  # completa solo campos vacíos
+            escuela.region = "Ñuble"
+            escuela.save(update_fields=["region"])
 
         def usuario(username, nombre, apellido, rol):
             u, creado = User.objects.get_or_create(username=username, defaults={"first_name": nombre, "last_name": apellido})
@@ -92,10 +96,7 @@ class Command(BaseCommand):
         jefes = [mate, leng, cien]
         niveles = ["1° Básico", "2° Básico", "3° Básico", "4° Básico", "5° Básico", "6° Básico", "7° Básico", "8° Básico"]
         for orden, nombre_nivel in enumerate(niveles, start=1):
-            nivel, _ = Nivel.objects.get_or_create(nombre=nombre_nivel, defaults={"orden": orden})
-            if nivel.orden != orden:
-                nivel.orden = orden
-                nivel.save(update_fields=["orden"])
+            nivel, _ = Nivel.objects.get_or_create(nombre=nombre_nivel, defaults={"orden": orden + 2})
             for letra in "AB":
                 jefe = jefes[(orden * 2 + ord(letra)) % 3]
                 curso, _ = Curso.objects.get_or_create(nivel=nivel, letra=letra, anio=anio,
@@ -139,6 +140,18 @@ class Command(BaseCommand):
                         descripcion=("Destaca por su participación en clases." if tipo == "POSITIVA"
                                      else "No trae materiales de trabajo."),
                         fecha=date(anio, 5, random.randint(1, 28)), autor=jefe)
+        reordenar_niveles()
+        for nivel in Nivel.objects.filter(decreto_plan_estudios=""):
+            if nivel.ensenanza == "BASICA":
+                grado = nivel.orden - 2
+                nivel.decreto_plan_estudios = ("Decreto Exento N° 2960 de 2012" if grado <= 6
+                                               else "Decreto Exento N° 628 de 2016")
+                nivel.save(update_fields=["decreto_plan_estudios"])
+        femeninos = {"Sofía", "Isidora", "Florencia", "Emilia", "Antonella", "Josefa", "Martina", "Catalina", "Trinidad"}
+        for est in Estudiante.objects.filter(genero="", porcentaje_asistencia=None):
+            est.genero = "F" if est.nombres.split()[0] in femeninos else "M"
+            est.porcentaje_asistencia = Decimal(str(round(random.uniform(78, 99), 1)))
+            est.save(update_fields=["genero", "porcentaje_asistencia"])
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos. Usuarios: sostenedor, director, utp, inspector, convivencia, "
             "profe.historia, profe.matematica, profe.lenguaje, profe.ciencias (contraseña: demo1234)"))

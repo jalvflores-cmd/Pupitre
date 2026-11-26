@@ -21,8 +21,11 @@
       <h5>Datos personales y contacto</h5>
       <dl class="row small mb-0">
         <dt class="col-5">Fecha nacimiento</dt><dd class="col-7">{{ est.fecha_nacimiento|date:"d-m-Y"|default:"—" }}</dd>
+        <dt class="col-5">Género</dt><dd class="col-7">{{ est.get_genero_display|default:"—" }}</dd>
+        <dt class="col-5">Asistencia</dt><dd class="col-7">{% if est.porcentaje_asistencia is not None %}{{ est.porcentaje_asistencia }} %{% else %}—{% endif %}</dd>
+        <dt class="col-5">Incorporación</dt><dd class="col-7">{{ est.fecha_incorporacion|date:"d-m-Y"|default:"—" }}{% if est.fecha_retiro %}<br><span class="text-danger">Retiro: {{ est.fecha_retiro|date:"d-m-Y" }}</span>{% endif %}</dd>
         <dt class="col-5">Dirección</dt><dd class="col-7">{{ est.direccion|default:"—" }}{% if est.comuna %}, {{ est.comuna }}{% endif %}</dd>
-        <dt class="col-5">Teléfono</dt><dd class="col-7">{{ est.telefono|default:"—" }}</dd>
+        <dt class="col-5">Teléfono</dt><dd class="col-7">{{ est.telefono|default:"—" }}{% if est.celular %} · {{ est.celular }}{% endif %}</dd>
         <dt class="col-5">Email</dt><dd class="col-7">{{ est.email|default:"—" }}</dd>
         <dt class="col-5 border-top pt-2">Apoderado(a)</dt><dd class="col-7 border-top pt-2">{{ est.apoderado_nombre|default:"—" }}{% if est.apoderado_rut %}<br><span class="text-muted">{{ est.apoderado_rut|rut }}</span>{% endif %}</dd>
         <dt class="col-5">Tel. apoderado</dt><dd class="col-7">{{ est.apoderado_telefono|default:"—" }}</dd>

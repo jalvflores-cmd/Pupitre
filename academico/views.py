@@ -376,6 +376,7 @@ def convivencia(request):
 def importar(request):
     return render(request, "academico/importar.html", {
         "form": ArchivoExcelForm(),
+        "puede_importar_estudiantes": es_gestion(request.user) or Curso.objects.filter(profesor_jefe=request.user).exists(),
         "asignaturas": [ac for ac in asignaturas_curso_visibles(request.user).filter(curso__anio=anio_actual())
                         if puede_editar_notas(request.user, ac)],
     })
@@ -396,17 +397,25 @@ def _procesar_importacion(request, funcion, *args):
             messages.error(request, f"… y {len(e.errores) - 25} errores más.")
         messages.warning(request, "No se importó nada. Corrija el archivo y vuelva a intentarlo.")
     except Exception:  # archivo dañado o con formato inesperado
-        messages.error(request, "No se pudo leer el archivo. Verifique que sea un Excel .xlsx válido.")
+        messages.error(request, "No se pudo leer el archivo. Verifique que sea un Excel, CSV, Word o nómina SIGE válido.")
     return None
 
 
 @login_required
-@solo_gestion
 @require_POST
 def importar_estudiantes(request):
-    r = _procesar_importacion(request, importacion.importar_estudiantes)
+    """Dirección/UTP: cualquier archivo. Profesor(a) jefe: nómina SIGE de sus cursos."""
+    if es_gestion(request.user):
+        r = _procesar_importacion(request, importacion.importar_estudiantes)
+    else:
+        jefaturas = list(Curso.objects.filter(profesor_jefe=request.user))
+        exigir(bool(jefaturas))
+        r = _procesar_importacion(request, importacion.importar_estudiantes, jefaturas)
     if r:
-        messages.success(request, f"Importación lista: {r['creados']} estudiantes nuevos, {r['actualizados']} actualizados.")
+        detalle = f"{r['creados']} estudiantes nuevos, {r['actualizados']} actualizados"
+        if r.get("sige"):
+            detalle = f"Nómina SIGE reconocida. {detalle}, {r['cursos']} cursos, {r['retirados']} marcados como retirados"
+        messages.success(request, f"Importación lista: {detalle}.")
     return redirect("importar")
 
 

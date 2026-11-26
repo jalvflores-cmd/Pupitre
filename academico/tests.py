@@ -53,9 +53,9 @@ class CalculosTests(TestCase):
         uno = [object()]
         self.assertEqual(situacion_final(Decimal("5.0"), []), "Promovido(a)")
         self.assertEqual(situacion_final(Decimal("4.5"), uno), "Promovido(a)")
-        self.assertEqual(situacion_final(Decimal("4.4"), uno), "No promovido(a)")
+        self.assertEqual(situacion_final(Decimal("4.4"), uno), "Reprobado(a)")
         self.assertEqual(situacion_final(Decimal("5.0"), uno * 2), "Promovido(a)")
-        self.assertEqual(situacion_final(Decimal("6.0"), uno * 3), "No promovido(a)")
+        self.assertEqual(situacion_final(Decimal("6.0"), uno * 3), "Reprobado(a)")
 
 
 class BaseDatos(TestCase):
@@ -407,3 +407,74 @@ class DemoYListadoTests(BaseDatos):
         html = r.content.decode()
         self.assertLess(html.index("5° Básico A"), html.index("5° Básico B"))
         self.assertLess(html.index("Pérez, Ana"), html.index("Soto, Luis"))
+
+
+SIGE_HTML = """<!DOCTYPE html><html><head><title>.:SIGE:.</title></head><body><table>
+<tr><td>Año</td><td>RBD</td><td>Cod Tipo Enseñanza</td><td>Cod Grado</td><td>Desc Grado</td><td>Letra Curso</td>
+<td>Run</td><td>Dígito Ver.</td><td>Genero</td><td>Nombres</td><td>Apellido Paterno</td><td>Apellido Materno</td>
+<td>Dirección</td><td>Comuna Residencia</td><td>Código Comuna Residencia</td><td>Email</td><td>Telefono</td>
+<td>Celular</td><td>Fecha Nacimiento</td><td>Código Etnia</td><td>Fecha Incorporación Curso</td><td>Fecha Retiro</td>
+<td>%Asistenca</td><td>Promedio Final</td></tr>
+<tr><td>2026</td><td>3660</td><td>10</td><td>4</td><td>1er nivel de Transición (Pre-kinder)</td><td>A</td><td>22222222</td>
+<td>2</td><td>F</td><td>MARÍA DE LOS ÁNGELES</td><td>PÉREZ</td><td>SOTO</td><td>CALLE UNO 123</td><td>CHILLÁN</td>
+<td>16101</td><td></td><td></td><td>912345678</td><td>2021-05-11</td><td>0</td><td>2026-03-01</td><td>1900-01-01</td><td>0</td><td>0.0</td></tr>
+<tr><td>2026</td><td>3660</td><td>110</td><td>5</td><td>5° básico</td><td>A</td><td>100502822</td>
+<td>8</td><td>M</td><td>JUAN</td><td>ROJAS</td><td>DÍAZ</td><td></td><td>CHILLÁN VIEJO</td>
+<td>16103</td><td></td><td></td><td></td><td>2015-02-01</td><td>0</td><td>2026-03-01</td><td>2026-04-30</td><td>91.5</td><td>5.8</td></tr>
+</table></body></html>"""
+
+
+class SigeYFormatosTests(BaseDatos):
+    def subir(self, contenido, nombre, usuario=None):
+        self.client.force_login(usuario or self.utp)
+        return self.client.post(reverse("importar_estudiantes"),
+                                {"archivo": SimpleUploadedFile(nombre, contenido)}, follow=True)
+
+    def test_nomina_sige_tal_como_viene(self):
+        r = self.subir(SIGE_HTML.encode("latin-1"), "nomina_excel.xls")
+        self.assertContains(r, "Nómina SIGE reconocida")
+        maria = Estudiante.objects.get(rut="22222222-2")
+        self.assertEqual((maria.nombres, maria.apellido_paterno, maria.comuna), ("María de los Ángeles", "Pérez", "Chillán"))
+        self.assertEqual((maria.genero, maria.celular, maria.codigo_comuna), ("F", "912345678", "16101"))
+        self.assertEqual(maria.curso.nivel.nombre, "Pre-kínder")
+        self.assertTrue(maria.activo)
+        juan = Estudiante.objects.get(rut="100502822-8")  # IPE de 9 dígitos
+        self.assertFalse(juan.activo)
+        self.assertEqual((juan.porcentaje_asistencia, juan.promedio_sige), (Decimal("91.5"), Decimal("5.8")))
+        self.assertEqual(juan.curso.nivel.nombre, "5° Básico")  # se reutiliza el nivel existente
+        self.assertEqual(juan.curso.nivel.orden, 7)
+
+    def test_rbd_de_otro_establecimiento(self):
+        from .models import Establecimiento
+        Establecimiento.objects.create(nombre="Otra", rbd="9999")
+        r = self.subir(SIGE_HTML.encode("latin-1"), "nomina.xls")
+        self.assertContains(r, "no corresponde a este establecimiento")
+        self.assertFalse(Estudiante.objects.filter(rut="22222222-2").exists())
+
+    def test_profesor_jefe_solo_su_curso(self):
+        r = self.subir(SIGE_HTML.encode("latin-1"), "nomina.xls", self.profe_len)  # jefe del 5° A (2026)
+        self.assertContains(r, "no es de su jefatura")
+        self.assertEqual(self.subir(b"x", "a.csv", self.profe_mat).status_code, 403)  # no es jefe
+
+    def test_csv_y_docx(self):
+        csv_txt = "RUT;Nombres;Apellido paterno;Nivel;Letra;Año\n9.876.543-3;Pedro;Rojas;6° Básico;A;2026\n"
+        self.subir(csv_txt.encode("cp1252"), "lista.csv")
+        self.assertTrue(Estudiante.objects.filter(rut="9876543-3").exists())
+        import docx
+        documento = docx.Document()
+        tabla = documento.add_table(rows=2, cols=3)
+        for i, v in enumerate(["RUT", "Nombres", "Apellido paterno"]):
+            tabla.cell(0, i).text = v
+        for i, v in enumerate(["7.654.321-6", "Rosa", "Vera"]):
+            tabla.cell(1, i).text = v
+        salida = BytesIO()
+        documento.save(salida)
+        self.subir(salida.getvalue(), "lista.docx")
+        self.assertTrue(Estudiante.objects.filter(rut="7654321-6").exists())
+
+    def test_certificado_y_acta(self):
+        from .calculos import nota_en_palabras
+        self.assertEqual(nota_en_palabras(Decimal("6.5")), "seis coma cinco")
+        self.client.force_login(self.director)
+        for nombre in ("informe_final_pdf", "acta_final_pdf", "informe_notas_pdf"):
+            self.assertEqual(self.client.get(reverse(nombre, args=[self.curso.pk])).status_code, 200)
