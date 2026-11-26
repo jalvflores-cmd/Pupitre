@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from .models import Establecimiento, Perfil, SolicitudCambio
-from .permisos import es_gestion, es_solo_lectura, gestiona_convivencia, puede_editar_contacto, rol_de, ve_todo
+from .permisos import puede_ver_funcionarios, es_gestion, es_solo_lectura, gestiona_convivencia, puede_editar_contacto, rol_de, ve_todo
 
 
 USUARIOS_DEMO = [
@@ -26,6 +26,7 @@ def rol(request):
         "solicitudes_pendientes": pendientes,
         "es_profesor_jefe": not gestion and request.user.jefaturas.exists(),
         "ve_todo": ve_todo(request.user),
+        "ve_funcionarios": puede_ver_funcionarios(request.user),
         "gestiona_convivencia": gestiona_convivencia(request.user),
         "puede_editar_contacto": puede_editar_contacto(request.user),
         "solo_lectura": es_solo_lectura(request.user),

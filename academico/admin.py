@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 
 from .models import (
     Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Nivel,
-    Comentario, Perfil, SolicitudCambio,
+    Comentario, Funcionario, Perfil, SolicitudCambio,
 )
 from .permisos import es_gestion
 
@@ -152,3 +152,10 @@ class ComentarioAdmin(SoloGestion, admin.ModelAdmin):
     list_display = ("creado", "usuario", "tipo", "texto", "revisado")
     list_filter = ("tipo", "revisado")
     list_editable = ("revisado",)
+
+
+@admin.register(Funcionario)
+class FuncionarioAdmin(SoloGestion, admin.ModelAdmin):
+    list_display = ("rut", "apellido_paterno", "nombres", "cargo", "tipo_contrato", "horas_contrato", "activo")
+    list_filter = ("cargo", "tipo_contrato", "activo")
+    search_fields = ("rut", "nombres", "apellido_paterno")

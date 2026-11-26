@@ -11,15 +11,15 @@ from django.views.decorators.http import require_POST
 
 from . import exportacion, importacion
 from .calculos import resumen_curso
-from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, SolicitudCambioForm
+from .forms import AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm
 from .models import (
-    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Estudiante, Evaluacion, SolicitudCambio,
-    anio_actual,
+    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Comentario, Curso, Establecimiento, Estudiante, Evaluacion,
+    Funcionario, SolicitudCambio, anio_actual,
 )
 from .permisos import (
     asignaturas_curso_visibles, cursos_visibles, es_gestion, estudiantes_visibles, exigir, puede_editar_notas,
     es_solo_lectura, gestiona_convivencia, puede_anotar, puede_editar_contacto, puede_eliminar_anotacion,
-    puede_solicitar_cambio, ve_todo, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
+    puede_solicitar_cambio, puede_ver_funcionarios, ve_todo, puede_ver_asignatura_curso, puede_ver_curso, puede_ver_estudiante, puede_ver_informe_curso, solo_gestion,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -538,3 +538,63 @@ def comentarios(request):
         libro.save(salida)
         return _descarga(salida.getvalue(), "comentarios.xlsx", XLSX)
     return render(request, "academico/comentarios.html", {"comentarios": qs[:300]})
+
+
+# --------------------------------------------------------------------------- Funcionarios
+
+@login_required
+def funcionarios(request):
+    exigir(puede_ver_funcionarios(request.user))
+    est = Establecimiento.actual()
+    qs = Funcionario.objects.all()
+    if request.GET.get("inactivos") != "1":
+        qs = qs.filter(activo=True)
+    filas = [(f, *f.distribucion(est)) for f in qs]
+    if request.GET.get("exportar") == "excel":
+        from io import BytesIO
+        from openpyxl import Workbook
+        libro = Workbook()
+        hoja = libro.active
+        hoja.title = "Funcionarios"
+        hoja.append(["RUT", "Nombre", "Cargo", "Título", "Mención", "Contrato", "Horas contrato",
+                     "Proporción", "Horas lectivas", "Horas no lectivas", "Teléfono", "Email"])
+        for f, pct, lec, nolec in filas:
+            hoja.append([f.rut_formateado, f.nombre_completo, f.get_cargo_display(), f.titulo, f.mencion,
+                         f.get_tipo_contrato_display(), float(f.horas_contrato),
+                         f"{pct}/{100 - pct}" if pct else "", float(lec) if lec is not None else None,
+                         float(nolec) if nolec is not None else None, f.telefono, f.email])
+        for col, ancho in zip("ABCDEFGHIJKL", (14, 32, 24, 30, 22, 12, 10, 11, 10, 10, 16, 26)):
+            hoja.column_dimensions[col].width = ancho
+        salida = BytesIO()
+        libro.save(salida)
+        return _descarga(salida.getvalue(), "funcionarios.xlsx", XLSX)
+    docentes = [x for x in filas if x[1] is not None]
+    return render(request, "academico/funcionarios.html", {
+        "filas": filas, "est": est,
+        "total_horas": sum(f.horas_contrato for f, *_ in filas),
+        "total_lectivas": sum(x[2] for x in docentes),
+        "total_no_lectivas": sum(x[3] for x in docentes),
+        "inactivos": request.GET.get("inactivos") == "1",
+    })
+
+
+@login_required
+@solo_gestion
+def funcionario_form(request, pk=None):
+    from django.contrib.auth.models import User
+
+    funcionario = get_object_or_404(Funcionario, pk=pk) if pk else Funcionario()
+    form = FuncionarioForm(request.POST or None, instance=funcionario)
+    form.fields["usuario"].queryset = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+    form.fields["usuario"].label_from_instance = lambda u: f"{u.get_full_name() or u.username} ({u.username})"
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Ficha guardada.")
+        return redirect("funcionarios")
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": "Editar funcionario(a)" if pk else "Nuevo funcionario(a)",
+        "ayuda": "La proporción lectiva/no lectiva se calcula sola: 65/35 en general, y 60/40 para docentes de "
+                 "pre-kínder a 4° básico si el establecimiento tiene 80 % o más de alumnos prioritarios. "
+                 "Puede fijarla a mano si corresponde otra.",
+        "volver": ("funcionarios", None),
+    })

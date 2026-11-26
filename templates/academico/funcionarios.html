@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Funcionarios{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Funcionarios</h3><div class="sub">Docentes y asistentes: título, contrato y distribución de horas lectivas y no lectivas.</div></div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+    {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'funcionario_crear' %}"><i class="bi bi-person-plus"></i> Nuevo funcionario</a>{% endif %}
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-azul"><i class="bi bi-people"></i></div><div><div class="valor">{{ filas|length }}</div><div class="etiqueta">Funcionarios</div></div></div></div>
+  <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-verde"><i class="bi bi-clock"></i></div><div><div class="valor">{{ total_horas|floatformat:"-1" }}</div><div class="etiqueta">Horas de contrato en total</div></div></div></div>
+  <div class="col-md-4"><div class="card p-kpi"><div class="icono ic-amarillo"><i class="bi bi-percent"></i></div><div>
+    <div class="valor fs-5">{% if est.porcentaje_prioritarios is not None %}{{ est.porcentaje_prioritarios|floatformat:"-1" }} % prioritarios{% else %}Sin dato{% endif %}</div>
+    <div class="etiqueta">{% if est.alta_concentracion %}Alta concentración: 60/40 en pre-kínder a 4° básico{% elif est.porcentaje_prioritarios is not None %}Bajo 80 %: todos los docentes 65/35{% else %}Indique el % de alumnos prioritarios{% endif %}
+      {% if es_gestion and est.pk %} · <a href="{% url 'admin:academico_establecimiento_change' est.pk %}">editar</a>{% endif %}</div></div></div></div>
+</div>
+<div class="card p-2 p-lg-3">
+  <div class="table-responsive"><table class="table table-hover align-middle">
+    <thead><tr><th>Funcionario(a)</th><th>Cargo y título</th><th>Contrato</th><th class="text-center">Horas</th><th class="text-center">Proporción</th><th>Lectivas</th><th>No lectivas</th>{% if es_gestion %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for f, pct, lec, nolec in filas %}
+      <tr class="{% if not f.activo %}text-muted{% endif %}">
+        <td><b>{{ f.nombre_completo }}</b><div class="small text-muted">{{ f.rut_formateado }}{% if f.email %} · {{ f.email }}{% endif %}</div></td>
+        <td>{{ f.get_cargo_display }}<div class="small text-muted">{{ f.titulo|default:"Sin título registrado" }}{% if f.mencion %}, {{ f.mencion }}{% endif %}</div></td>
+        <td><span class="badge {% if f.tipo_contrato == 'TITULAR' %}bg-success{% elif f.tipo_contrato == 'CONTRATA' %}bg-warning{% else %}bg-secondary{% endif %}">{{ f.get_tipo_contrato_display|truncatewords:1 }}</span></td>
+        <td class="text-center fw-semibold">{{ f.horas_contrato|floatformat:"-1" }}</td>
+        <td class="text-center">{% if pct %}<span class="badge {% if pct == 60 %}bg-warning{% else %}bg-secondary{% endif %}">{% if pct == 60 %}60/40{% else %}65/35{% endif %}</span>{% else %}—{% endif %}</td>
+        <td class="text-nowrap">{{ lec|horas }}</td><td class="text-nowrap">{{ nolec|horas }}</td>
+        {% if es_gestion %}<td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'funcionario_editar' f.pk %}"><i class="bi bi-pencil"></i></a></td>{% endif %}
+      </tr>
+    {% empty %}<tr><td colspan="8" class="text-muted p-3">No hay funcionarios registrados.{% if es_gestion %} Use «Nuevo funcionario» para agregar la primera ficha.{% endif %}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<p class="small text-muted mt-3">Horas cronológicas semanales, referenciales según la Ley 20.903. La distribución exacta de horas pedagógicas y recreos debe ajustarse a la normativa vigente.
+  <a href="?inactivos={% if inactivos %}0{% else %}1{% endif %}">{% if inactivos %}Ocultar{% else %}Mostrar{% endif %} inactivos</a></p>
+{% endblock %}

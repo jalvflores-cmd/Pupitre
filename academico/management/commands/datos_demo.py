@@ -13,7 +13,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from academico.models import (
-    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Nivel,
+    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Funcionario,
+    Nivel,
     Perfil, anio_actual,
 )
 from academico.rut import calcular_dv
@@ -60,6 +61,26 @@ class Command(BaseCommand):
         mate = usuario("profe.matematica", "Carla", "Núñez Pino", Perfil.Rol.PROFESOR)
         leng = usuario("profe.lenguaje", "Jorge", "Reyes Lagos", Perfil.Rol.PROFESOR)
         cien = usuario("profe.ciencias", "Daniela", "Vergara Toro", Perfil.Rol.PROFESOR)
+
+        fichas = [
+            # usuario, rut, cargo, título, mención, contrato, horas, primer ciclo
+            ("director", 12_345_670, "DIRECTIVO", "Profesora de Educación General Básica", "Gestión educacional", "TITULAR", 44, False),
+            ("utp", 13_456_780, "TECNICO", "Profesor de Educación General Básica", "Currículum y evaluación", "TITULAR", 44, False),
+            ("inspector", 14_567_890, "DIRECTIVO", "Profesora de Historia y Geografía", "", "TITULAR", 44, False),
+            ("convivencia", 15_678_900, "ASISTENTE", "Psicólogo", "Convivencia escolar", "CONTRATA", 44, False),
+            ("profe.matematica", 16_789_010, "DOCENTE", "Profesora de Educación General Básica", "Matemática", "TITULAR", 44, True),
+            ("profe.lenguaje", 17_890_120, "DOCENTE", "Profesor de Educación General Básica", "Lenguaje y Comunicación", "CONTRATA", 38, True),
+            ("profe.ciencias", 18_901_230, "DOCENTE", "Profesora de Biología y Ciencias Naturales", "", "TITULAR", 40, False),
+            ("profe.historia", 19_012_340, "DOCENTE", "Profesora de Historia, Geografía y Ciencias Sociales", "", "CONTRATA", 30, False),
+        ]
+        for username, cuerpo, cargo, titulo, mencion, contrato, horas, ciclo in fichas:
+            u = User.objects.get(username=username)
+            if not Funcionario.objects.filter(usuario=u).exists():
+                Funcionario.objects.get_or_create(rut=f"{cuerpo}-{calcular_dv(cuerpo)}", defaults={
+                    "usuario": u, "nombres": u.first_name, "apellido_paterno": u.last_name.split()[0],
+                    "apellido_materno": " ".join(u.last_name.split()[1:]), "cargo": cargo, "titulo": titulo,
+                    "mencion": mencion, "tipo_contrato": contrato, "horas_contrato": horas, "primer_ciclo": ciclo,
+                    "email": f"{username}@ejemplo.cl"})
 
         asignaturas = {}
         for i, nombre in enumerate(["Lenguaje y Comunicación", "Matemática", "Ciencias Naturales",

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Anotacion, Estudiante, Evaluacion
+from .models import Anotacion, Estudiante, Evaluacion, Funcionario
 from .rut import normalizar_rut
 
 
@@ -124,3 +124,18 @@ class ContactoEstudianteForm(BootstrapMixin, forms.ModelForm):
         model = Estudiante
         fields = ["direccion", "comuna", "telefono", "email", "apoderado_nombre", "apoderado_rut",
                   "apoderado_telefono", "contacto_emergencia", "telefono_emergencia"]
+
+
+class FuncionarioForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = Funcionario
+        fields = ["rut", "nombres", "apellido_paterno", "apellido_materno", "cargo", "titulo", "mencion",
+                  "tipo_contrato", "horas_contrato", "primer_ciclo", "proporcion", "fecha_ingreso",
+                  "telefono", "email", "usuario", "activo"]
+        widgets = {"fecha_ingreso": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
+
+    def clean_rut(self):
+        rut = normalizar_rut(self.cleaned_data["rut"])
+        if Funcionario.objects.filter(rut=rut).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Ya existe un funcionario con este RUT.")
+        return rut

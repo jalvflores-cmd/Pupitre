@@ -25,6 +25,7 @@
     <a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
+    {% if ve_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}
     {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<a href="{% url 'solicitudes' %}" class="{% if '/solicitudes/' in p %}activo{% endif %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %}<span class="badge bg-warning">{{ solicitudes_pendientes }}</span>{% endif %}</a>{% endif %}
     {% if es_gestion %}<a href="{% url 'comentarios' %}" class="{% if '/comentarios/' in p %}activo{% endif %}"><i class="bi bi-chat-square-heart"></i> Comentarios</a>

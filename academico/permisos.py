@@ -132,3 +132,7 @@ def solo_gestion(vista):
 def exigir(condicion: bool):
     if not condicion:
         raise PermissionDenied("No tiene acceso a esta información.")
+
+
+def puede_ver_funcionarios(user) -> bool:
+    return es_gestion(user) or es_solo_lectura(user)

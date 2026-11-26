@@ -343,3 +343,41 @@ class RolesAdicionalesTests(BaseDatos):
         self.assertEqual(self.client.get(reverse("comentarios")).status_code, 403)
         self.client.force_login(self.director)
         self.assertContains(self.client.get(reverse("comentarios")), "Me gusta")
+
+
+class FuncionariosTests(BaseDatos):
+    def crear(self, **extra):
+        from .models import Funcionario
+        datos = {"rut": "12.345.678-5", "nombres": "Rosa", "apellido_paterno": "Díaz", "horas_contrato": Decimal("44"),
+                 "cargo": "DOCENTE"}
+        datos.update(extra)
+        return Funcionario.objects.create(**datos)
+
+    def test_distribucion_ley_20903(self):
+        from .models import Establecimiento
+        est = Establecimiento.objects.create(nombre="Escuela", porcentaje_prioritarios=Decimal("85"))
+        f = self.crear(primer_ciclo=True)
+        self.assertEqual(f.distribucion(est), (60, Decimal("26.40"), Decimal("17.60")))
+        f.primer_ciclo = False
+        self.assertEqual(f.distribucion(est), (65, Decimal("28.60"), Decimal("15.40")))
+        est.porcentaje_prioritarios = Decimal("79.9")
+        f.primer_ciclo = True
+        self.assertEqual(f.distribucion(est)[0], 65)
+        f.proporcion = "60"
+        self.assertEqual(f.distribucion(est)[0], 60)
+        f.proporcion, f.cargo = "AUTO", "ASISTENTE"
+        self.assertEqual(f.distribucion(est), (None, None, None))
+
+    def test_acceso(self):
+        self.crear()
+        self.client.force_login(self.director)
+        r = self.client.get(reverse("funcionarios"))
+        self.assertContains(r, "Rosa Díaz")
+        self.assertContains(r, "28 h 36 min")
+        self.assertEqual(self.client.get(reverse("funcionarios") + "?exportar=excel").status_code, 200)
+        r = self.client.post(reverse("funcionario_crear"), {
+            "rut": "9.876.543-3", "nombres": "Luis", "apellido_paterno": "Soto", "cargo": "DOCENTE",
+            "tipo_contrato": "CONTRATA", "horas_contrato": "30", "proporcion": "AUTO", "activo": "on"})
+        self.assertEqual(r.status_code, 302)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("funcionarios")).status_code, 403)

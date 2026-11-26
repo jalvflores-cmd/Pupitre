@@ -30,3 +30,12 @@ def obtener(diccionario, clave):
 @register.filter
 def rut(valor):
     return formatear_rut(valor)
+
+
+@register.filter
+def horas(valor):
+    """28.60 -> '28 h 36 min' (horas cronológicas)."""
+    if valor is None:
+        return "—"
+    h, m = divmod(int(round(float(valor) * 60)), 60)
+    return f"{h} h {m} min" if m else f"{h} h"

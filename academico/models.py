@@ -26,6 +26,9 @@ class Establecimiento(models.Model):
     telefono = models.CharField("teléfono", max_length=50, blank=True)
     director = models.CharField("nombre del director(a)", max_length=200, blank=True)
     jefe_utp = models.CharField("nombre del jefe(a) de UTP", max_length=200, blank=True)
+    porcentaje_prioritarios = models.DecimalField(
+        "% de alumnos prioritarios", max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Con 80 % o más, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
 
     class Meta:
         verbose_name = "establecimiento"
@@ -33,6 +36,10 @@ class Establecimiento(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def alta_concentracion(self):
+        return self.porcentaje_prioritarios is not None and self.porcentaje_prioritarios >= 80
 
     @classmethod
     def actual(cls):
@@ -356,3 +363,88 @@ class Comentario(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} – {self.usuario} ({self.creado:%d-%m-%Y})"
+
+
+class Funcionario(models.Model):
+    """Ficha de docentes y demás funcionarios del establecimiento."""
+
+    class Cargo(models.TextChoices):
+        DOCENTE = "DOCENTE", "Docente de aula"
+        DIRECTIVO = "DIRECTIVO", "Docente directivo"
+        TECNICO = "TECNICO", "Docente técnico-pedagógico"
+        ASISTENTE = "ASISTENTE", "Asistente de la educación"
+
+    class Contrato(models.TextChoices):
+        TITULAR = "TITULAR", "Titular"
+        CONTRATA = "CONTRATA", "Contrata"
+        OTRO = "OTRO", "Otro (reemplazo, honorarios, Código del Trabajo)"
+
+    class Proporcion(models.TextChoices):
+        AUTOMATICA = "AUTO", "Automática según la Ley 20.903"
+        P65 = "65", "65/35"
+        P60 = "60", "60/40"
+
+    usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="funcionario", verbose_name="usuario de la plataforma",
+                                   help_text="Opcional: vincula la ficha con su cuenta de acceso.")
+    rut = models.CharField("RUT", max_length=12, unique=True, validators=[validar_rut])
+    nombres = models.CharField(max_length=100)
+    apellido_paterno = models.CharField(max_length=100)
+    apellido_materno = models.CharField(max_length=100, blank=True)
+    cargo = models.CharField(max_length=20, choices=Cargo.choices, default=Cargo.DOCENTE)
+    titulo = models.CharField("título profesional", max_length=200, blank=True)
+    mencion = models.CharField("mención o especialidad", max_length=200, blank=True)
+    tipo_contrato = models.CharField("tipo de contrato", max_length=20, choices=Contrato.choices,
+                                     default=Contrato.TITULAR)
+    horas_contrato = models.DecimalField("horas de contrato (semanales)", max_digits=4, decimal_places=1,
+                                         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("44"))])
+    primer_ciclo = models.BooleanField(
+        "hace clases entre pre-kínder y 4° básico", default=False,
+        help_text="Con alta concentración de alumnos prioritarios, estos docentes tienen proporción 60/40.")
+    proporcion = models.CharField("proporción lectiva/no lectiva", max_length=4, choices=Proporcion.choices,
+                                  default=Proporcion.AUTOMATICA)
+    telefono = models.CharField("teléfono", max_length=30, blank=True)
+    email = models.EmailField("correo electrónico", blank=True)
+    fecha_ingreso = models.DateField("fecha de ingreso", null=True, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["apellido_paterno", "apellido_materno", "nombres"]
+        verbose_name = "funcionario(a)"
+        verbose_name_plural = "funcionarios"
+
+    def __str__(self):
+        return self.nombre_completo
+
+    def save(self, *args, **kwargs):
+        self.rut = normalizar_rut(self.rut)
+        super().save(*args, **kwargs)
+
+    @property
+    def nombre_completo(self):
+        return " ".join(p for p in [self.nombres, self.apellido_paterno, self.apellido_materno] if p)
+
+    @property
+    def rut_formateado(self):
+        return formatear_rut(self.rut)
+
+    def porcentaje_lectivo(self, establecimiento=None):
+        """65 o 60 (Ley 20.903). None si no corresponde (no es docente de aula)."""
+        if self.proporcion == self.Proporcion.P65:
+            return 65
+        if self.proporcion == self.Proporcion.P60:
+            return 60
+        if self.cargo != self.Cargo.DOCENTE:
+            return None
+        establecimiento = establecimiento or Establecimiento.actual()
+        if establecimiento.alta_concentracion and self.primer_ciclo:
+            return 60
+        return 65
+
+    def distribucion(self, establecimiento=None):
+        """(porcentaje, horas lectivas, horas no lectivas) en horas cronológicas."""
+        pct = self.porcentaje_lectivo(establecimiento)
+        if pct is None:
+            return None, None, None
+        lectivas = (self.horas_contrato * pct / 100).quantize(Decimal("0.01"))
+        return pct, lectivas, self.horas_contrato - lectivas
