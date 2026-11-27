@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Gestión de personal{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-person-badge text-primary"></i> Gestión de personal</h3>
+    <div class="sub">{% if sostenedor %}{{ sostenedor.nombre }} · {{ ests|length }} establecimiento{{ ests|length|pluralize }}{% else %}{{ ests.0.nombre }}{% endif %}. Tramos de la carrera docente, evaluación docente y asignaciones mensuales estimadas para {{ anio }}.</div></div>
+  <div class="d-flex gap-2 flex-wrap">
+    <form class="d-flex gap-2" method="get">
+      {% if ests|length > 1 %}<select name="est" class="form-select form-select-sm" onchange="this.form.submit()"><option value="">Todos los establecimientos</option>{% for e in ests %}<option value="{{ e.pk }}"{% if filtro_est == e.pk|stringformat:"s" %} selected{% endif %}>{{ e.nombre }}</option>{% endfor %}</select>{% endif %}
+      <input type="number" name="anio" value="{{ anio }}" class="form-control form-control-sm" style="width:6rem" onchange="this.form.submit()" aria-label="Año">
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="?anio={{ anio }}&est={{ filtro_est }}&exportar=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ n_docentes }}</div><div class="small text-muted">docentes ({{ filas|length }} funcionarios, {{ horas|floatformat:0 }} horas)</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ total.brp|pesos }}</div><div class="small text-muted">BRP mensual</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ total.tramo|pesos }}</div><div class="small text-muted">Asignación de tramo mensual</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ total.prioritarios|pesos }}</div><div class="small text-muted">Asignación por alta concentración de prioritarios</div></div></div>
+</div>
+{% if not param_guardados %}<div class="alert alert-warning small"><i class="bi bi-exclamation-triangle"></i> {% if param_anio %}Los montos usados son los de {{ param_anio }}: ingrese los de {{ anio }} más abajo.{% else %}Aún no hay montos ingresados para {{ anio }}: las asignaciones aparecen en $0 hasta que se ingresen más abajo.{% endif %}</div>{% endif %}
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-6"><div class="card p-3 h-100"><h6>Docentes por tramo de desarrollo profesional</h6>{{ g_tramos }}</div></div>
+  <div class="col-xl-6"><div class="card p-3 h-100"><h6>Resultados de la evaluación docente</h6>{{ g_eval }}<div class="small text-muted">▲ en rojo: Básico o Insatisfactorio.</div></div></div>
+</div>
+
+{% if por_mejorar or sin_tramo %}
+<div class="row g-4 mb-4">
+  {% if por_mejorar %}<div class="col-xl-6"><div class="card p-3 h-100 border-danger-subtle">
+    <h6 class="text-danger-emphasis"><i class="bi bi-exclamation-triangle"></i> Evaluación Básico o Insatisfactorio ({{ por_mejorar|length }})</h6>
+    <p class="small text-muted mb-2">Requieren plan de superación profesional y acompañamiento.</p>
+    <ul class="small mb-0">{% for x in por_mejorar %}<li>{{ x.f.nombre_completo }} · {{ x.f.get_evaluacion_docente_display }}{% if x.f.evaluacion_anio %} ({{ x.f.evaluacion_anio }}){% endif %}{% if ests|length > 1 %} · <span class="text-muted">{{ x.est.nombre }}</span>{% endif %}</li>{% endfor %}</ul>
+  </div></div>{% endif %}
+  {% if sin_tramo %}<div class="col-xl-6"><div class="card p-3 h-100">
+    <h6><i class="bi bi-question-circle"></i> Docentes sin tramo registrado ({{ sin_tramo|length }})</h6>
+    <p class="small text-muted mb-2">Sin tramo no se calcula la asignación de tramo ni la de prioritarios.</p>
+    <ul class="small mb-0">{% for x in sin_tramo|slice:":12" %}<li>{{ x.f.nombre_completo }}{% if ests|length > 1 %} · <span class="text-muted">{{ x.est.nombre }}</span>{% endif %}</li>{% endfor %}{% if sin_tramo|length > 12 %}<li class="text-muted">y {{ sin_tramo|length|add:"-12" }} más</li>{% endif %}</ul>
+  </div></div>{% endif %}
+</div>
+{% endif %}
+
+<div class="card p-3 mb-4">
+  <h6>Dotación y asignaciones mensuales estimadas</h6>
+  <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">
+    <thead><tr><th>Funcionario(a)</th>{% if ests|length > 1 %}<th>Establecimiento</th>{% endif %}<th>Cargo</th><th class="text-end">Horas</th><th>Tramo</th><th class="text-end">Años</th><th>Evaluación</th><th class="text-end">BRP</th><th class="text-end">Tramo</th><th class="text-end">Prioritarios</th><th class="text-end">Total</th>{% if editable %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for x in filas %}<tr>
+      <td>{{ x.f.nombre_completo }}</td>{% if ests|length > 1 %}<td class="small text-muted">{{ x.est.nombre }}</td>{% endif %}
+      <td class="small">{{ x.f.get_cargo_display }}</td><td class="text-end">{{ x.f.horas_contrato|floatformat:0 }}</td>
+      <td>{{ x.f.get_tramo_display|default:"—" }}</td><td class="text-end">{{ x.f.anios_experiencia|default_if_none:"—" }}</td>
+      <td>{% if x.f.evaluacion_docente %}<span class="badge {% if x.f.evaluacion_docente == 'INSATISFACTORIO' or x.f.evaluacion_docente == 'BASICO' %}bg-danger-subtle text-danger-emphasis{% else %}bg-light text-body border{% endif %}">{{ x.f.get_evaluacion_docente_display }}{% if x.f.evaluacion_anio %} {{ x.f.evaluacion_anio }}{% endif %}</span>{% else %}—{% endif %}</td>
+      <td class="text-end">{% if x.brp %}{{ x.brp|pesos }}{% else %}—{% endif %}</td><td class="text-end">{% if x.tramo %}{{ x.tramo|pesos }}{% else %}—{% endif %}</td>
+      <td class="text-end">{% if x.prioritarios %}{{ x.prioritarios|pesos }}{% else %}—{% endif %}</td><td class="text-end fw-semibold">{% if x.total %}{{ x.total|pesos }}{% else %}—{% endif %}</td>
+      {% if editable %}<td><a class="btn btn-sm btn-link p-0" href="{% url 'personal_carrera' x.f.pk %}" title="Editar tramo y evaluación"><i class="bi bi-pencil"></i></a></td>{% endif %}
+    </tr>{% empty %}<tr><td colspan="12" class="text-muted">No hay funcionarios registrados. Se agregan en «Funcionarios» de cada establecimiento.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <div class="small text-muted mt-2">Montos proporcionales a las horas de contrato (base 44 horas). Son una estimación para planificar: la liquidación oficial la determina el sostenedor con los valores vigentes.</div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7"><div class="card p-3 h-100">
+    <h6>Montos mensuales {{ anio }} (contrato de 44 horas)</h6>
+    <p class="small text-muted">Ingrese los valores vigentes informados por Mineduc/CPEIP; se reajustan cada año.</p>
+    <form method="post">{% csrf_token %}
+      <div class="row g-2">{% for f in param_form %}<div class="col-md-6"><label class="form-label small mb-0" for="{{ f.id_for_label }}">{{ f.label|capfirst }}</label>
+        <div class="input-group input-group-sm"><span class="input-group-text">$</span>{{ f }}</div>{% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}</div>{% endfor %}</div>
+      {% if editable %}<button class="btn btn-primary btn-sm mt-3" name="guardar_parametros"><i class="bi bi-check-lg"></i> Guardar montos</button>{% endif %}
+    </form>
+  </div></div>
+  <div class="col-xl-5"><div class="card p-3 h-100">
+    <h6>Concentración de alumnos prioritarios</h6>
+    <p class="small text-muted">60 % o más: 20 % de la asignación de tramo + monto fijo. 80 % o más: monto adicional para Avanzado, Experto I y II. Rural con 45 % a 59 %: 10 % de la asignación de tramo.</p>
+    <form method="post">{% csrf_token %}
+      <table class="table table-sm align-middle"><thead><tr><th>Establecimiento</th><th style="width:7rem">% prioritarios</th><th>Rural</th></tr></thead><tbody>
+      {% for e in ests %}<tr><td class="small">{{ e.nombre }}</td>
+        <td><input class="form-control form-control-sm" name="pct_{{ e.pk }}" value="{{ e.pct_prioritarios|default_if_none:''|floatformat:'-1' }}" inputmode="decimal"{% if not editable %} disabled{% endif %}></td>
+        <td><input class="form-check-input" type="checkbox" name="rural_{{ e.pk }}"{% if e.rural %} checked{% endif %}{% if not editable %} disabled{% endif %}></td></tr>{% endfor %}
+      </tbody></table>
+      {% if editable %}<button class="btn btn-primary btn-sm" name="guardar_establecimientos"><i class="bi bi-check-lg"></i> Guardar</button>{% endif %}
+    </form>
+  </div></div>
+</div>
+{% endblock %}

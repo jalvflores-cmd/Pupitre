@@ -39,3 +39,12 @@ def horas(valor):
         return "—"
     h, m = divmod(int(round(float(valor) * 60)), 60)
     return f"{h} h {m} min" if m else f"{h} h"
+
+
+@register.filter
+def pesos(valor):
+    """1234567 -> $1.234.567"""
+    try:
+        return "$" + f"{int(round(float(valor))):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return "—"

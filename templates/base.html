@@ -31,6 +31,7 @@
     {% if de_sostenedor %}
     <div class="titulo">{{ nombre_sostenedor }}</div>
     <a href="{% url 'red' %}" class="{% if '/red/' in p %}activo{% endif %}"><i class="bi bi-diagram-2"></i> Mis establecimientos</a>
+    <a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>
     {% if establecimiento.pk %}<form method="post" action="{% url 'red_salir' %}" class="px-2 small">{% csrf_token %}
       <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · cambiar</button></form>{% endif %}
     {% endif %}
@@ -46,7 +47,8 @@
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
     {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}
-    {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
+    {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>
+    {% if not de_sostenedor %}<a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>{% endif %}{% endif %}
     {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
     {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}
     {% if es_gestion or es_profesor_jefe or gestiona_convivencia %}<a href="{% url 'solicitudes' %}" class="{% if '/solicitudes/' in p %}activo{% endif %}"><i class="bi bi-inbox"></i> Solicitudes{% if solicitudes_pendientes %}<span class="badge bg-warning">{{ solicitudes_pendientes }}</span>{% endif %}</a>{% endif %}

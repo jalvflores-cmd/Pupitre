@@ -84,6 +84,11 @@ class Establecimiento(models.Model):
     alta_concentracion = models.BooleanField(
         "establecimiento con 80 % o más de alumnos prioritarios", default=False,
         help_text="Si se marca, los docentes de pre-kínder a 4° básico tienen proporción 60/40 (Ley 20.903).")
+    pct_prioritarios = models.DecimalField(
+        "% de estudiantes prioritarios", max_digits=5, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
+        help_text="Concentración de alumnos prioritarios (Ley 20.248). Define la asignación por alta concentración.")
+    rural = models.BooleanField("establecimiento rural", default=False)
     logo = models.BinaryField("logo institucional", null=True, blank=True, editable=False)
     color_principal = models.CharField(
         "color institucional", max_length=7, blank=True,
@@ -663,6 +668,30 @@ class Funcionario(DeEstablecimiento):
         help_text="Con alta concentración de alumnos prioritarios, estos docentes tienen proporción 60/40.")
     proporcion = models.CharField("proporción lectiva/no lectiva", max_length=4, choices=Proporcion.choices,
                                   default=Proporcion.AUTOMATICA)
+    class Tramo(models.TextChoices):
+        INICIAL = "INICIAL", "Inicial"
+        TEMPRANO = "TEMPRANO", "Temprano"
+        AVANZADO = "AVANZADO", "Avanzado"
+        EXPERTO_I = "EXPERTO_I", "Experto I"
+        EXPERTO_II = "EXPERTO_II", "Experto II"
+
+    class Evaluacion(models.TextChoices):
+        DESTACADO = "DESTACADO", "Destacado"
+        COMPETENTE = "COMPETENTE", "Competente"
+        BASICO = "BASICO", "Básico"
+        INSATISFACTORIO = "INSATISFACTORIO", "Insatisfactorio"
+
+    tramo = models.CharField("tramo de desarrollo profesional", max_length=12, choices=Tramo.choices, blank=True,
+                             help_text="Sistema de Desarrollo Profesional Docente (Ley 20.903). Vacío = sin tramo.")
+    anios_experiencia = models.PositiveSmallIntegerField(
+        "años de experiencia docente", null=True, blank=True,
+        help_text="Cada 2 años es un bienio (máximo 15) para el componente de experiencia.")
+    evaluacion_docente = models.CharField("resultado de la evaluación docente", max_length=16,
+                                          choices=Evaluacion.choices, blank=True)
+    evaluacion_anio = models.PositiveSmallIntegerField("año de la evaluación docente", null=True, blank=True)
+    brp_mencion = models.BooleanField(
+        "BRP con mención", default=False,
+        help_text="Marque si su título tiene mención reconocida para la BRP (además del componente por título).")
     telefono = models.CharField("teléfono", max_length=30, blank=True)
     email = models.EmailField("correo electrónico", blank=True)
     fecha_ingreso = models.DateField("fecha de ingreso", null=True, blank=True)
@@ -974,3 +1003,40 @@ class ResultadoPaes(DeEstablecimiento):
         verbose_name = "resultado PAES"
         verbose_name_plural = "resultados PAES"
         constraints = [models.UniqueConstraint(fields=["establecimiento", "anio", "prueba"], name="paes_unico")]
+
+
+class ParametrosPersonal(models.Model):
+    """Montos mensuales para un contrato de 44 horas con que se estiman las asignaciones docentes de un año.
+
+    Son del sostenedor (o del establecimiento independiente). Los montos se reajustan cada año: se ingresan con
+    los valores vigentes informados por Mineduc/CPEIP.
+    """
+
+    sostenedor = models.ForeignKey(Sostenedor, on_delete=models.CASCADE, null=True, blank=True,
+                                   related_name="parametros_personal")
+    establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
+                                        related_name="parametros_personal")
+    anio = models.PositiveSmallIntegerField("año", default=anio_actual)
+    brp_titulo = models.PositiveIntegerField("BRP: componente título", default=0)
+    brp_mencion = models.PositiveIntegerField("BRP: componente mención", default=0)
+    por_bienio = models.PositiveIntegerField("asignación de tramo: monto por bienio de experiencia", default=0)
+    tramo_inicial = models.PositiveIntegerField("tramo Inicial", default=0)
+    tramo_temprano = models.PositiveIntegerField("tramo Temprano", default=0)
+    tramo_avanzado = models.PositiveIntegerField("tramo Avanzado", default=0)
+    tramo_experto_i = models.PositiveIntegerField("tramo Experto I", default=0)
+    tramo_experto_ii = models.PositiveIntegerField("tramo Experto II", default=0)
+    prioritarios_fijo = models.PositiveIntegerField(
+        "prioritarios (60 % o más): monto fijo", default=43726,
+        help_text="Además del 20 % de la asignación de tramo. Monto legal base: actualícelo con el valor reajustado.")
+    prioritarios_80 = models.PositiveIntegerField(
+        "prioritarios (80 % o más): monto adicional para Avanzado, Experto I y II", default=60000,
+        help_text="Monto legal base: actualícelo con el valor reajustado.")
+
+    class Meta:
+        verbose_name = "parámetros de remuneraciones docentes"
+        verbose_name_plural = "parámetros de remuneraciones docentes"
+        ordering = ["-anio"]
+
+    def monto_tramo(self, tramo):
+        return {"INICIAL": self.tramo_inicial, "TEMPRANO": self.tramo_temprano, "AVANZADO": self.tramo_avanzado,
+                "EXPERTO_I": self.tramo_experto_i, "EXPERTO_II": self.tramo_experto_ii}.get(tramo, 0)

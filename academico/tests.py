@@ -1062,3 +1062,42 @@ class NivelesSostenedorTests(VariosEstablecimientosTests):
         self.assertEqual(Establecimiento.objects.get(pk=self.a.pk).sostenedor, y)
         self.assertEqual(Perfil.objects.get(usuario__username="adm.y").sostenedor, y)
         self.assertContains(self.client.get(reverse("plataforma")), "Fundación Y")
+
+
+class GestionPersonalTests(BaseDatos):
+    def test_calculo_de_asignaciones(self):
+        from .models import Establecimiento, Funcionario, ParametrosPersonal
+        from .personal import asignaciones
+        est = Establecimiento.actual()
+        p = ParametrosPersonal(brp_titulo=100000, brp_mencion=40000, por_bienio=10000, tramo_avanzado=200000,
+                               prioritarios_fijo=40000, prioritarios_80=60000)
+        f = Funcionario(cargo="DOCENTE", titulo="Profesor", brp_mencion=True, horas_contrato=Decimal("22"),
+                        tramo="AVANZADO", anios_experiencia=9)
+        est.pct_prioritarios = Decimal("85")
+        m = asignaciones(f, est, p)
+        self.assertEqual(m["brp"], 70000)                     # (100.000 + 40.000) × 22/44
+        self.assertEqual(m["tramo"], 120000)                  # (200.000 + 4 bienios × 10.000) × 1/2
+        self.assertEqual(m["prioritarios"], 24000 + 20000 + 30000)  # 20 % tramo + fijo + adicional 80 %
+        est.pct_prioritarios = Decimal("50")
+        self.assertEqual(asignaciones(f, est, p)["prioritarios"], 0)
+        est.rural = True
+        self.assertEqual(asignaciones(f, est, p)["prioritarios"], 12000)  # rural 45-59 %: 10 % del tramo
+        f.cargo = "ASISTENTE"
+        self.assertEqual(asignaciones(f, est, p)["total"], 0)
+
+    def test_pagina_y_permisos(self):
+        from .models import Funcionario, ParametrosPersonal
+        Funcionario.objects.create(rut="11.111.111-1", nombres="Ana", apellido_paterno="Soto", horas_contrato=44,
+                                   titulo="Profesora", tramo="TEMPRANO", evaluacion_docente="BASICO")
+        self.client.force_login(User.objects.get(username="director"))
+        r = self.client.get(reverse("personal"))
+        self.assertContains(r, "Ana Soto")
+        self.assertContains(r, "plan de superación")
+        self.client.post(reverse("personal"), {"guardar_parametros": "1", "brp_titulo": 90000, "brp_mencion": 0,
+                         "por_bienio": 0, "tramo_inicial": 0, "tramo_temprano": 80000, "tramo_avanzado": 0,
+                         "tramo_experto_i": 0, "tramo_experto_ii": 0, "prioritarios_fijo": 0, "prioritarios_80": 0})
+        self.assertEqual(ParametrosPersonal.objects.get().brp_titulo, 90000)
+        self.assertContains(self.client.get(reverse("personal")), "$170.000")
+        self.assertEqual(self.client.get(reverse("personal") + "?exportar=excel").status_code, 200)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("personal")).status_code, 403)

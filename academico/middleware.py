@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 from . import tenencia
 
 # Rutas permitidas al superadministrador sin haber elegido un establecimiento
-LIBRES_SUPERADMIN = ("/plataforma/", "/red/", "/static/", "/salir/", "/ingresar/", "/clave/", "/admin/", "/logo.png")
+LIBRES_SUPERADMIN = ("/plataforma/", "/red/", "/personal/", "/static/", "/salir/", "/ingresar/", "/clave/", "/admin/", "/logo.png")
 # Rutas de cada módulo (si el establecimiento no tiene el módulo, no se puede entrar)
 RUTAS_MODULO = {
     "convivencia": ("/convivencia/", "/anotaciones/", "/entrevistas/", "/redes/"),

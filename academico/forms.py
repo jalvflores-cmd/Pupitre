@@ -233,6 +233,7 @@ class FuncionarioForm(BootstrapMixin, forms.ModelForm):
         model = Funcionario
         fields = ["rut", "nombres", "apellido_paterno", "apellido_materno", "cargo", "titulo", "mencion",
                   "tipo_contrato", "horas_contrato", "primer_ciclo", "proporcion", "fecha_ingreso",
+                  "tramo", "anios_experiencia", "brp_mencion", "evaluacion_docente", "evaluacion_anio",
                   "telefono", "email", "usuario", "activo"]
         widgets = {"fecha_ingreso": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 

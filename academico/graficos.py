@@ -4,6 +4,7 @@ Paleta categórica validada (orden fijo): establecimiento = azul, nacional = nar
 Cada marca lleva <title> para el tooltip al pasar el mouse, y las vistas muestran también la tabla.
 """
 from html import escape
+from math import ceil
 
 from django.utils.safestring import mark_safe
 
@@ -23,7 +24,7 @@ def _num(v, dec=1):
 
 
 def barras(filas, maximo=None, umbral=None, umbral_txt="", dec=1, sufijo="", ancho=640, alto_fila=28,
-           malo=None):
+           malo=None, rojas=()):
     """Barras horizontales. filas: [(etiqueta, valor)]. malo(valor) -> True marca la barra en rojo + ícono."""
     filas = [(e, v) for e, v in filas]
     if not filas:
@@ -34,12 +35,16 @@ def barras(filas, maximo=None, umbral=None, umbral_txt="", dec=1, sufijo="", anc
     util = ancho - izq - der
     alto = alto_fila * len(filas) + 24
     partes = [f'<svg viewBox="0 0 {ancho} {alto}" class="w-100" role="img" style="{FUENTE};max-height:{alto * 1.2:.0f}px">']
-    marcas = [k / maximo for k in range(int(maximo) + 1)] if maximo in (7, 7.0) else (0, 0.25, 0.5, 0.75, 1)
+    enteros = dec == 0 and maximo <= 12  # conteos pequeños: marcas en números enteros
+    if enteros:
+        maximo = float(max(1, ceil(maximo)))
+    marcas = ([k / maximo for k in range(int(maximo) + 1)] if maximo in (7, 7.0) or enteros
+              else (0, 0.25, 0.5, 0.75, 1))
     for t in marcas:
         x = izq + util * t
         partes.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="4" y2="{alto - 18}" stroke="{GRILLA}" stroke-width="1"/>')
         partes.append(f'<text x="{x:.1f}" y="{alto - 4}" font-size="10" fill="{TEXTO_2}" text-anchor="middle">'
-                      f'{_num(maximo * t, 0 if maximo >= 10 else 1)}{sufijo}</text>')
+                      f'{_num(maximo * t, 0 if maximo >= 10 or enteros else 1)}{sufijo}</text>')
     for i, (etiqueta, valor) in enumerate(filas):
         y = 6 + i * alto_fila
         partes.append(f'<text x="{izq - 8}" y="{y + alto_fila / 2 + 1:.1f}" font-size="12" fill="{TEXTO}" '
@@ -49,7 +54,7 @@ def barras(filas, maximo=None, umbral=None, umbral_txt="", dec=1, sufijo="", anc
                           f'dominant-baseline="middle">sin datos</text>')
             continue
         w = max(2.0, util * min(float(valor), maximo) / maximo)
-        rojo = malo(valor) if malo else False
+        rojo = (malo(valor) if malo else False) or etiqueta in rojas
         color = CRITICO if rojo else SERIES[0]
         partes.append(f'<g><title>{escape(str(etiqueta))}: {_num(valor, dec)}{sufijo}</title>'
                       f'<rect x="{izq}" y="{y + 5}" width="{w:.1f}" height="{alto_fila - 10}" rx="4" fill="{color}"/>'

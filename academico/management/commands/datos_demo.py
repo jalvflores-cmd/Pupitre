@@ -70,6 +70,7 @@ class Command(BaseCommand):
                     self.demo_libro(anio, cursos=1)
                     self.demo_resultados(liceo)
         self.demo_red(escuela)
+        self.demo_personal(escuela)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -469,6 +470,46 @@ class Command(BaseCommand):
         usuario("admin.red", "Carolina", "Fuentes Lagos", rol=Perfil.Rol.ADMIN_SOSTENEDOR, sostenedor=sost)
         usuario("sostenedor.red", "Hernán", "Muñoz Parra", rol=Perfil.Rol.SOSTENEDOR, sostenedor=sost)
         usuario("admin.escuela", "Marcela", "Riquelme Soto", rol=Perfil.Rol.ADMIN, establecimiento=escuela)
+
+    def demo_personal(self, escuela):
+        """Tramos, evaluación docente, % de prioritarios y montos ilustrativos. Solo completa lo que está vacío."""
+        from academico.models import ParametrosPersonal, Sostenedor
+
+        rnd = random.Random(7)
+        ests = [escuela] + list(Establecimiento.objects.filter(nombre__in=[d["nombre"] for d in LICEOS]))
+        for est, pct, rural in zip(ests, (82, 64, 71, 58), (False, False, False, True)):
+            if est.pct_prioritarios is None:
+                est.pct_prioritarios, est.rural = pct, rural
+                est.save(update_fields=["pct_prioritarios", "rural"])
+            with en_establecimiento(est):
+                if not Funcionario.objects.exists():  # liceos demo: fichas a partir de sus usuarios
+                    for i, perfil in enumerate(Perfil.objects.filter(establecimiento=est).select_related("usuario")):
+                        u = perfil.usuario
+                        cargo = {"DIRECTOR": "DIRECTIVO", "UTP": "TECNICO"}.get(perfil.rol, "DOCENTE")
+                        cuerpo = 20_000_000 + est.pk * 1000 + i
+                        Funcionario.objects.create(
+                            usuario=u, rut=f"{cuerpo}-{calcular_dv(cuerpo)}", nombres=u.first_name or u.username,
+                            apellido_paterno=(u.last_name.split() or ["—"])[0],
+                            apellido_materno=" ".join(u.last_name.split()[1:]), cargo=cargo,
+                            titulo="Profesor(a) de Educación Media", horas_contrato=rnd.choice([30, 38, 44, 44]))
+                if not Funcionario.objects.exclude(tramo="").exists():
+                    for f in Funcionario.objects.exclude(cargo=Funcionario.Cargo.ASISTENTE):
+                        f.anios_experiencia = rnd.randint(1, 32)
+                        f.tramo = ("INICIAL" if f.anios_experiencia < 4 else rnd.choice(
+                            ["TEMPRANO", "AVANZADO", "AVANZADO", "EXPERTO_I", "EXPERTO_II"]))
+                        f.evaluacion_docente = rnd.choice(["DESTACADO", "COMPETENTE", "COMPETENTE", "COMPETENTE",
+                                                           "BASICO", "INSATISFACTORIO", ""])
+                        f.evaluacion_anio = rnd.choice([2022, 2023, 2024, 2025]) if f.evaluacion_docente else None
+                        f.brp_mencion = bool(f.mencion) or rnd.random() < 0.3
+                        f.save()
+        montos = {"brp_titulo": 95000, "brp_mencion": 32000, "por_bienio": 25000, "tramo_inicial": 30000,
+                  "tramo_temprano": 90000, "tramo_avanzado": 210000, "tramo_experto_i": 380000,
+                  "tramo_experto_ii": 560000}  # ilustrativos, solo para la demostración
+        sost = Sostenedor.objects.filter(nombre="Corporación Educacional Ñuble (demo)").first()
+        if sost and not ParametrosPersonal.objects.filter(sostenedor=sost).exists():
+            ParametrosPersonal.objects.create(sostenedor=sost, **montos)
+        if escuela.sostenedor_id is None and not ParametrosPersonal.objects.filter(establecimiento=escuela).exists():
+            ParametrosPersonal.objects.create(establecimiento=escuela, **montos)
 
     def demo_superadmin(self):
         u, creado = User.objects.get_or_create(username="superadmin", defaults={
