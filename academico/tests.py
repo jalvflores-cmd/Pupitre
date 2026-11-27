@@ -1158,3 +1158,22 @@ class AsistenciaDiariaHoraTests(BaseDatos):
         AsistenciaClase.objects.create(clase=temprano, estudiante=self.est, estado="A")  # llegó tarde al colegio
         AsistenciaClase.objects.create(clase=diez, estudiante=self.est, estado="P")
         self.assertEqual(asistencia_diaria(self.curso)[(self.est.pk, dia)], "P")
+
+
+class OATalleresTests(BaseDatos):
+    def test_oa_propios_de_un_taller(self):
+        from . import curriculo
+        from .models import ObjetivoAprendizaje
+        taller = Asignatura.objects.create(nombre="Taller de Robótica", tipo="TALLER")
+        ac = AsignaturaCurso.objects.create(curso=self.curso, asignatura=taller, profesor=self.profe_mat)
+        self.client.force_login(self.utp)
+        self.client.post(reverse("curriculum"), {"asignatura_propia": taller.pk, "grado": 0, "numero": 1,
+                                                 "texto": "Programar un robot simple con secuencias."})
+        oa = ObjetivoAprendizaje.objects.get(asignatura_propia=taller)
+        self.assertEqual(oa.asignatura, "otra")
+        self.assertIn(oa, curriculo.oas_para(ac))
+        self.assertNotIn(oa, curriculo.oas_para(self.mat))
+        r = self.client.get(reverse("curriculum") + f"?asignatura=p{taller.pk}")
+        self.assertContains(r, "Programar un robot")
+        self.client.force_login(self.profe_mat)
+        self.assertContains(self.client.get(reverse("clase_crear", args=[ac.pk])), "Programar un robot")

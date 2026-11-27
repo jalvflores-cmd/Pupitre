@@ -199,8 +199,8 @@ def clase_form(request, ac_pk=None, pk=None):
     por_nivel = OrderedDict()
     for oa in oas.order_by("-grado", "numero"):
         por_nivel.setdefault(oa.grado, []).append(oa)
-    niveles_oa = [{"grado": g, "nombre": dict(GRADOS_CURRICULUM)[g], "actual": g == grado_actual, "oas": lista,
-                   "abierto": g == grado_actual or any(str(o.pk) in marcados for o in lista)}
+    niveles_oa = [{"grado": g, "nombre": dict(GRADOS_CURRICULUM)[g], "actual": g in (grado_actual, 0), "oas": lista,
+                   "abierto": g in (grado_actual, 0) or any(str(o.pk) in marcados for o in lista)}
                   for g, lista in por_nivel.items()]
     for n in niveles_oa:
         if not n["actual"]:
@@ -444,14 +444,18 @@ def curriculum(request):
     asig = request.GET.get("asignatura", "")
     grado = request.GET.get("grado", "")
     q = request.GET.get("q", "").strip()
-    if asig:
-        qs = qs.filter(asignatura=asig)
+    if asig.startswith("p") and asig[1:].isdigit():
+        qs = qs.filter(asignatura_propia_id=int(asig[1:]))
+    elif asig:
+        qs = qs.filter(asignatura=asig, asignatura_propia__isnull=True)
     if grado.isdigit():
         qs = qs.filter(grado=int(grado))
     if q:
         qs = qs.filter(texto__icontains=q)
     puede = es_gestion(request.user) and not es_solo_lectura(request.user)
-    form = ObjetivoForm(request.POST or None, initial={"asignatura": asig or None, "grado": grado or None})
+    form = ObjetivoForm(request.POST or None, initial={
+        "asignatura": asig if asig and not asig.startswith("p") else None, "grado": grado or None,
+        "asignatura_propia": asig[1:] if asig.startswith("p") else None})
     if request.method == "POST":
         exigir(puede)
         if request.POST.get("eliminar"):
@@ -473,36 +477,48 @@ def curriculum(request):
             oa = form.save(commit=False)
             oa.establecimiento = Establecimiento.actual()
             if ObjetivoAprendizaje.objects.filter(establecimiento=oa.establecimiento, asignatura=oa.asignatura,
-                                                  grado=oa.grado, numero=oa.numero).exists():
+                                                  asignatura_propia=oa.asignatura_propia, grado=oa.grado,
+                                                  numero=oa.numero).exists():
                 form.add_error("numero", "Ya existe un OA propio con ese número para esa asignatura y nivel.")
             else:
                 oa.save()
                 messages.success(request, f"{oa.codigo} agregado.")
-                return redirect(f"{request.path}?asignatura={oa.asignatura}&grado={oa.grado}")
+                clave = f"p{oa.asignatura_propia_id}" if oa.asignatura_propia_id else oa.asignatura
+                return redirect(f"{request.path}?asignatura={clave}&grado={oa.grado}")
     # agrupa por asignatura y nivel; abre de partida lo que el usuario enseña
-    propias = set()
+    propias = set()  # (clave de sección, grado) de lo que el usuario enseña
     for ac in asignaturas_curso_visibles(request.user).filter(curso__anio=anio_actual(), profesor=request.user):
         g = curriculo.grado_de_curso(ac.curso)
+        propias.add((f"p{ac.asignatura_id}", g or 0))
+        propias.add((f"p{ac.asignatura_id}", 0))
         if g:
             propias.add((curriculo.clave_asignatura(ac.asignatura.nombre), g))
     nombres_asig = dict(ObjetivoAprendizaje._meta.get_field("asignatura").choices)
     nombres_grado = dict(GRADOS_CURRICULUM)
     orden_asig = list(nombres_asig)
-    grupos = OrderedDict()
-    for oa in qs.order_by("grado", "numero"):
-        grupos.setdefault(oa.asignatura, OrderedDict()).setdefault(oa.grado, []).append(oa)
+    grupos, nombres = OrderedDict(), dict(nombres_asig)
+    for oa in qs.select_related("asignatura_propia").order_by("grado", "numero"):
+        clave = f"p{oa.asignatura_propia_id}" if oa.asignatura_propia_id else oa.asignatura
+        if oa.asignatura_propia_id:
+            nombres[clave] = f"{oa.asignatura_propia.nombre} · {oa.asignatura_propia.get_tipo_display()}"
+        grupos.setdefault(clave, OrderedDict()).setdefault(oa.grado, []).append(oa)
     filtrado = bool(asig or grado or q)
     secciones = []
-    for clave in sorted(grupos, key=orden_asig.index):
+    orden = lambda k: (1, nombres[k].lower()) if k.startswith("p") else (0, orden_asig.index(k))
+    for clave in sorted(grupos, key=orden):
         mios = sum(1 for g in grupos[clave] if (clave, g) in propias)
         niveles = [{"grado": g, "nombre": nombres_grado[g], "oas": oas, "mio": (clave, g) in propias,
                     "abierto": filtrado or ((clave, g) in propias and mios == 1)}
                    for g, oas in grupos[clave].items()]
-        secciones.append({"clave": clave, "nombre": nombres_asig[clave], "niveles": niveles,
+        secciones.append({"clave": clave, "nombre": nombres[clave], "niveles": niveles,
                           "total": sum(len(n["oas"]) for n in niveles),
                           "abierta": filtrado or any(n["mio"] for n in niveles)})
+    from .models import Asignatura
+    otras = [(f"p{a.pk}", f"{a.nombre} ({a.get_tipo_display().split(' (')[0]})")
+             for a in Asignatura.objects.exclude(tipo=Asignatura.Tipo.ASIGNATURA).order_by("nombre")]
     return render(request, "academico/curriculum.html", {
         "secciones": secciones, "total": qs.count(), "form": form, "puede": puede, "tiene_propias": bool(propias),
-        "asignaturas": ObjetivoAprendizaje._meta.get_field("asignatura").choices, "grados": GRADOS_CURRICULUM,
+        "asignaturas": ObjetivoAprendizaje._meta.get_field("asignatura").choices, "otras": otras,
+        "grados": GRADOS_CURRICULUM,
         "asig": asig, "grado": grado, "q": q,
     })

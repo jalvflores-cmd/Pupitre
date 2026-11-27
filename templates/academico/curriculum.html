@@ -3,10 +3,10 @@
 {% block contenido %}
 <div class="p-encabezado">
   <div><h3>Currículum nacional</h3>
-    <div class="sub">Objetivos de aprendizaje (OA) que usa el asistente de planificación. Vienen precargados los OA basales de la Priorización Curricular (Mineduc) de Lenguaje, Matemática, Ciencias Naturales e Historia, de 1° básico a II medio, como síntesis fiel; el texto oficial completo está en curriculumnacional.cl.</div></div>
+    <div class="sub">Objetivos de aprendizaje (OA) que usa el asistente de planificación. Vienen precargados los OA basales de la Priorización Curricular (Mineduc) de Lenguaje, Matemática, Ciencias Naturales e Historia, de 1° básico a II medio, como síntesis fiel; el texto oficial completo está en curriculumnacional.cl. Las demás asignaturas, talleres, especialidades y modalidades flexibles se agregan aquí como OA propios.</div></div>
 </div>
 <form class="card p-3 mb-3"><div class="row g-2 align-items-end">
-  <div class="col-md-4"><label class="form-label small">Asignatura</label><select name="asignatura" class="form-select form-select-sm"><option value="">Todas</option>{% for k, n in asignaturas %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><label class="form-label small">Asignatura</label><select name="asignatura" class="form-select form-select-sm"><option value="">Todas</option><optgroup label="Currículum nacional">{% for k, n in asignaturas %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</optgroup>{% if otras %}<optgroup label="Talleres, módulos, electivos y modalidades flexibles">{% for k, n in otras %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</optgroup>{% endif %}</select></div>
   <div class="col-md-2"><label class="form-label small">Nivel</label><select name="grado" class="form-select form-select-sm"><option value="">Todos</option>{% for k, n in grados %}<option value="{{ k }}"{% if k|stringformat:"s" == grado %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
   <div class="col-md-4"><label class="form-label small">Buscar en el texto</label><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Ej.: fracciones, poema, ecosistema"></div>
   <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Filtrar</button></div>
@@ -47,7 +47,7 @@
   <div class="col-xl-4">
     <div class="card p-4 mb-4">
       <h5>Agregar un OA propio</h5>
-      <p class="small text-muted">Para OA complementarios, otras asignaturas, talleres JEC o módulos TP.</p>
+      <p class="small text-muted">Para talleres JEC, módulos de especialidad TP, electivos del plan diferenciado, modalidades flexibles u OA complementarios. Elija el taller o módulo del establecimiento (se crean en la carga académica de cada curso) y el nivel; use «Todos los niveles» si el taller es el mismo para varios cursos.</p>
       <form method="post">{% csrf_token %}
         {% for f in form %}<div class="mb-2"><label class="form-label small">{{ f.label|capfirst }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
         <button class="btn btn-primary btn-sm">Agregar</button>
@@ -55,7 +55,7 @@
     </div>
     <div class="card p-4">
       <h5>Importar desde Excel</h5>
-      <p class="small text-muted">Columnas: <b>Asignatura</b>, <b>Nivel</b> (ej. «5° básico», «I medio»), <b>OA</b> (número), <b>Texto</b> y, si quiere, <b>Unidad</b>. Puede copiar los OA desde curriculumnacional.cl.</p>
+      <p class="small text-muted">Columnas: <b>Asignatura</b> (del currículum, o el nombre exacto del taller o módulo del establecimiento), <b>Nivel</b> (ej. «5° básico», «I medio» o «Todos»), <b>OA</b> (número), <b>Texto</b> y, si quiere, <b>Unidad</b>. Puede copiar los OA desde curriculumnacional.cl o desde los programas de cada especialidad.</p>
       <form method="post" enctype="multipart/form-data" class="d-flex gap-2">{% csrf_token %}
         <input type="file" name="archivo" accept=".xlsx,.xls,.csv" class="form-control form-control-sm" required>
         <button class="btn btn-sm btn-outline-primary">Importar</button>

@@ -431,8 +431,30 @@ class VisadoForm(BootstrapMixin, forms.ModelForm):
 class ObjetivoForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = ObjetivoAprendizaje
-        fields = ["asignatura", "grado", "numero", "texto", "unidad"]
+        fields = ["asignatura_propia", "asignatura", "grado", "numero", "texto", "unidad"]
         widgets = {"texto": forms.Textarea(attrs={"rows": 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .models import Asignatura
+        campo = self.fields["asignatura_propia"]
+        campo.queryset = Asignatura.objects.order_by("tipo", "nombre")
+        campo.label_from_instance = lambda a: f"{a.nombre} ({a.get_tipo_display().split(' (')[0]})"
+        campo.empty_label = "— Ninguna: asignatura del currículum nacional —"
+        self.fields["asignatura"].required = False
+        self.fields["asignatura"].help_text = "Solo si no eligió un taller, módulo o asignatura arriba."
+
+    def clean(self):
+        d = super().clean()
+        if d.get("asignatura_propia"):
+            from .curriculo import clave_asignatura
+            d["asignatura"] = clave_asignatura(d["asignatura_propia"].nombre)
+            if d["asignatura_propia"].tipo != "ASIGNATURA":
+                d["asignatura"] = "otra"
+            self.instance.asignatura = d["asignatura"]
+        elif not d.get("asignatura"):
+            self.add_error("asignatura", "Elija la asignatura del currículum o un taller/módulo del establecimiento.")
+        return d
 
 
 class SimceForm(BootstrapMixin, forms.ModelForm):

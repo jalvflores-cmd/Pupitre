@@ -87,16 +87,24 @@ def cargar_oficiales(modelo):
 def oas_para(ac, anteriores=False):
     """OA disponibles para una asignatura de un curso (oficiales + propios del establecimiento).
 
-    anteriores=True incluye los de niveles anteriores de la misma asignatura (nivelación).
+    Incluye los OA propios ligados a esa asignatura del establecimiento (talleres, módulos TP, electivos,
+    modalidades flexibles), del nivel del curso o «todos los niveles». anteriores=True incluye los de niveles
+    anteriores de la misma asignatura (nivelación).
     """
+    from django.db.models import Q
+
     from .models import ObjetivoAprendizaje
 
     grado = grado_de_curso(ac.curso)
     clave = clave_asignatura(ac.asignatura.nombre)
-    if grado is None:
-        return ObjetivoAprendizaje.objects.none()
-    filtro = {"grado__lte": grado} if anteriores else {"grado": grado}
-    return ObjetivoAprendizaje.disponibles().filter(asignatura=clave, **filtro)
+    disponibles = ObjetivoAprendizaje.disponibles()
+    filtro_grado = Q(grado=0)
+    if grado is not None:
+        filtro_grado |= Q(grado__lte=grado) if anteriores else Q(grado=grado)
+    propios = Q(asignatura_propia=ac.asignatura)
+    if clave != "otra" and grado is not None:
+        propios |= Q(asignatura=clave, asignatura_propia__isnull=True)
+    return disponibles.filter(propios & filtro_grado)
 
 
 # --------------------------------------------------------------------------- asistente (reglas, sin IA)

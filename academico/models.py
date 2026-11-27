@@ -277,6 +277,7 @@ class Asignatura(DeEstablecimiento):
         DIFERENCIADA = "DIFERENCIADA", "Plan diferenciado HC (electivo)"
         MODULO_TP = "MODULO_TP", "Módulo de especialidad TP"
         TALLER = "TALLER", "Taller JEC"
+        FLEXIBLE = "FLEXIBLE", "Modalidad flexible (adultos, reingreso u otra)"
 
     nombre = models.CharField(max_length=100)
     codigo = models.CharField("código", max_length=20, blank=True)
@@ -917,9 +918,9 @@ ASIGNATURAS_CURRICULUM = [
     ("tecnologia", "Tecnología"),
     ("orientacion", "Orientación"),
     ("religion", "Religión"),
-    ("otra", "Otra / módulo o taller"),
+    ("otra", "Otra (taller, módulo TP, electivo, modalidad flexible)"),
 ]
-GRADOS_CURRICULUM = [(g, f"{g}° básico") for g in range(1, 9)] + [
+GRADOS_CURRICULUM = [(0, "Todos los niveles")] + [(g, f"{g}° básico") for g in range(1, 9)] + [
     (9, "I medio"), (10, "II medio"), (11, "III medio"), (12, "IV medio")]
 
 
@@ -929,6 +930,11 @@ class ObjetivoAprendizaje(models.Model):
     establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
                                         editable=False, related_name="objetivos")
     asignatura = models.CharField(max_length=20, choices=ASIGNATURAS_CURRICULUM)
+    asignatura_propia = models.ForeignKey(
+        "Asignatura", on_delete=models.CASCADE, null=True, blank=True, related_name="objetivos",
+        verbose_name="taller, módulo o asignatura del establecimiento",
+        help_text="Para talleres JEC, módulos de especialidad, electivos o modalidades flexibles: los OA quedan "
+                  "ligados a esa asignatura del establecimiento.")
     grado = models.PositiveSmallIntegerField("nivel", choices=GRADOS_CURRICULUM)
     numero = models.PositiveSmallIntegerField("N° de OA")
     texto = models.TextField("objetivo de aprendizaje")
@@ -939,8 +945,8 @@ class ObjetivoAprendizaje(models.Model):
         verbose_name = "objetivo de aprendizaje"
         verbose_name_plural = "objetivos de aprendizaje"
         ordering = ["asignatura", "grado", "numero"]
-        constraints = [models.UniqueConstraint(fields=["establecimiento", "asignatura", "grado", "numero"],
-                                               name="oa_unico")]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "asignatura", "asignatura_propia", "grado",
+                                                       "numero"], name="oa_unico")]
 
     def __str__(self):
         return f"OA {self.numero}: {self.texto}"

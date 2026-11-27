@@ -636,21 +636,35 @@ def importar_oas(archivo):
     faltan = {"asignatura", "nivel", "numero", "texto"} - set(indices)
     if faltan:
         raise ValueError("El archivo debe tener las columnas Asignatura, Nivel, OA y Texto.")
+    from .models import Asignatura
+
     est = Establecimiento.actual()
+    propias = {a.nombre.strip().lower(): a for a in Asignatura.objects.all()}
     errores, n = [], 0
     with transaction.atomic():
         for fila, d in filas:
-            grado = grado_desde_texto(_texto(d["nivel"]))
+            nivel = _texto(d["nivel"])
+            grado = 0 if nivel.strip().lower() in ("todos", "todos los niveles", "-", "") else grado_desde_texto(nivel)
             try:
                 numero = int(re.sub(r"\D", "", _texto(d["numero"])) or "x")
             except ValueError:
                 numero = None
             texto = _texto(d["texto"])
-            if not grado or not numero or not texto:
+            if grado is None or not numero or not texto:
                 errores.append(f"Fila {fila}: revise nivel (ej. «5° básico», «I medio»), N° de OA y texto.")
                 continue
+            nombre = _texto(d["asignatura"])
+            clave = clave_asignatura(nombre)
+            propia = propias.get(nombre.strip().lower())
+            if propia is not None and propia.tipo == Asignatura.Tipo.ASIGNATURA and clave != "otra":
+                propia = None  # asignatura del currículum nacional: OA complementario de esa asignatura
+            if propia is not None and propia.tipo != Asignatura.Tipo.ASIGNATURA:
+                clave = "otra"
+            if grado == 0 and propia is None:
+                errores.append(f"Fila {fila}: «Todos los niveles» solo se usa con un taller o módulo del establecimiento.")
+                continue
             ObjetivoAprendizaje.objects.update_or_create(
-                establecimiento=est, asignatura=clave_asignatura(_texto(d["asignatura"])), grado=grado, numero=numero,
+                establecimiento=est, asignatura=clave, asignatura_propia=propia, grado=grado, numero=numero,
                 defaults={"texto": texto, "unidad": _texto(d.get("unidad"))[:120]})
             n += 1
         if errores:
