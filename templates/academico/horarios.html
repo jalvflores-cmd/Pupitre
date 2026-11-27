@@ -24,7 +24,14 @@
       <option value="">Ver un profesor(a)…</option>
       {% for p in profesores %}<option value="{{ p.pk }}"{% if profe and p.pk == profe.pk %} selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></form>
     {% elif not profe %}<a class="btn btn-sm btn-outline-secondary" href="?profesor={{ request.user.pk }}"><i class="bi bi-person"></i> Mi horario</a>{% endif %}
-    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+    <div class="btn-group">
+      <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{% url 'horarios_pdf' %}?{% if profe %}profesor={{ profe.pk }}{% elif curso %}curso={{ curso.pk }}{% endif %}"><i class="bi bi-printer"></i> Imprimir (carta)</a>
+      {% if profesores|length > 1 %}<button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Más opciones de impresión</span></button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" target="_blank" href="{% url 'horarios_pdf' %}?todos=cursos">Todos los cursos (una hoja por curso)</a></li>
+        <li><a class="dropdown-item" target="_blank" href="{% url 'horarios_pdf' %}?todos=profesores">Todos los profesores (una hoja por profesor)</a></li>
+      </ul>{% endif %}
+    </div>
   </div>
 </div>
 

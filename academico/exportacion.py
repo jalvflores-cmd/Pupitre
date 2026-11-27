@@ -789,3 +789,91 @@ def pdf_asistencia_mes(curso, datos, mes_txt):
     jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
     historia += _firmas([f"{escape(jefe)}<br/>Profesor(a) jefe", "Inspectoría General"], ancho_total=23.9 * cm, espacio=40)
     return _construir_pdf(historia, horizontal=True, titulo="Registro de asistencia", interno=True)
+
+
+def pdf_horarios(paginas):
+    """Horarios de clases, una hoja carta horizontal por curso o profesor(a).
+
+    paginas: [(titulo, subtitulo, filas, modo)] con filas como las arma horarios.grilla() y modo «curso» o
+    «profesor». Los bloques seguidos (sin recreo entre ellos) de la misma clase se unen en una sola celda.
+    """
+    from .models import DIAS_SEMANA
+
+    est = Establecimiento.actual()
+    alto_disponible = 21.59 * cm - 3 * cm - 2.0 * cm  # hoja, márgenes y encabezado
+    e_asig = ParagraphStyle("h_asig", parent=E_CELDA_C, fontName="Helvetica-Bold", fontSize=8, leading=9.2)
+    e_sub = ParagraphStyle("h_sub", parent=E_CELDA_C, fontSize=6.8, leading=8, textColor=colors.HexColor("#444444"))
+    e_hora = ParagraphStyle("h_hora", parent=E_CELDA_C, fontSize=7, leading=8.4)
+    historia = []
+    for i, (titulo, subtitulo, filas, modo) in enumerate(paginas):
+        if i:
+            historia.append(PageBreak())
+        encabezado = Table([[Paragraph(f"<b>{escape(titulo)}</b><br/><font size=8>{escape(subtitulo)}</font>",
+                                       ParagraphStyle("h_tit", parent=E_NORMAL, fontSize=12, leading=14)),
+                             Paragraph(f"<b>{escape(est.nombre)}</b>"
+                                       + (f"<br/>RBD {escape(est.rbd)}" if est.rbd else ""),
+                                       ParagraphStyle("h_est", parent=E_MINI, alignment=2))]],
+                           colWidths=["65%", "35%"])
+        encabezado.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                        ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+        historia += [encabezado, Spacer(1, 6)]
+        if not filas:
+            historia.append(Paragraph("Sin horario registrado.", E_NORMAL))
+            continue
+        datos = [["Bloque"] + [n for _, n in DIAS_SEMANA]]
+        estilo = [("GRID", (0, 0), (-1, -1), 0.5, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+                  ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                  ("ALIGN", (0, 0), (-1, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                  ("TOPPADDING", (0, 0), (-1, -1), 1.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5)]
+        n_recreos = sum(1 for f in filas if f["recreo"])
+        alto_recreo = 0.42 * cm
+        alto_bloque = min(1.75 * cm, (alto_disponible - 0.6 * cm - n_recreos * alto_recreo) / len(filas))
+        alturas = [0.6 * cm]
+        abiertas = {}  # columna -> [fila de inicio, clase, fila de término] de la celda que se puede seguir uniendo
+
+        def cerrar(col):
+            celda = abiertas.pop(col, None)
+            if celda and celda[2] > celda[0]:
+                estilo.append(("SPAN", (col, celda[0]), (col, celda[2])))
+        for f in filas:
+            if f["recreo"]:
+                r = len(datos)
+                datos.append([Paragraph(f'{f["desde"]:%H:%M}–{f["bloque"].inicio:%H:%M} · recreo', e_sub)] + [""] * 5)
+                estilo += [("SPAN", (0, r), (-1, r)), ("BACKGROUND", (0, r), (-1, r), colors.HexColor("#F4F5F7"))]
+                alturas.append(alto_recreo)
+                for col in list(abiertas):
+                    cerrar(col)
+            r = len(datos)
+            b = f["bloque"]
+            fila = [Paragraph(f"<b>{b.numero}°</b><br/>{b.inicio:%H:%M}–{b.fin:%H:%M}", e_hora)]
+            for col, c in enumerate(f["celdas"], start=1):
+                h = c["h"]
+                if not c["existe"]:
+                    fila.append("")
+                    estilo.append(("BACKGROUND", (col, r), (col, r), colors.HexColor("#E9ECEF")))
+                    cerrar(col)
+                    continue
+                if h is None:
+                    fila.append("")
+                    cerrar(col)
+                    continue
+                previa = abiertas.get(col)
+                if previa and previa[1] == h.asignatura_curso_id:  # mismo curso y asignatura: se une
+                    fila.append("")
+                    previa[2] = r
+                    continue
+                cerrar(col)
+                otro = h.curso.nombre_corto if modo == "profesor" else (
+                    h.asignatura_curso.profesor.get_full_name() if h.asignatura_curso.profesor else "")
+                fila.append([Paragraph(escape(h.asignatura_curso.asignatura.nombre), e_asig),
+                             Paragraph(escape(otro), e_sub)])
+                abiertas[col] = [r, h.asignatura_curso_id, r]
+            datos.append(fila)
+            alturas.append(alto_bloque)
+        for col in list(abiertas):
+            cerrar(col)
+        t = Table(datos, colWidths=[2.3 * cm] + [4.3 * cm] * 5, rowHeights=alturas)
+        t.setStyle(TableStyle(estilo))
+        historia.append(t)
+    return _construir_pdf(historia or [Paragraph("Sin horarios.", E_NORMAL)], horizontal=True,
+                          titulo="Horario de clases", interno=True)

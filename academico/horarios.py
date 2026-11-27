@@ -253,3 +253,55 @@ def jornada(request):
         return redirect("horarios")
     return render(request, "academico/jornada.html", {"formset": formset,
                                                       "establecimiento_nombre": Establecimiento.actual().nombre})
+
+
+@login_required
+def horarios_pdf(request):
+    """Horario imprimible en hoja carta: un curso, un profesor(a), todos los cursos o todos los profesores."""
+    from django.http import HttpResponse
+
+    from .exportacion import pdf_horarios
+
+    anio = anio_actual()
+    todos = ve_todo(request.user)
+    bloques = list(BloqueHorario.objects.order_by("numero"))
+    cursos = list(Curso.objects.filter(anio=anio).select_related("nivel", "profesor_jefe").order_by("nivel__orden", "letra"))
+    paginas = []
+    relacionados = ("curso__nivel", "asignatura_curso__asignatura", "asignatura_curso__profesor")
+
+    def pagina_curso(curso):
+        clases = HorarioClase.objects.filter(curso=curso).select_related(*relacionados)
+        jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
+        paginas.append((f"Horario de clases {anio} · {curso.nombre_corto}",
+                        f"Profesor(a) jefe: {jefe}" if jefe else "", grilla(bloques, clases, None), "curso"))
+
+    def pagina_profe(profe):
+        clases = HorarioClase.objects.filter(asignatura_curso__profesor=profe, curso__anio=anio).select_related(
+            *relacionados)
+        paginas.append((f"Horario de clases {anio} · {profe.get_full_name() or profe.username}",
+                        f"{clases.count()} horas pedagógicas semanales", grilla(bloques, clases, None), "profesor"))
+
+    if request.GET.get("todos") == "cursos":
+        exigir(todos)
+        for c in cursos:
+            pagina_curso(c)
+        nombre = f"horarios-cursos-{anio}.pdf"
+    elif request.GET.get("todos") == "profesores":
+        exigir(todos)
+        for p in usuarios_establecimiento().filter(asignaturas_curso__curso__anio=anio).distinct():
+            pagina_profe(p)
+        nombre = f"horarios-profesores-{anio}.pdf"
+    elif request.GET.get("profesor"):
+        profe = get_object_or_404(User, pk=request.GET["profesor"])
+        exigir(todos or profe == request.user)
+        pagina_profe(profe)
+        nombre = f"horario-{profe.username}-{anio}.pdf"
+    else:
+        curso = get_object_or_404(Curso, pk=request.GET.get("curso"))
+        exigir(todos or Curso.objects.filter(Q(asignaturas_curso__profesor=request.user) |
+                                             Q(profesor_jefe=request.user), pk=curso.pk).exists())
+        pagina_curso(curso)
+        nombre = f"horario-{curso.nombre_corto}-{anio}.pdf".replace(" ", "-").replace("°", "")
+    respuesta = HttpResponse(pdf_horarios(paginas), content_type="application/pdf")
+    respuesta["Content-Disposition"] = f'inline; filename="{nombre}"'
+    return respuesta

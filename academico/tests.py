@@ -1265,3 +1265,24 @@ class DotacionTests(BaseDatos):
                          "rut": "33.333.333-3", "nombres": "Nueva", "apellido_paterno": "Docente", "cargo": "DOCENTE",
                          "tipo_contrato": "TITULAR", "horas_contrato": 30, "activo": "on"})
         self.assertTrue(Funcionario.objects.filter(nombres="Nueva").exists())
+
+
+class HorarioImprimibleTests(HorariosTests):
+    def test_pdf_una_hoja_por_curso(self):
+        import re
+
+        from .horarios import generar
+
+        def paginas(contenido):
+            return len(re.findall(rb"/Type\s*/Page[^s]", contenido))
+
+        generar(Curso.objects.filter(pk__in=[self.curso.pk, self.otro_curso.pk]), semilla=1)
+        self.client.force_login(self.utp)
+        r = self.client.get(reverse("horarios_pdf") + f"?curso={self.curso.pk}")
+        self.assertEqual(r["Content-Type"], "application/pdf")
+        self.assertEqual(paginas(r.content), 1)
+        r = self.client.get(reverse("horarios_pdf") + "?todos=cursos")
+        self.assertEqual(paginas(r.content), 2)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("horarios_pdf") + f"?profesor={self.profe_mat.pk}").status_code, 200)
+        self.assertEqual(self.client.get(reverse("horarios_pdf") + "?todos=cursos").status_code, 403)

@@ -25,6 +25,7 @@ urlpatterns = [
     path("pme/gastos/", sep.gastos, name="pme_gastos"),
     path("pme/gastos/<int:pk>/eliminar/", sep.gasto_eliminar, name="pme_gasto_eliminar"),
     path("horarios/jornada/", horarios.jornada, name="jornada"),
+    path("horarios/imprimir/", horarios.horarios_pdf, name="horarios_pdf"),
     path("personal/<int:pk>/", personal.carrera, name="personal_carrera"),
     path("personal/nuevo/", personal.nuevo, name="personal_nuevo"),
     path("personal/dotacion/", personal.dotacion_vista, name="dotacion"),
