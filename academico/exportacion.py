@@ -331,6 +331,8 @@ def _estilo_oficial(datos, col_notas_desde=1, filas_encabezado=1, filas_pie=0):
 
 
 def _es_nota_roja(texto):
+    if texto.strip() == "I":  # concepto Insuficiente
+        return True
     try:
         return float(texto.replace(",", ".")) < float(NOTA_APROBACION)
     except ValueError:
@@ -376,8 +378,12 @@ def _sin_estudiantes(titulo):
 
 def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
     """Informe de Calificaciones (parcial o semestral), una página por estudiante."""
+    from .calculos import usa_conceptos
+
     asigs, evaluaciones, resumenes = resumen_curso(curso, asignaturas_curso, estudiantes)
     jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
+    conceptos = usa_conceptos(curso)
+    fmt = (lambda v: concepto(v) if v is not None else "") if conceptos else formato_nota
     historia = []
     for i, r in enumerate(resumenes):
         if i:
@@ -399,23 +405,24 @@ def pdf_informe_notas(curso, estudiantes, asignaturas_curso=None):
                 for ev in evs:
                     n = pa.notas.get(ev.id)
                     if ev.semestre == sem and n is not None:
-                        txt = formato_nota(n)
+                        txt = fmt(n)
                         partes.append(f'<font color="#C00000">{txt}</font>' if n < NOTA_APROBACION else txt)
                 notas_sem.append(Paragraph("&nbsp;&nbsp;".join(partes) or "", E_CELDA_C))
-            final = concepto(pa.final) if pa.con_concepto else formato_nota(pa.final)
+            final = concepto(pa.final) if pa.con_concepto else fmt(pa.final)
             nombre = str(pa.asignatura_curso.asignatura) + ("" if pa.incide else " *")
-            datos.append([Paragraph(nombre, E_CELDA), notas_sem[0], formato_nota(pa.s1),
-                          notas_sem[1], formato_nota(pa.s2), final])
-        datos.append(["Promedio general", "", formato_nota(r.promedio_s1), "", formato_nota(r.promedio_s2),
-                      formato_nota(r.promedio_general)])
+            datos.append([Paragraph(nombre, E_CELDA), notas_sem[0], fmt(pa.s1),
+                          notas_sem[1], fmt(pa.s2), final])
+        datos.append(["Promedio general", "", fmt(r.promedio_s1), "", fmt(r.promedio_s2),
+                      fmt(r.promedio_general)])
         t = Table(datos, colWidths=[4.2 * cm, 4.4 * cm, 1.4 * cm, 4.4 * cm, 1.4 * cm, 1.4 * cm], repeatRows=1)
         t.setStyle(_estilo_oficial(datos, 1, filas_pie=1))
         historia += [t, Spacer(1, 8)]
-        historia.append(_tabla_datos([("Asistencia", _asistencia_txt(e), "Escala", "1,0 a 7,0 · aprobación 4,0")],
+        historia.append(_tabla_datos([("Asistencia", _asistencia_txt(e), "Escala",
+                                       "Conceptos MB, B, S, I" if conceptos else "1,0 a 7,0 · aprobación 4,0")],
                                      [2.6 * cm, 7 * cm, 2.8 * cm, 4.6 * cm]))
         if any(pa.aplica and not pa.incide for pa in r.asignaturas):
             historia.append(Paragraph("* No incide en el promedio general ni en la promoción (Decreto 67/2018).", E_MINI))
-        if any(pa.aplica and pa.con_concepto for pa in r.asignaturas):
+        if conceptos or any(pa.aplica and pa.con_concepto for pa in r.asignaturas):
             historia.append(Paragraph("Conceptos: MB muy bueno, B bueno, S suficiente, I insuficiente.", E_MINI))
         historia.append(Spacer(1, 6))
         historia.append(Paragraph("Observaciones: ____________________________________________________________"

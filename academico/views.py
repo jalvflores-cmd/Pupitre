@@ -11,7 +11,7 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from . import exportacion, importacion
-from .calculos import resumen_curso
+from .calculos import resumen_curso, usa_conceptos
 from .forms import (
     AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm,
     AgregarAsignaturaCursoForm, ConfiguracionEstablecimientoForm, DerivacionForm, PrimeraConfiguracionForm, EntrevistaForm, RedApoyoForm,
@@ -92,7 +92,9 @@ def curso_detalle(request, pk):
         "grupos": [("Formación general" if (diferenciado or modulos_tp) else "Plan de estudios", del_plan),
                    ("Plan diferenciado Científico-Humanista (electivos)", diferenciado),
                    (f"Módulos de la especialidad{': ' + curso.especialidad if curso.especialidad else ''}", modulos_tp),
-                   ("Talleres JEC (Jornada Escolar Completa)", talleres)],
+                   ("Talleres JEC (Jornada Escolar Completa)", talleres),
+                   ("Modalidad flexible", [ac for ac in asignaturas if ac.asignatura.tipo == Asignatura.Tipo.FLEXIBLE])],
+        "conceptos": usa_conceptos(curso),
         "horas_totales": sum((ac.horas_semanales or 0) for ac in asignaturas),
         "form_agregar": AgregarAsignaturaCursoForm(curso=curso, profesores=_profesores()) if gestion else None,
         "profesores": _profesores() if gestion else None,
@@ -113,6 +115,7 @@ def libro_notas(request, pk):
     sin_religion = (ac.curso.estudiantes.filter(activo=True, religion="").count()
                     if ac.asignatura.religion else 0)
 
+    conceptos = usa_conceptos(ac.curso)
     if request.method == "POST":
         exigir(editable)
         errores, cambios = [], 0
@@ -125,7 +128,7 @@ def libro_notas(request, pk):
                     if campo not in request.POST:
                         continue
                     try:
-                        nota = importacion.leer_nota(request.POST[campo].strip())
+                        nota = importacion.leer_nota(request.POST[campo].strip(), conceptos=conceptos)
                     except ValueError as e:
                         errores.append(f"{est.nombre_completo} – {ev.nombre}: {e}")
                         continue
@@ -150,6 +153,7 @@ def libro_notas(request, pk):
     filas = [(r.estudiante, r.asignaturas[0]) for r in resumenes]
     return render(request, "academico/libro_notas.html", {
         "ac": ac, "evaluaciones": evaluaciones, "filas": filas, "editable": editable, "sin_religion": sin_religion,
+        "conceptos": conceptos,
         "evs_s1": [e for e in evaluaciones if e.semestre == 1], "evs_s2": [e for e in evaluaciones if e.semestre == 2],
     })
 
@@ -225,6 +229,7 @@ def estudiante_detalle(request, pk):
         informes = puede_ver_informe_curso(request.user, est.curso)
     return render(request, "academico/estudiante_detalle.html", {
         "est": est, "resumen": resumen, "informes": informes,
+        "conceptos": usa_conceptos(est.curso) if est.curso_id else False,
         "anotaciones": est.anotaciones.select_related("asignatura", "autor"),
         "puede_solicitar": puede_solicitar_cambio(request.user, est),
         "solicitudes": (est.solicitudes.select_related("solicitante", "revisor")[:10]

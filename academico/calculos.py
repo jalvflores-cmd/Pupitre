@@ -181,6 +181,21 @@ CONCEPTOS = [(Decimal("6.0"), "MB", "Muy bueno"), (Decimal("5.0"), "B", "Bueno")
              (Decimal("4.0"), "S", "Suficiente"), (Decimal("1.0"), "I", "Insuficiente")]
 
 
+# Equivalencia de cada concepto al ingresarlo (cae dentro del tramo de CONCEPTOS, así el concepto se conserva)
+EQUIVALENCIAS = {"MB": Decimal("6.5"), "B": Decimal("5.5"), "S": Decimal("4.5"), "I": Decimal("3.0")}
+
+
+def usa_conceptos(curso):
+    """El establecimiento evalúa con conceptos de 1° a 4° básico y el curso es de esos niveles."""
+    from .curriculo import grado_de_curso
+
+    est = getattr(curso, "establecimiento", None)
+    if not curso or not getattr(est, "conceptos_basica", False):
+        return False
+    grado = grado_de_curso(curso)
+    return grado is not None and 1 <= grado <= 4
+
+
 def concepto(valor, largo=False):
     """Concepto para asignaturas que no inciden en el promedio (Religión, Orientación, talleres)."""
     if valor is None:

@@ -323,7 +323,7 @@ class ConfiguracionEstablecimientoForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Establecimiento
         fields = ["nombre", "rbd", "direccion", "comuna", "region", "telefono", "director", "jefe_utp",
-                  "resolucion_reconocimiento", "alta_concentracion", "hora_asistencia", "color_principal",
+                  "resolucion_reconocimiento", "alta_concentracion", "conceptos_basica", "hora_asistencia", "color_principal",
                   "pie_documentos"]
         widgets = {"color_principal": forms.TextInput(attrs={"type": "color"}),
                    "hora_asistencia": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}

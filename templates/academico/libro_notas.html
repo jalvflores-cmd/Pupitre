@@ -27,6 +27,7 @@
   <div class="alert alert-info py-2 small">Solo aparecen los estudiantes que optaron por Religión {{ ac.asignatura.get_religion_display }}.{% if sin_religion %} Hay {{ sin_religion }} estudiante(s) del curso sin opción de Religión registrada: indíquela en su ficha.{% endif %}</div>
 {% endif %}
 {% if not ac.asignatura.incide_en_promedio %}<div class="alert alert-secondary py-2 small">Esta asignatura no incide en el promedio general ni en la promoción.</div>{% endif %}
+{% if conceptos %}<div class="alert alert-info py-2 small"><i class="bi bi-info-circle"></i> Este curso se evalúa con conceptos: MB muy bueno (equivale a 6,5), B bueno (5,5), S suficiente (4,5) e I insuficiente (3,0). Los promedios se muestran como concepto; el certificado anual y el acta mantienen la escala 1,0 a 7,0 (Decreto 67/2018).</div>{% endif %}
 {% if not evaluaciones %}
   <div class="alert alert-info">Aún no hay evaluaciones. {% if editable %}Cree la primera con «Nueva evaluación» o cargue un Excel.{% endif %}</div>
 {% endif %}
@@ -49,11 +50,11 @@
   <tbody>
   {% for est, p in filas %}
     <tr><td class="sticky-col"><a href="{% url 'estudiante_detalle' est.pk %}">{{ est.nombre_completo }}</a></td>
-      {% for e in evs_s1 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota }}" inputmode="decimal">{% else %}<span class="{{ n|clase_nota }}">{{ n|nota }}</span>{% endif %}</td>{% endwith %}{% endfor %}
-      {% if evs_s1 %}<td class="text-center col-prom {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td>{% endif %}
-      {% for e in evs_s2 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota }}" inputmode="decimal">{% else %}<span class="{{ n|clase_nota }}">{{ n|nota }}</span>{% endif %}</td>{% endwith %}{% endfor %}
-      {% if evs_s2 %}<td class="text-center col-prom {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>{% endif %}
-      <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}</td></tr>
+      {% for e in evs_s1 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota_c:conceptos }}"{% if not conceptos %} inputmode="decimal"{% endif %}>{% else %}<span class="{{ n|clase_nota }}">{{ n|nota_c:conceptos }}</span>{% endif %}</td>{% endwith %}{% endfor %}
+      {% if evs_s1 %}<td class="text-center col-prom {{ p.s1|clase_nota }}">{{ p.s1|nota_c:conceptos }}</td>{% endif %}
+      {% for e in evs_s2 %}{% with n=p.notas|obtener:e.id %}<td class="text-center">{% if editable %}<input class="form-control form-control-sm nota-input {{ n|clase_nota }}" name="n_{{ est.id }}_{{ e.id }}" value="{{ n|nota_c:conceptos }}"{% if not conceptos %} inputmode="decimal"{% endif %}>{% else %}<span class="{{ n|clase_nota }}">{{ n|nota_c:conceptos }}</span>{% endif %}</td>{% endwith %}{% endfor %}
+      {% if evs_s2 %}<td class="text-center col-prom {{ p.s2|clase_nota }}">{{ p.s2|nota_c:conceptos }}</td>{% endif %}
+      <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota_c:conceptos }}</td></tr>
   {% empty %}<tr><td class="text-muted" colspan="30">El curso no tiene estudiantes.</td></tr>{% endfor %}
   </tbody>
 </table>
@@ -62,7 +63,7 @@
 {% if editable and evaluaciones and filas %}
 <div class="mt-3 d-flex align-items-center gap-3">
   <button class="btn btn-primary"><i class="bi bi-save"></i> Guardar notas</button>
-  <span class="text-muted small">Notas de 1,0 a 7,0 (puede escribir 5,5 · 5.5 · 55). Deje vacío para borrar una nota.</span>
+  <span class="text-muted small">{% if conceptos %}Escriba MB, B, S o I (también acepta notas de 1,0 a 7,0).{% else %}Notas de 1,0 a 7,0 (puede escribir 5,5 · 5.5 · 55).{% endif %} Deje vacío para borrar una nota.</span>
 </div>
 {% endif %}
 </form>
@@ -73,6 +74,8 @@ document.querySelectorAll('.nota-input').forEach(function (inp) {
   inp.addEventListener('input', function () {
     var v = inp.value.trim().replace(',', '.');
     if (v === '') { inp.classList.remove('invalida', 'nota-roja', 'nota-azul'); return; }
+    {% if conceptos %}var sigla = v.toUpperCase();
+    if (['MB', 'B', 'S', 'I'].indexOf(sigla) >= 0) { inp.classList.remove('invalida'); inp.classList.toggle('nota-roja', sigla === 'I'); inp.classList.toggle('nota-azul', sigla !== 'I'); return; }{% endif %}
     var n = parseFloat(v);
     if (Number.isInteger(n) && n >= 10 && n <= 70) n = n / 10;
     var ok = !isNaN(n) && n >= 1 && n <= 7 && /^\d+(\.\d)?$/.test(v);

@@ -1177,3 +1177,25 @@ class OATalleresTests(BaseDatos):
         self.assertContains(r, "Programar un robot")
         self.client.force_login(self.profe_mat)
         self.assertContains(self.client.get(reverse("clase_crear", args=[ac.pk])), "Programar un robot")
+
+
+class ConceptosBasicaTests(BaseDatos):
+    def test_ingreso_y_vista_con_conceptos(self):
+        from .models import Establecimiento
+        est = Establecimiento.actual()
+        nivel = Nivel.objects.create(nombre="2° Básico", orden=2)
+        curso = Curso.objects.create(nivel=nivel, letra="A", anio=2026)
+        ac = AsignaturaCurso.objects.create(curso=curso, asignatura=self.mat.asignatura, profesor=self.profe_mat)
+        alumno = Estudiante.objects.create(rut="15.555.555-8", nombres="Sofía", apellido_paterno="Rojas", curso=curso)
+        ev = Evaluacion.objects.create(asignatura_curso=ac, nombre="Prueba", semestre=1)
+        self.client.force_login(self.profe_mat)
+        campo = f"n_{alumno.pk}_{ev.pk}"
+        r = self.client.post(reverse("libro_notas", args=[ac.pk]), {campo: "MB"}, follow=True)
+        self.assertContains(r, "no es una nota")  # sin la opción, «MB» no se acepta
+        Establecimiento.objects.filter(pk=est.pk).update(conceptos_basica=True)
+        self.client.post(reverse("libro_notas", args=[ac.pk]), {campo: "mb"})
+        self.assertEqual(Calificacion.objects.get(evaluacion=ev).nota, Decimal("6.5"))
+        r = self.client.get(reverse("libro_notas", args=[ac.pk]))
+        self.assertContains(r, 'value="MB"')
+        # 5° básico sigue con notas
+        self.assertNotContains(self.client.get(reverse("libro_notas", args=[self.mat.pk])), "se evalúa con conceptos")

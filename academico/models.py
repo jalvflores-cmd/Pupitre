@@ -90,6 +90,10 @@ class Establecimiento(models.Model):
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
         help_text="Concentración de alumnos prioritarios (Ley 20.248). Define la asignación por alta concentración.")
     rural = models.BooleanField("establecimiento rural", default=False)
+    conceptos_basica = models.BooleanField(
+        "evaluar con conceptos de 1° a 4° básico", default=False,
+        help_text="Las notas de 1° a 4° básico se ingresan y muestran como MB, B, S o I. El certificado anual y el "
+                  "acta siguen en escala 1,0 a 7,0 (Decreto 67/2018), con la equivalencia de cada concepto.")
     hora_asistencia = models.TimeField(
         "hora de la asistencia diaria", default=datetime_time(10, 0),
         help_text="La asistencia del día se toma de la clase que está en curso a esta hora (o la más cercana).")

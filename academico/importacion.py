@@ -58,10 +58,16 @@ def _fecha(valor):
     raise ValueError(f"fecha «{texto}» no reconocida (use dd-mm-aaaa)")
 
 
-def leer_nota(valor):
-    """Acepta 5.5, '5,5', 55 (=5,5). Devuelve Decimal o None si la celda está vacía."""
+def leer_nota(valor, conceptos=False):
+    """Acepta 5.5, '5,5', 55 (=5,5) y, si el curso evalúa con conceptos, MB, B, S o I (con su equivalencia).
+    Devuelve Decimal o None si la celda está vacía."""
     if valor in (None, ""):
         return None
+    if conceptos:
+        from .calculos import EQUIVALENCIAS
+        sigla = _texto(valor).strip().upper()
+        if sigla in EQUIVALENCIAS:
+            return EQUIVALENCIAS[sigla]
     texto = _texto(valor).replace(",", ".")
     try:
         nota = Decimal(texto)
@@ -381,7 +387,10 @@ def importar_notas(archivo, asignatura_curso):
     fila 3: Ponderación | | peso ...
     fila 4 en adelante: rut | nombre | notas
     """
+    from .calculos import usa_conceptos
+
     tabla = _leer(archivo)
+    con_conceptos = usa_conceptos(asignatura_curso.curso)
 
     def celda(fila, col):  # fila y columna desde 1, como en Excel
         if fila - 1 < len(tabla) and col - 1 < len(tabla[fila - 1]):
@@ -434,7 +443,7 @@ def importar_notas(archivo, asignatura_curso):
                 continue
             for col, ev in columnas:
                 try:
-                    nota = leer_nota(celda(fila, col))
+                    nota = leer_nota(celda(fila, col), conceptos=con_conceptos)
                 except ValueError as e:
                     errores.append(f"Fila {fila}, «{ev.nombre}»: {e}")
                     continue

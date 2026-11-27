@@ -43,11 +43,11 @@
         <tbody>
         {% for p in resumen.asignaturas %}{% if p.aplica %}
           <tr><td><a href="{% url 'libro_notas' p.asignatura_curso.pk %}">{{ p.asignatura_curso.asignatura }}</a></td>
-            <td class="text-center {{ p.s1|clase_nota }}">{{ p.s1|nota }}</td><td class="text-center {{ p.s2|clase_nota }}">{{ p.s2|nota }}</td>
-            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota }}{% if p.con_concepto %} <span class="badge bg-secondary">{{ p.concepto }}</span>{% endif %}{% if not p.incide %} <span class="small text-muted" title="No incide en el promedio">*</span>{% endif %}</td></tr>
+            <td class="text-center {{ p.s1|clase_nota }}">{{ p.s1|nota_c:conceptos }}</td><td class="text-center {{ p.s2|clase_nota }}">{{ p.s2|nota_c:conceptos }}</td>
+            <td class="text-center col-prom {{ p.final|clase_nota }}">{{ p.final|nota_c:conceptos }}{% if p.con_concepto and not conceptos %} <span class="badge bg-secondary">{{ p.concepto }}</span>{% endif %}{% if not p.incide %} <span class="small text-muted" title="No incide en el promedio">*</span>{% endif %}</td></tr>
         {% endif %}{% endfor %}
         </tbody>
-        {% if informes %}<tfoot><tr class="fw-bold"><td>Promedio general</td><td class="text-center">{{ resumen.promedio_s1|nota }}</td><td class="text-center">{{ resumen.promedio_s2|nota }}</td><td class="text-center col-prom">{{ resumen.promedio_general|nota }}</td></tr>
+        {% if informes %}<tfoot><tr class="fw-bold"><td>Promedio general</td><td class="text-center">{{ resumen.promedio_s1|nota_c:conceptos }}</td><td class="text-center">{{ resumen.promedio_s2|nota_c:conceptos }}</td><td class="text-center col-prom">{{ resumen.promedio_general|nota_c:conceptos }}</td></tr>
         <tr><td colspan="4" class="small">Situación: <b>{{ resumen.situacion }}</b></td></tr></tfoot>{% endif %}
       </table>
       {% else %}<p class="text-muted mb-0">Sin calificaciones.</p>{% endif %}

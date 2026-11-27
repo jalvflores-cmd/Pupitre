@@ -48,3 +48,12 @@ def pesos(valor):
         return "$" + f"{int(round(float(valor))):,}".replace(",", ".")
     except (TypeError, ValueError):
         return "—"
+
+
+@register.filter
+def nota_c(valor, conceptos=False):
+    """Nota con formato chileno o, si el curso evalúa con conceptos, su concepto (MB, B, S, I)."""
+    if conceptos and valor not in (None, ""):
+        from academico.calculos import concepto
+        return concepto(valor)
+    return nota(valor)
