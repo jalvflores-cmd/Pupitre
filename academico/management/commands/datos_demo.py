@@ -59,6 +59,7 @@ class Command(BaseCommand):
         with en_establecimiento(escuela):
             self.demo_escuela(anio)
             self.demo_libro(anio, cursos=2)
+            self.demo_alertas(anio)
         self.demo_superadmin()
         for datos in LICEOS:
             self.demo_liceo(anio, datos)
@@ -332,6 +333,26 @@ class Command(BaseCommand):
                     nota = Decimal(str(round(min(7, max(2, random.gauss(5.7, 0.8))), 1)))
                     notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
         Calificacion.objects.bulk_create(notas, ignore_conflicts=True)
+
+    def demo_alertas(self, anio):
+        """Para que la demo muestre alertas de bajo rendimiento: solo si no hay ninguna nota roja."""
+        from academico.alertas import bajo_rendimiento
+
+        cursos = list(Curso.objects.filter(anio=anio).order_by("-nivel__orden", "letra")[:3])
+        if bajo_rendimiento(cursos):
+            return
+        rnd = random.Random(f"alertas-{anio}")
+        for curso in cursos:
+            ests = list(curso.estudiantes.filter(activo=True))
+            if not ests:
+                continue
+            est = rnd.choice(ests)
+            acs = [ac for ac in curso.asignaturas_curso.select_related("asignatura")
+                   if ac.asignatura.incide_en_promedio and est.cursa(ac.asignatura)][:2 if curso == cursos[0] else 1]
+            for ac in acs:
+                for c in Calificacion.objects.filter(estudiante=est, evaluacion__asignatura_curso=ac):
+                    c.nota = Decimal(str(round(rnd.uniform(2.5, 3.7), 1)))
+                    c.save(update_fields=["nota"])
 
     # ------------------------------------------------------------------ Libro de clases
     def demo_libro(self, anio, cursos=1):

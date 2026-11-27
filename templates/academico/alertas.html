@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Alertas{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-bell text-danger"></i> Alertas</h3>
+    <div class="sub">{% if todas %}Todo el establecimiento. Las ven UTP, Dirección, Inspectoría General y Convivencia Escolar.{% else %}Cursos en que usted es profesor(a) jefe.{% endif %} Se actualizan solas con las notas y la asistencia del libro de clases.</div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><a href="?ver=notas" class="card p-kpi text-reset text-decoration-none{% if pestana == 'notas' %} border-primary{% endif %}"><div class="icono ic-amarillo"><i class="bi bi-journal-x"></i></div><div><div class="valor">{{ n_pendientes }}</div><div class="etiqueta">Asignaturas con notas pendientes</div></div></a></div>
+  <div class="col-md-4"><a href="?ver=rendimiento" class="card p-kpi text-reset text-decoration-none{% if pestana == 'rendimiento' %} border-primary{% endif %}"><div class="icono ic-rojo"><i class="bi bi-graph-down-arrow"></i></div><div><div class="valor">{{ rendimiento|length }}</div><div class="etiqueta">Estudiantes con bajo rendimiento ({{ n_riesgo_notas }} en riesgo de repitencia)</div></div></a></div>
+  <div class="col-md-4"><a href="?ver=asistencia" class="card p-kpi text-reset text-decoration-none{% if pestana == 'asistencia' %} border-primary{% endif %}"><div class="icono ic-azul"><i class="bi bi-person-x"></i></div><div><div class="valor">{{ asistencia|length }}</div><div class="etiqueta">Estudiantes con baja asistencia ({{ n_riesgo_asist }} bajo {{ minimo|floatformat:0 }} %)</div></div></a></div>
+</div>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link{% if pestana == 'notas' %} active{% endif %}" href="?ver=notas">Profesores con notas pendientes</a></li>
+  <li class="nav-item"><a class="nav-link{% if pestana == 'rendimiento' %} active{% endif %}" href="?ver=rendimiento">Bajas notas</a></li>
+  <li class="nav-item"><a class="nav-link{% if pestana == 'asistencia' %} active{% endif %}" href="?ver=asistencia">Baja asistencia</a></li>
+</ul>
+{% if pestana == 'notas' %}
+  <p class="small text-muted">Asignaturas sin notas en el semestre, sin evaluaciones nuevas hace más de {{ dias }} días, o con evaluaciones ya aplicadas que aún no tienen notas.</p>
+  {% for profe, items in pendientes %}
+  <div class="card p-3 mb-3">
+    <h6 class="mb-2"><i class="bi bi-person"></i> {% if profe %}{{ profe.get_full_name|default:profe.username }}{% else %}Sin profesor asignado{% endif %} <span class="badge bg-warning text-dark">{{ items|length }}</span></h6>
+    <ul class="mb-0 small">{% for it in items %}<li><a href="{% url 'libro_notas' it.ac.pk %}">{{ it.ac.asignatura }} · {{ it.ac.curso.nombre_corto }}</a>: {{ it.motivos|join:"; " }}</li>{% endfor %}</ul>
+  </div>
+  {% empty %}<div class="alert alert-success">Todas las asignaturas tienen sus notas al día.</div>{% endfor %}
+{% elif pestana == 'rendimiento' %}
+  <div class="card p-2"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Estudiante</th><th>Curso</th><th>Asignaturas bajo 4,0</th><th class="text-center">Promedio</th><th>Situación proyectada</th></tr></thead>
+    <tbody>{% for f in rendimiento %}
+      <tr><td><a href="{% url 'estudiante_detalle' f.est.pk %}">{{ f.est.nombre_completo }}</a></td><td class="small">{{ f.curso.nombre_corto }}</td>
+        <td class="small">{% for a in f.rojas %}<span class="badge bg-danger-subtle text-danger-emphasis me-1">{{ a.asignatura_curso.asignatura }} {{ a.final|nota }}</span>{% endfor %}</td>
+        <td class="text-center {{ f.promedio|clase_nota }}">{{ f.promedio|nota }}</td>
+        <td>{% if f.riesgo %}<span class="badge bg-danger">Riesgo de repitencia</span>{% else %}<span class="badge bg-warning text-dark">Seguimiento</span>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="text-muted">No hay estudiantes con promedios bajo 4,0.</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+{% else %}
+  <p class="small text-muted">% anual bajo {{ umbral|floatformat:0 }} % (bajo {{ minimo|floatformat:0 }} % pone en riesgo la promoción) o 3 o más ausencias seguidas en el último mes según el libro de clases.</p>
+  <div class="card p-2"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Estudiante</th><th>Curso</th><th class="text-center">% asistencia anual</th><th>Ausencias seguidas</th><th>Estado</th></tr></thead>
+    <tbody>{% for f in asistencia %}
+      <tr><td><a href="{% url 'estudiante_detalle' f.est.pk %}">{{ f.est.nombre_completo }}</a>{% if f.ausente_hoy %} <span class="badge bg-secondary">Ausente hoy</span>{% endif %}</td><td class="small">{{ f.curso.nombre_corto }}</td>
+        <td class="text-center {% if f.riesgo %}text-danger fw-semibold{% endif %}">{{ f.pct|default_if_none:"—" }}</td>
+        <td>{% if f.seguidas %}<span class="badge bg-warning text-dark">{{ f.seguidas }} días</span>{% endif %}</td>
+        <td>{% if f.riesgo %}<span class="badge bg-danger">Bajo {{ minimo|floatformat:0 }} %</span>{% else %}<span class="badge bg-warning text-dark">Seguimiento</span>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="text-muted">No hay estudiantes con baja asistencia.</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+{% endif %}
+{% endblock %}

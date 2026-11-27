@@ -962,3 +962,31 @@ class AsistentePlanificacionTests(BaseDatos):
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.post(reverse("curriculum"), {"asignatura": "otra", "grado": 5, "numero": 2,
                                                                   "texto": "x"}).status_code, 403)
+
+
+class AlertasTests(BaseDatos):
+    def test_alertas_visibles_por_rol_y_contenido(self):
+        Perfil.objects.create(usuario=User.objects.create_user("insp", password="x"), rol=Perfil.Rol.INSPECTOR)
+        Perfil.objects.create(usuario=User.objects.create_user("conv", password="x"), rol=Perfil.Rol.CONVIVENCIA)
+        Calificacion.objects.filter(estudiante=self.est).update(nota=Decimal("3.2"))
+        Estudiante.objects.filter(pk=self.est.pk).update(porcentaje_asistencia=Decimal("80"))
+        from django.utils import timezone
+        self.curso.anio = timezone.localdate().year
+        self.curso.save()
+        for u in ("director", "utp", "insp", "conv"):
+            self.client.force_login(User.objects.get(username=u))
+            self.assertContains(self.client.get(reverse("alertas") + "?ver=rendimiento"), "Pérez")
+            self.assertContains(self.client.get(reverse("alertas") + "?ver=asistencia"), "Bajo 85")
+        self.client.force_login(self.profe_mat)  # profesor de asignatura sin jefatura
+        self.assertEqual(self.client.get(reverse("alertas")).status_code, 403)
+        self.client.force_login(self.profe_len)  # profesor jefe: ve su curso
+        r = self.client.get(reverse("alertas") + "?ver=notas")
+        self.assertEqual(r.status_code, 200)
+
+    def test_nivelacion_muestra_oa_de_niveles_anteriores(self):
+        from . import curriculo
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("clase_crear", args=[self.mat.pk]))
+        self.assertContains(r, "Nivelación")
+        anterior = curriculo.oas_para(self.mat, anteriores=True).filter(grado=4).first()
+        self.assertEqual(self.client.get(reverse("asistente_clase", args=[self.mat.pk]), {"oa": anterior.pk}).status_code, 200)

@@ -62,5 +62,12 @@ def rol(request):
         "solo_lectura": es_solo_lectura(request.user),
         "rol_usuario": Perfil.Rol(rol_de(request.user)).label,
         "establecimiento": est, **_marca(est),
+        "ve_alertas": _ve_alertas(request.user),
         "respaldos_disponibles": gestion and settings.DATABASES["default"]["ENGINE"].endswith("sqlite3"),
     }
+
+
+def _ve_alertas(user):
+    from .alertas import ve_alertas
+
+    return ve_alertas(user)

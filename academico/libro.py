@@ -166,7 +166,7 @@ def clase_form(request, ac_pk=None, pk=None):
     if clase.firmada:
         messages.warning(request, "La clase ya está firmada y no se puede modificar.")
         return redirect("clase_detalle", pk=clase.pk)
-    oas = curriculo.oas_para(ac)
+    oas = curriculo.oas_para(ac, anteriores=True)
     inicial = {}
     if not pk and request.GET.get("evaluacion"):
         inicial = {"es_evaluacion": True, "nombre_evaluacion": request.GET["evaluacion"][:100]}
@@ -183,8 +183,21 @@ def clase_form(request, ac_pk=None, pk=None):
             _sincronizar_evaluacion(request, clase, form.cleaned_data)
         messages.success(request, "Clase guardada en el leccionario.")
         return redirect("clase_detalle", pk=clase.pk)
+    grado_actual = curriculo.grado_de_curso(ac.curso)
+    marcados = {str(v) for v in (form["oas"].value() or [])}
+    por_nivel = OrderedDict()
+    for oa in oas.order_by("-grado", "numero"):
+        por_nivel.setdefault(oa.grado, []).append(oa)
+    niveles_oa = [{"grado": g, "nombre": dict(GRADOS_CURRICULUM)[g], "actual": g == grado_actual, "oas": lista,
+                   "abierto": g == grado_actual or any(str(o.pk) in marcados for o in lista)}
+                  for g, lista in por_nivel.items()]
+    for n in niveles_oa:
+        if not n["actual"]:
+            n["primero_anterior"] = True
+            break
     return render(request, "academico/clase_form.html", {
-        "form": form, "ac": ac, "clase": clase, "hay_oas": oas.exists(),
+        "form": form, "ac": ac, "clase": clase, "hay_oas": oas.exists(), "niveles_oa": niveles_oa,
+        "marcados": marcados,
         "grado_txt": dict(GRADOS_CURRICULUM).get(curriculo.grado_de_curso(ac.curso), ""),
         "titulo": f"{'Editar' if pk else 'Planificar'} clase – {ac.asignatura} · {ac.curso.nombre_corto}",
     })
@@ -381,7 +394,7 @@ def asistente_clase(request, ac_pk):
     exigir(puede_ver_asignatura_curso(request.user, ac))
     texto = ""
     if request.GET.get("oa"):
-        oa = get_object_or_404(curriculo.oas_para(ac), pk=request.GET["oa"])
+        oa = get_object_or_404(curriculo.oas_para(ac, anteriores=True), pk=request.GET["oa"])
         texto = f"OA {oa.numero}: {oa.texto}"
     texto = texto or request.GET.get("texto", "").strip()
     if not texto:

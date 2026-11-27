@@ -84,15 +84,19 @@ def cargar_oficiales(modelo):
     return creados
 
 
-def oas_para(ac):
-    """OA disponibles para una asignatura de un curso (oficiales + propios del establecimiento)."""
+def oas_para(ac, anteriores=False):
+    """OA disponibles para una asignatura de un curso (oficiales + propios del establecimiento).
+
+    anteriores=True incluye los de niveles anteriores de la misma asignatura (nivelación).
+    """
     from .models import ObjetivoAprendizaje
 
     grado = grado_de_curso(ac.curso)
     clave = clave_asignatura(ac.asignatura.nombre)
     if grado is None:
         return ObjetivoAprendizaje.objects.none()
-    return ObjetivoAprendizaje.disponibles().filter(asignatura=clave, grado=grado)
+    filtro = {"grado__lte": grado} if anteriores else {"grado": grado}
+    return ObjetivoAprendizaje.disponibles().filter(asignatura=clave, **filtro)
 
 
 # --------------------------------------------------------------------------- asistente (reglas, sin IA)

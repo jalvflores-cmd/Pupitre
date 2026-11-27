@@ -38,6 +38,7 @@
     {% if mod_convivencia %}<a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>{% endif %}
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
+    {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
     {% if not solo_lectura %}<a href="{% url 'importar' %}" class="{% if '/importar/' in p %}activo{% endif %}"><i class="bi bi-cloud-arrow-up"></i> Importar Excel</a>{% endif %}

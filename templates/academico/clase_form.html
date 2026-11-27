@@ -34,12 +34,22 @@
       <h5 class="mb-1"><i class="bi bi-stars text-warning"></i> Asistente de planificación</h5>
       <p class="small text-muted">Currículum nacional · {{ ac.asignatura }} · {{ grado_txt|default:ac.curso.nivel }}. Marque el o los OA de la clase y pida una propuesta: puede usarla tal cual o ajustarla.</p>
       {% if hay_oas %}
-      <div class="lista-oa mb-2" style="max-height:320px; overflow:auto">
-        {% for o in form.oas %}
-        <div class="d-flex gap-2 align-items-start py-1 border-bottom">
-          <div class="form-check flex-grow-1 mb-0">{{ o.tag }} <label class="form-check-label small" for="{{ o.id_for_label }}">{{ o.choice_label }}</label></div>
-          <button type="button" class="btn btn-sm btn-outline-primary text-nowrap btn-proponer" data-oa="{{ o.data.value }}">Proponer</button>
-        </div>
+      <div class="lista-oa mb-2" style="max-height:380px; overflow:auto">
+        {% for niv in niveles_oa %}
+          {% if niv.primero_anterior %}<div class="small fw-semibold text-muted mt-2 mb-1"><i class="bi bi-arrow-down-up"></i> Nivelación: OA de niveles anteriores</div>{% endif %}
+          <div class="border rounded-3 mb-1">
+            <a class="d-flex justify-content-between px-2 py-1 text-decoration-none text-reset small fw-semibold{% if not niv.abierto %} collapsed{% endif %}" data-bs-toggle="collapse" href="#oa-niv-{{ niv.grado }}">
+              <span>{{ niv.nombre }}{% if niv.actual %} <span class="badge bg-primary-subtle text-primary-emphasis">nivel del curso</span>{% else %} <span class="badge bg-warning-subtle text-warning-emphasis">nivelación</span>{% endif %}</span><span class="text-muted fw-normal">{{ niv.oas|length }} OA</span></a>
+            <div class="collapse{% if niv.abierto %} show{% endif %} px-2" id="oa-niv-{{ niv.grado }}">
+            {% for o in niv.oas %}
+              <div class="d-flex gap-2 align-items-start py-1 border-top">
+                <div class="form-check flex-grow-1 mb-0"><input class="form-check-input" type="checkbox" name="oas" value="{{ o.pk }}" id="oa{{ o.pk }}"{% if o.pk|stringformat:"s" in marcados %} checked{% endif %}>
+                  <label class="form-check-label small" for="oa{{ o.pk }}">{% if not niv.actual %}<b>{{ niv.nombre }}</b> · {% endif %}{{ o }}</label></div>
+                <button type="button" class="btn btn-sm btn-outline-primary text-nowrap btn-proponer" data-oa="{{ o.pk }}">Proponer</button>
+              </div>
+            {% endfor %}
+            </div>
+          </div>
         {% endfor %}
       </div>
       <div class="form-text mb-3">OA basales de la Priorización Curricular (síntesis; texto oficial en curriculumnacional.cl). UTP puede agregar más en <a href="{% url 'curriculum' %}">Currículum</a>.</div>
