@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Asistencia del personal{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-person-check text-primary"></i> Asistencia del personal</h3>
+    <div class="sub">{{ fecha|date:"l j \d\e F \d\e Y"|capfirst }}{% if not registrado %} · aún sin registrar{% endif %}</div></div>
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <a class="btn btn-sm btn-outline-secondary" href="?fecha={{ anterior|date:'Y-m-d' }}" aria-label="Día anterior"><i class="bi bi-chevron-left"></i></a>
+    <form method="get"><input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="this.form.submit()" aria-label="Fecha"></form>
+    <a class="btn btn-sm btn-outline-secondary" href="?fecha={{ siguiente|date:'Y-m-d' }}" aria-label="Día siguiente"><i class="bi bi-chevron-right"></i></a>
+    {% if fecha != hoy %}<a class="btn btn-sm btn-link" href="?">Hoy</a>{% endif %}
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'asistencia_personal_mes' %}?mes={{ fecha|date:'Y-m' }}"><i class="bi bi-calendar3"></i> Resumen mensual</a>
+  </div>
+</div>
+{% if resumen %}<div class="d-flex flex-wrap gap-2 mb-3">{% for n, c in resumen %}<span class="badge bg-light text-body border">{{ n }}: <b>{{ c }}</b></span>{% endfor %}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="card p-2 p-lg-3">
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Funcionario(a)</th><th style="width:13rem">Estado</th><th style="width:7.5rem">Entrada</th><th style="width:7.5rem">Salida</th><th style="width:6.5rem">Min. atraso</th><th>Observación</th></tr></thead>
+    <tbody>
+    {% for f, a in filas %}<tr>
+      <td>{{ f.nombre_completo }}<div class="small text-muted">{{ f.get_cargo_display }}</div></td>
+      {% if editable %}
+      <td><select name="estado_{{ f.pk }}" class="form-select form-select-sm" aria-label="Estado de {{ f.nombre_completo }}">{% for c, n in estados %}<option value="{{ c }}"{% if a and a.estado == c or not a and c == 'P' %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></td>
+      <td><input type="time" name="entrada_{{ f.pk }}" value="{{ a.entrada|time:'H:i' }}" class="form-control form-control-sm" aria-label="Entrada"></td>
+      <td><input type="time" name="salida_{{ f.pk }}" value="{{ a.salida|time:'H:i' }}" class="form-control form-control-sm" aria-label="Salida"></td>
+      <td><input type="number" min="0" name="atraso_{{ f.pk }}" value="{% if a.minutos_atraso %}{{ a.minutos_atraso }}{% endif %}" class="form-control form-control-sm" aria-label="Minutos de atraso"></td>
+      <td><input name="obs_{{ f.pk }}" value="{{ a.observacion|default:'' }}" maxlength="200" class="form-control form-control-sm" aria-label="Observación"></td>
+      {% else %}
+      <td>{% if a %}<span class="badge {% if a.estado == 'A' %}bg-danger-subtle text-danger-emphasis{% elif a.estado == 'P' %}bg-success-subtle text-success-emphasis{% else %}bg-warning-subtle text-warning-emphasis{% endif %}">{{ a.get_estado_display }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td>{{ a.entrada|time:"H:i"|default:"—" }}</td><td>{{ a.salida|time:"H:i"|default:"—" }}</td><td>{% if a.minutos_atraso %}{{ a.minutos_atraso }}{% endif %}</td><td class="small">{{ a.observacion|default:"" }}</td>
+      {% endif %}
+    </tr>{% empty %}<tr><td colspan="6" class="text-muted">No hay funcionarios registrados. Se agregan en «Funcionarios».</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% if editable and filas %}<div class="mt-3 d-flex align-items-center gap-3"><button class="btn btn-primary"><i class="bi bi-save"></i> Guardar asistencia del día</button>
+  <span class="small text-muted">Todos parten como «Presente»: cambie solo a quienes llegaron tarde, faltaron o tienen licencia o permiso.</span></div>{% endif %}
+</form>
+{% endblock %}

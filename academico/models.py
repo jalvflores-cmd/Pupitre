@@ -24,9 +24,9 @@ MODULOS = [
     ("curricular", "Gestión curricular (cursos, notas, informes)", True),
     ("convivencia", "Convivencia escolar", True),
     ("funcionarios", "Funcionarios", True),
-    ("asistencia_personal", "Asistencia del personal", False),
+    ("asistencia_personal", "Asistencia del personal", True),
+    ("sep", "Gestión PME / SEP", True),
     ("inventario", "Inventario y recursos", False),
-    ("sep", "Rendición SEP / PME", False),
 ]
 MODULOS_DISPONIBLES = [m for m in MODULOS if m[2]]
 
@@ -1092,3 +1092,121 @@ class HorarioClase(models.Model):
         verbose_name = "clase del horario"
         verbose_name_plural = "horario de clases"
         constraints = [models.UniqueConstraint(fields=["curso", "dia", "bloque"], name="horario_celda_unica")]
+
+
+class AsistenciaFuncionario(models.Model):
+    """Registro diario de asistencia de un funcionario(a)."""
+    objects = PorEstablecimientoManager.por("funcionario__establecimiento")
+    todos = models.Manager()
+
+    class Estado(models.TextChoices):
+        PRESENTE = "P", "Presente"
+        ATRASO = "T", "Atraso"
+        AUSENTE = "A", "Inasistencia"
+        LICENCIA = "L", "Licencia médica"
+        PERMISO = "PA", "Permiso administrativo"
+        COMETIDO = "C", "Cometido o capacitación"
+        OTRO = "O", "Otro permiso (con o sin goce)"
+
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE, related_name="asistencias")
+    fecha = models.DateField()
+    estado = models.CharField(max_length=2, choices=Estado.choices, default=Estado.PRESENTE)
+    entrada = models.TimeField("hora de entrada", null=True, blank=True)
+    salida = models.TimeField("hora de salida", null=True, blank=True)
+    minutos_atraso = models.PositiveSmallIntegerField("minutos de atraso", default=0)
+    observacion = models.CharField("observación", max_length=200, blank=True)
+    registrado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "asistencia de funcionario(a)"
+        verbose_name_plural = "asistencia de funcionarios"
+        ordering = ["-fecha"]
+        constraints = [models.UniqueConstraint(fields=["funcionario", "fecha"], name="asistencia_funcionario_unica")]
+
+
+DIMENSIONES_PME = [
+    ("PEDAGOGICA", "Gestión pedagógica"),
+    ("LIDERAZGO", "Liderazgo"),
+    ("CONVIVENCIA", "Convivencia escolar"),
+    ("RECURSOS", "Gestión de recursos"),
+]
+
+
+class PlanMejoramiento(DeEstablecimiento):
+    """PME de un año: presupuesto SEP y objetivos."""
+
+    anio = models.PositiveSmallIntegerField("año", default=anio_actual)
+    presupuesto_sep = models.PositiveBigIntegerField("ingresos SEP estimados del año", default=0)
+    saldo_anterior = models.PositiveBigIntegerField("saldo del año anterior", default=0)
+    objetivo_general = models.TextField("objetivo estratégico / sello", blank=True)
+
+    class Meta:
+        verbose_name = "plan de mejoramiento educativo"
+        verbose_name_plural = "planes de mejoramiento educativo"
+        ordering = ["-anio"]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "anio"], name="pme_unico")]
+
+    def __str__(self):
+        return f"PME {self.anio}"
+
+
+class AccionPME(models.Model):
+    objects = PorEstablecimientoManager.por("plan__establecimiento")
+    todos = models.Manager()
+
+    class Estado(models.TextChoices):
+        NO_INICIADA = "NO", "No iniciada"
+        EN_PROCESO = "PROCESO", "En proceso"
+        EJECUTADA = "EJECUTADA", "Ejecutada"
+
+    plan = models.ForeignKey(PlanMejoramiento, on_delete=models.CASCADE, related_name="acciones")
+    dimension = models.CharField("dimensión", max_length=12, choices=DIMENSIONES_PME)
+    nombre = models.CharField("acción", max_length=200)
+    descripcion = models.TextField("descripción", blank=True)
+    responsable = models.CharField(max_length=120, blank=True)
+    inicio = models.DateField(null=True, blank=True)
+    termino = models.DateField("término", null=True, blank=True)
+    monto_sep = models.PositiveBigIntegerField("monto SEP planificado", default=0)
+    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.NO_INICIADA)
+    avance = models.PositiveSmallIntegerField("avance (%)", default=0, validators=[MaxValueValidator(100)])
+    medios_verificacion = models.TextField("medios de verificación", blank=True)
+
+    class Meta:
+        verbose_name = "acción del PME"
+        verbose_name_plural = "acciones del PME"
+        ordering = ["dimension", "inicio", "nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+    @property
+    def atrasada(self):
+        return bool(self.termino and self.termino < timezone.localdate() and self.estado != self.Estado.EJECUTADA)
+
+
+class GastoSEP(models.Model):
+    objects = PorEstablecimientoManager.por("plan__establecimiento")
+    todos = models.Manager()
+
+    class Categoria(models.TextChoices):
+        PERSONAL = "PERSONAL", "Remuneraciones y honorarios"
+        RECURSOS = "RECURSOS", "Recursos de aprendizaje y materiales"
+        EQUIPAMIENTO = "EQUIPAMIENTO", "Equipamiento y tecnología"
+        CAPACITACION = "CAPACITACION", "Capacitación y asesoría técnica"
+        SALIDAS = "SALIDAS", "Salidas pedagógicas y actividades"
+        OTROS = "OTROS", "Otros gastos"
+
+    plan = models.ForeignKey(PlanMejoramiento, on_delete=models.CASCADE, related_name="gastos")
+    accion = models.ForeignKey(AccionPME, on_delete=models.SET_NULL, null=True, blank=True, related_name="gastos",
+                               verbose_name="acción del PME")
+    fecha = models.DateField(default=timezone.localdate)
+    categoria = models.CharField("categoría", max_length=14, choices=Categoria.choices, default=Categoria.RECURSOS)
+    detalle = models.CharField(max_length=200)
+    proveedor = models.CharField(max_length=150, blank=True)
+    documento = models.CharField("documento (boleta, factura, N°)", max_length=80, blank=True)
+    monto = models.PositiveBigIntegerField()
+
+    class Meta:
+        verbose_name = "gasto SEP"
+        verbose_name_plural = "gastos SEP"
+        ordering = ["-fecha", "-id"]

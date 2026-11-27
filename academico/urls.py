@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import alertas, horarios, libro, personal, plataforma, red, resultados, views
+from . import alertas, asistencia_personal, horarios, libro, personal, sep, plataforma, red, resultados, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
@@ -17,6 +17,13 @@ urlpatterns = [
     path("red/salir/", red.salir, name="red_salir"),
     path("personal/", personal.personal, name="personal"),
     path("horarios/", horarios.horarios, name="horarios"),
+    path("asistencia-personal/", asistencia_personal.diaria, name="asistencia_personal"),
+    path("asistencia-personal/mes/", asistencia_personal.mensual, name="asistencia_personal_mes"),
+    path("pme/", sep.pme, name="pme"),
+    path("pme/acciones/nueva/", sep.accion_form, name="pme_accion_nueva"),
+    path("pme/acciones/<int:pk>/", sep.accion_form, name="pme_accion_editar"),
+    path("pme/gastos/", sep.gastos, name="pme_gastos"),
+    path("pme/gastos/<int:pk>/eliminar/", sep.gasto_eliminar, name="pme_gasto_eliminar"),
     path("horarios/jornada/", horarios.jornada, name="jornada"),
     path("personal/<int:pk>/", personal.carrera, name="personal_carrera"),
     path("logo.png", views.logo, name="logo"),

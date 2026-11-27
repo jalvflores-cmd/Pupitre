@@ -72,6 +72,7 @@ class Command(BaseCommand):
         self.demo_red(escuela)
         self.demo_personal(escuela)
         self.demo_horarios(anio)
+        self.demo_administrativo(anio)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -522,6 +523,53 @@ class Command(BaseCommand):
                 cursos = Curso.objects.filter(anio=anio)
                 if cursos.exists() and not HorarioClase.objects.exists():
                     generar(cursos, semilla=1)
+
+    def demo_administrativo(self, anio):
+        """Asistencia del personal de las últimas semanas y un PME con acciones y gastos SEP (solo si no hay)."""
+        from academico.models import AccionPME, AsistenciaFuncionario, GastoSEP, PlanMejoramiento
+
+        rnd = random.Random(11)
+        hoy = timezone.localdate()
+        dias = [hoy - timedelta(days=i) for i in range(1, 30) if (hoy - timedelta(days=i)).weekday() < 5]
+        acciones_demo = [
+            ("PEDAGOGICA", "Acompañamiento al aula con retroalimentación", "Jefe(a) de UTP", 3, 11, 1_800_000, "PROCESO", 60),
+            ("PEDAGOGICA", "Reforzamiento de lectura y matemática en 1° y 2° ciclo", "Coordinación PIE", 4, 11, 6_500_000, "PROCESO", 55),
+            ("PEDAGOGICA", "Compra de textos y material concreto", "Jefe(a) de UTP", 3, 5, 4_200_000, "EJECUTADA", 100),
+            ("LIDERAZGO", "Jornadas de análisis de resultados con el consejo de profesores", "Director(a)", 3, 12, 600_000, "PROCESO", 50),
+            ("CONVIVENCIA", "Talleres de convivencia y habilidades socioemocionales", "Encargado(a) de convivencia", 4, 10, 2_400_000, "PROCESO", 70),
+            ("CONVIVENCIA", "Salidas pedagógicas y actividades de formación ciudadana", "Inspector(a) general", 5, 9, 3_000_000, "NO", 0),
+            ("RECURSOS", "Renovación de equipamiento tecnológico de aula", "Director(a)", 4, 8, 7_500_000, "PROCESO", 40),
+            ("RECURSOS", "Capacitación docente en evaluación formativa", "Jefe(a) de UTP", 6, 10, 2_000_000, "NO", 0),
+        ]
+        for est in Establecimiento.objects.all():
+            with en_establecimiento(est):
+                funcionarios = list(Funcionario.objects.filter(activo=True))
+                if funcionarios and not AsistenciaFuncionario.objects.exists():
+                    registros = []
+                    for d in dias:
+                        for f in funcionarios:
+                            r = rnd.random()
+                            estado = "P" if r < 0.86 else "T" if r < 0.93 else "A" if r < 0.96 else "L" if r < 0.985 else "PA"
+                            registros.append(AsistenciaFuncionario(
+                                funcionario=f, fecha=d, estado=estado,
+                                entrada=time(8, rnd.randint(16, 40)) if estado == "T" else time(7, rnd.randint(40, 59)) if estado == "P" else None,
+                                salida=time(17, rnd.randint(0, 20)) if estado in ("P", "T") else None,
+                                minutos_atraso=rnd.randint(5, 25) if estado == "T" else 0))
+                    AsistenciaFuncionario.objects.bulk_create(registros)
+                if not PlanMejoramiento.objects.exists():
+                    plan = PlanMejoramiento.objects.create(
+                        anio=anio, presupuesto_sep=rnd.choice([38_000_000, 45_000_000, 52_000_000]), saldo_anterior=4_500_000,
+                        objetivo_general="Mejorar los aprendizajes en lectura y matemática con foco en la evaluación formativa.")
+                    for dim, nombre, resp, m1, m2, monto, estado, avance in acciones_demo:
+                        a = AccionPME.objects.create(plan=plan, dimension=dim, nombre=nombre, responsable=resp,
+                                                     inicio=date(anio, m1, 1), termino=date(anio, m2, 28), monto_sep=monto,
+                                                     estado=estado, avance=avance,
+                                                     medios_verificacion="Actas, listas de asistencia y registro fotográfico.")
+                        for i in range(int(monto * avance / 100 // 900_000)):
+                            GastoSEP.objects.create(plan=plan, accion=a, fecha=date(anio, min(m1 + i, 11), 10 + i),
+                                                    categoria=rnd.choice(["RECURSOS", "EQUIPAMIENTO", "CAPACITACION", "PERSONAL"]),
+                                                    detalle=f"{nombre[:60]} – compra {i + 1}", proveedor="Proveedor demo SpA",
+                                                    documento=f"Factura {1000 + rnd.randint(1, 8999)}", monto=900_000)
 
     def demo_superadmin(self):
         u, creado = User.objects.get_or_create(username="superadmin", defaults={

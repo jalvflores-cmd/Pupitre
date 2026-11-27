@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Asistencia del personal · {{ mes_txt }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-calendar3 text-primary"></i> Asistencia del personal · {{ mes_txt|capfirst }}</h3>
+    <div class="sub">Resumen por funcionario(a) a partir del registro diario.</div></div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-sm btn-outline-secondary" href="?mes={{ previo }}" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></a>
+    <a class="btn btn-sm btn-outline-secondary" href="?mes={{ siguiente }}" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></a>
+    <a class="btn btn-sm btn-outline-success" href="?mes={{ anio }}-{{ mes|stringformat:'02d' }}&exportar=excel"><i class="bi bi-file-excel"></i> Excel</a>
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'asistencia_personal' %}"><i class="bi bi-person-check"></i> Registro diario</a>
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg"><div class="card p-3 h-100"><div class="fs-4 fw-semibold">{{ totales.atrasos }}</div><div class="small text-muted">atrasos ({{ totales.minutos }} min)</div></div></div>
+  <div class="col-6 col-lg"><div class="card p-3 h-100"><div class="fs-4 fw-semibold">{{ totales.inasistencias }}</div><div class="small text-muted">inasistencias</div></div></div>
+  <div class="col-6 col-lg"><div class="card p-3 h-100"><div class="fs-4 fw-semibold">{{ totales.licencias }}</div><div class="small text-muted">días de licencia médica</div></div></div>
+  <div class="col-6 col-lg"><div class="card p-3 h-100"><div class="fs-4 fw-semibold">{{ totales.permisos }}</div><div class="small text-muted">permisos administrativos</div></div></div>
+</div>
+<div class="card p-2 p-lg-3">
+  <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">
+    <thead><tr><th>Funcionario(a)</th><th class="text-end">Días reg.</th><th class="text-end">% asistencia</th><th class="text-end">Atrasos</th><th class="text-end">Min.</th><th class="text-end">Inasist.</th><th class="text-end">Licencias</th><th class="text-end">Permisos adm.</th><th class="text-end">En el año</th><th class="text-end">Cometidos</th><th class="text-end">Otros</th></tr></thead>
+    <tbody>{% for x in filas %}<tr>
+      <td>{{ x.f.nombre_completo }}<div class="small text-muted">{{ x.f.get_cargo_display }}</div></td>
+      <td class="text-end">{{ x.dias }}</td>
+      <td class="text-end{% if x.pct is not None and x.pct < 90 %} text-danger fw-semibold{% endif %}">{% if x.pct is not None %}{{ x.pct|floatformat:1 }} %{% else %}—{% endif %}</td>
+      <td class="text-end">{{ x.atrasos|default:"" }}</td><td class="text-end">{{ x.minutos|default:"" }}</td>
+      <td class="text-end{% if x.inasistencias %} text-danger{% endif %}">{{ x.inasistencias|default:"" }}</td>
+      <td class="text-end">{{ x.licencias|default:"" }}</td><td class="text-end">{{ x.permisos|default:"" }}</td>
+      <td class="text-end{% if x.permisos_anio > tope_permisos %} text-danger fw-semibold{% endif %}">{{ x.permisos_anio }} / {{ tope_permisos }}</td>
+      <td class="text-end">{{ x.cometidos|default:"" }}</td><td class="text-end">{{ x.otros|default:"" }}</td>
+    </tr>{% empty %}<tr><td colspan="11" class="text-muted">No hay funcionarios registrados.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="small text-muted mt-2">Días trabajados: presente, atraso y cometido. Permisos administrativos en el año: el Estatuto Docente permite hasta {{ tope_permisos }} días; revise lo que corresponda a asistentes de la educación según su contrato.</div>
+</div>
+{% endblock %}

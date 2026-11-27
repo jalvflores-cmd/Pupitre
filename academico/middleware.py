@@ -9,6 +9,8 @@ LIBRES_SUPERADMIN = ("/plataforma/", "/red/", "/personal/", "/static/", "/salir/
 RUTAS_MODULO = {
     "convivencia": ("/convivencia/", "/anotaciones/", "/entrevistas/", "/redes/"),
     "funcionarios": ("/funcionarios/",),
+    "asistencia_personal": ("/asistencia-personal/",),
+    "sep": ("/pme/",),
 }
 
 

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Gastos SEP {{ anio }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><div class="miga mb-1"><a href="{% url 'pme' %}?anio={{ anio }}">PME {{ anio }}</a></div>
+    <h3><i class="bi bi-receipt text-primary"></i> Gastos y rendición SEP {{ anio }}</h3>
+    <div class="sub">{{ gastos|length }} gasto{{ gastos|length|pluralize }} por {{ total|pesos }}. Asocie cada gasto a una acción del PME para la rendición.</div></div>
+  {% if plan %}<a class="btn btn-sm btn-outline-success" href="?anio={{ anio }}&exportar=excel"><i class="bi bi-file-excel"></i> Planilla de rendición (Excel)</a>{% endif %}
+</div>
+<div class="row g-4">
+  <div class="{% if form %}col-xl-8{% else %}col-12{% endif %}">
+    {% if gastos %}<div class="card p-3 mb-4"><h6>Gasto por categoría (millones de $)</h6>{{ g_categoria }}</div>{% endif %}
+    <div class="card p-2 p-lg-3"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">
+      <thead><tr><th>Fecha</th><th>Detalle</th><th>Acción PME</th><th>Documento</th><th class="text-end">Monto</th>{% if editable %}<th></th>{% endif %}</tr></thead>
+      <tbody>{% for g in gastos %}<tr>
+        <td class="small text-nowrap">{{ g.fecha|date:"d/m/Y" }}</td>
+        <td>{{ g.detalle }}<div class="small text-muted">{{ g.get_categoria_display }}{% if g.proveedor %} · {{ g.proveedor }}{% endif %}</div></td>
+        <td class="small">{% if g.accion %}{{ g.accion.nombre }}{% else %}<span class="text-warning-emphasis">Sin acción</span>{% endif %}</td>
+        <td class="small">{{ g.documento|default:"—" }}</td><td class="text-end">{{ g.monto|pesos }}</td>
+        {% if editable %}<td><form method="post" action="{% url 'pme_gasto_eliminar' g.pk %}" onsubmit="return confirm('¿Eliminar este gasto?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0" aria-label="Eliminar"><i class="bi bi-trash"></i></button></form></td>{% endif %}
+      </tr>{% empty %}<tr><td colspan="6" class="text-muted">Aún no hay gastos registrados.</td></tr>{% endfor %}</tbody>
+    </table></div></div>
+  </div>
+  {% if form %}<div class="col-xl-4"><div class="card p-3">
+    <h6>Registrar gasto</h6>
+    <form method="post">{% csrf_token %}
+      {% for f in form %}<div class="mb-2"><label class="form-label small mb-0" for="{{ f.id_for_label }}">{{ f.label|capfirst }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
+      <button class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Agregar</button>
+    </form>
+  </div></div>{% endif %}
+</div>
+{% endblock %}

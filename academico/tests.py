@@ -1199,3 +1199,44 @@ class ConceptosBasicaTests(BaseDatos):
         self.assertContains(r, 'value="MB"')
         # 5° básico sigue con notas
         self.assertNotContains(self.client.get(reverse("libro_notas", args=[self.mat.pk])), "se evalúa con conceptos")
+
+
+class ModulosAdministrativosTests(BaseDatos):
+    def setUp(self):
+        from .models import Funcionario
+        self.f = Funcionario.objects.create(rut="11.111.111-1", nombres="Ana", apellido_paterno="Soto",
+                                            horas_contrato=44)
+        self.insp = User.objects.create_user("insp", password="x")
+        Perfil.objects.create(usuario=self.insp, rol=Perfil.Rol.INSPECTOR)
+
+    def test_asistencia_del_personal(self):
+        from .models import AsistenciaFuncionario
+        self.client.force_login(self.insp)
+        url = reverse("asistencia_personal") + "?fecha=2026-05-04"
+        self.client.post(url, {f"estado_{self.f.pk}": "T", f"atraso_{self.f.pk}": "15", f"entrada_{self.f.pk}": "08:15"})
+        a = AsistenciaFuncionario.objects.get(funcionario=self.f)
+        self.assertEqual((a.estado, a.minutos_atraso, a.fecha.isoformat()), ("T", 15, "2026-05-04"))
+        r = self.client.get(reverse("asistencia_personal_mes") + "?mes=2026-05")
+        self.assertContains(r, "Ana Soto")
+        self.assertEqual(self.client.get(reverse("asistencia_personal_mes") + "?mes=2026-05&exportar=excel").status_code, 200)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("asistencia_personal")).status_code, 403)
+
+    def test_pme_acciones_y_gastos(self):
+        from .models import AccionPME, GastoSEP
+        self.client.force_login(self.utp)
+        self.client.get(reverse("pme") + "?anio=2026")
+        self.client.post(reverse("pme_accion_nueva") + "?anio=2026", {
+            "dimension": "PEDAGOGICA", "nombre": "Reforzamiento", "monto_sep": 1000000, "estado": "EJECUTADA",
+            "avance": 20})
+        accion = AccionPME.objects.get()
+        self.assertEqual(accion.avance, 100)
+        self.client.post(reverse("pme_gastos") + "?anio=2026", {"fecha": "2026-05-04", "accion": accion.pk,
+                         "categoria": "RECURSOS", "detalle": "Textos", "monto": 250000})
+        self.assertEqual(GastoSEP.objects.get().monto, 250000)
+        r = self.client.get(reverse("pme") + "?anio=2026")
+        self.assertContains(r, "Reforzamiento")
+        self.assertContains(r, "$250.000")
+        self.assertEqual(self.client.get(reverse("pme_gastos") + "?anio=2026&exportar=excel").status_code, 200)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("pme")).status_code, 403)

@@ -50,7 +50,10 @@ def rol(request):
     extra = {"es_superadmin": superadmin, "de_sostenedor": de_sostenedor,
              "nombre_sostenedor": perfil.sostenedor.nombre if de_sostenedor else "",
              "mod_convivencia": est.tiene_modulo("convivencia") if est.pk else True,
-             "mod_funcionarios": est.tiene_modulo("funcionarios") if est.pk else True}
+             "mod_funcionarios": est.tiene_modulo("funcionarios") if est.pk else True,
+             "mod_asistencia_personal": est.tiene_modulo("asistencia_personal") if est.pk else True,
+             "mod_sep": est.tiene_modulo("sep") if est.pk else True,
+             "ve_administrativo": _ve_administrativo(request.user)}
     gestion = es_gestion(request.user)
     if gestion:
         pendientes = SolicitudCambio.objects.filter(estado=SolicitudCambio.Estado.PENDIENTE).count()
@@ -78,3 +81,9 @@ def _ve_alertas(user):
     from .alertas import ve_alertas
 
     return ve_alertas(user)
+
+
+def _ve_administrativo(user):
+    from .asistencia_personal import puede_ver
+
+    return puede_ver(user)
