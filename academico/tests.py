@@ -1007,3 +1007,58 @@ class ResultadosTests(BaseDatos):
         self.assertContains(self.client.get(reverse("resultados") + "?ver=simce"), "<svg")
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("resultados")).status_code, 403)
+
+
+class NivelesSostenedorTests(VariosEstablecimientosTests):
+    """Superadministrador › sostenedor (con su administrador) › establecimiento; un colegio solo tiene su admin."""
+
+    def setUp(self):
+        from .models import Establecimiento, Sostenedor
+        self.sost = Sostenedor.objects.create(nombre="Corporación X")
+        Establecimiento.objects.filter(pk=self.b.pk).update(sostenedor=self.sost)
+        self.c = Establecimiento.objects.create(nombre="Liceo C", sostenedor=self.sost)
+        self.adm = User.objects.create_user("adm.red", password="x")
+        Perfil.objects.create(usuario=self.adm, rol="ADMIN_SOSTENEDOR", sostenedor=self.sost)
+
+    def test_admin_sostenedor_elige_entre_sus_establecimientos(self):
+        self.assertIsNone(Perfil.objects.get(usuario=self.adm).establecimiento)
+        self.client.force_login(self.adm)
+        self.assertRedirects(self.client.get(reverse("inicio")), reverse("red"))
+        r = self.client.get(reverse("red"))
+        self.assertContains(r, "Liceo B")
+        self.assertContains(r, "Liceo C")
+        self.assertNotContains(r, self.a.nombre)
+        self.assertEqual(self.client.post(reverse("red_entrar", args=[self.a.pk])).status_code, 404)
+        self.client.post(reverse("red_entrar", args=[self.b.pk]))
+        r = self.client.get(reverse("estudiantes"))
+        self.assertContains(r, "Est b")
+        self.assertNotContains(r, "Est a")
+        self.assertEqual(self.client.get(reverse("libro_notas", args=[self.acb.pk])).status_code, 200)
+        # crea el administrador de plataforma de un establecimiento
+        self.client.post(reverse("red"), {"destino": str(self.c.pk), "rol": "ADMIN", "nombres": "A", "apellidos": "B",
+                                          "usuario": "adm.c", "clave": "clave12345"})
+        p = Perfil.objects.get(usuario__username="adm.c")
+        self.assertEqual((p.establecimiento, p.sostenedor, p.es_gestion), (self.c, None, True))
+        r = self.client.post(reverse("red"), {"destino": "", "rol": "PROFESOR", "nombres": "A", "apellidos": "B",
+                                              "usuario": "malo", "clave": "clave12345"})
+        self.assertContains(r, "trabajan en todos")
+
+    def test_sostenedor_solo_consulta_y_otros_no_entran(self):
+        u = User.objects.create_user("sost.red", password="x")
+        Perfil.objects.create(usuario=u, rol="SOSTENEDOR", sostenedor=self.sost)
+        self.client.force_login(u)
+        self.assertEqual(self.client.get(reverse("red")).status_code, 200)
+        self.assertEqual(self.client.post(reverse("red"), {"rol": "ADMIN"}).status_code, 403)
+        self.client.force_login(self.ua)
+        self.assertEqual(self.client.get(reverse("red")).status_code, 403)
+
+    def test_superadmin_crea_sostenedor_con_su_administrador(self):
+        from .models import Establecimiento, Sostenedor
+        self.client.force_login(self.sa)
+        self.client.post(reverse("sostenedor_nuevo"), {
+            "nombre": "Fundación Y", "rut": "", "activo": "on", "establecimientos": [self.a.pk],
+            "rol": "ADMIN_SOSTENEDOR", "nombres": "N", "apellidos": "M", "usuario": "adm.y", "clave": "clave12345"})
+        y = Sostenedor.objects.get(nombre="Fundación Y")
+        self.assertEqual(Establecimiento.objects.get(pk=self.a.pk).sostenedor, y)
+        self.assertEqual(Perfil.objects.get(usuario__username="adm.y").sostenedor, y)
+        self.assertContains(self.client.get(reverse("plataforma")), "Fundación Y")

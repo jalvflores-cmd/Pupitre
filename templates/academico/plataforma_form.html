@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% block titulo %}{% if est %}Editar establecimiento{% else %}Nuevo establecimiento{% endif %}{% endblock %}
+{% block titulo %}{% if est %}Editar{% else %}Nuevo{% endif %} {% if es_sostenedor %}sostenedor{% else %}establecimiento{% endif %}{% endblock %}
 {% block contenido %}
 <div class="row justify-content-center"><div class="col-xl-9"><div class="card p-4">
   <div class="miga mb-1"><a href="{% url 'plataforma' %}">Plataforma</a></div>
-  <h4 class="mb-3">{% if est %}{{ est }}{% else %}Nuevo establecimiento{% endif %}</h4>
+  <h4 class="mb-3">{% if est %}{{ est }}{% elif es_sostenedor %}Nuevo sostenedor{% else %}Nuevo establecimiento{% endif %}</h4>
+  {% if es_sostenedor %}<p class="small text-muted">El sostenedor agrupa sus establecimientos. Sus usuarios (administrador(a) de plataforma y sostenedor(a)) trabajan en todos ellos y ven un resumen comparado.</p>{% endif %}
   <form method="post">{% csrf_token %}
     {{ form.non_field_errors }}
     <div class="row g-3">
       {% for f in form %}
-      <div class="{% if f.name == 'modulos' %}col-12{% else %}col-md-6{% endif %}">
-        {% if f.name == "activo" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">Establecimiento activo (sus usuarios pueden ingresar)</label></div>
-        {% elif f.name == "modulos" %}<label class="form-label">{{ f.label }}</label>
+      <div class="{% if f.name == 'modulos' or f.name == 'establecimientos' %}col-12{% else %}col-md-6{% endif %}">
+        {% if f.name == "activo" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{% if es_sostenedor %}Sostenedor activo{% else %}Establecimiento activo{% endif %} (sus usuarios pueden ingresar)</label></div>
+        {% elif f.name == "modulos" or f.name == "establecimientos" %}<label class="form-label">{{ f.label }}</label>
           <div class="d-flex flex-wrap gap-3">{% for c in f %}<div class="form-check">{{ c.tag }} <label class="form-check-label" for="{{ c.id_for_label }}">{{ c.choice_label }}</label></div>{% endfor %}</div>
         {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}{% endif %}
         {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
@@ -18,8 +19,8 @@
       {% endfor %}
     </div>
     {% if admin_form %}
-    <h5 class="mt-4 mb-1">Primera cuenta del establecimiento</h5>
-    <p class="small text-muted">Con esta cuenta el establecimiento crea sus demás usuarios y configura su logo y datos.</p>
+    <h5 class="mt-4 mb-1">Primera cuenta del {% if es_sostenedor %}sostenedor{% else %}establecimiento{% endif %}</h5>
+    <p class="small text-muted">{% if es_sostenedor %}Con esta cuenta el sostenedor crea los usuarios de sus establecimientos.{% else %}Con esta cuenta el establecimiento crea sus demás usuarios y configura su logo y datos. Se recomienda que cada establecimiento tenga un(a) administrador(a) de plataforma.{% endif %}</p>
     <div class="row g-3">
       {% for f in admin_form %}
       <div class="col-md-6">{% if f.field.widget.input_type == "checkbox" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>

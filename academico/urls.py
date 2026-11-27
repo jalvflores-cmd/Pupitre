@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import alertas, libro, plataforma, resultados, views
+from . import alertas, libro, plataforma, red, resultados, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
@@ -10,6 +10,11 @@ urlpatterns = [
     path("plataforma/<int:pk>/", plataforma.establecimiento_form, name="plataforma_editar"),
     path("plataforma/<int:pk>/entrar/", plataforma.entrar, name="plataforma_entrar"),
     path("plataforma/salir/", plataforma.salir, name="plataforma_salir"),
+    path("plataforma/sostenedores/nuevo/", plataforma.sostenedor_form, name="sostenedor_nuevo"),
+    path("plataforma/sostenedores/<int:pk>/", plataforma.sostenedor_form, name="sostenedor_editar"),
+    path("red/", red.red, name="red"),
+    path("red/<int:pk>/entrar/", red.entrar, name="red_entrar"),
+    path("red/salir/", red.salir, name="red_salir"),
     path("logo.png", views.logo, name="logo"),
     path("configuracion/", views.configuracion, name="configuracion"),
     path("respaldos/", views.respaldos_vista, name="respaldos"),

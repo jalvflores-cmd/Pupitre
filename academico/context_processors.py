@@ -6,8 +6,10 @@ from .permisos import puede_ver_funcionarios, es_gestion, es_solo_lectura, gesti
 
 USUARIOS_DEMO = [
     ("Plataforma", [("superadmin", "Superadministrador(a)")]),
-    ("Escuela Gabriela Mistral · Básica", [
-        ("sostenedor", "Sostenedor(a)"), ("director", "Director(a)"), ("utp", "Jefe(a) de UTP"),
+    ("Corporación Educacional Ñuble · sostenedor de los 3 liceos", [
+        ("admin.red", "Administrador(a) del sostenedor"), ("sostenedor.red", "Sostenedor(a)")]),
+    ("Escuela Gabriela Mistral · Básica (independiente)", [
+        ("admin.escuela", "Administrador(a) de plataforma"), ("sostenedor", "Sostenedor(a)"), ("director", "Director(a)"), ("utp", "Jefe(a) de UTP"),
         ("inspector", "Inspector(a) general"), ("convivencia", "Encargado(a) de convivencia"),
         ("profe.historia", "Profesor(a) de asignatura"), ("profe.lenguaje", "Profesor(a) jefe")]),
     ("Liceo Científico-Humanista", [("director.hc", "Director(a)"), ("utp.hc", "Jefe(a) de UTP"),
@@ -39,9 +41,14 @@ def rol(request):
         return {"modo_demo": settings.MODO_DEMO, "usuarios_demo": USUARIOS_DEMO if settings.MODO_DEMO else [],
                 "establecimiento": est, **_marca(est)}
     superadmin = es_superadmin(request.user)
+    perfil = getattr(request.user, "perfil", None)
+    de_sostenedor = bool(perfil and perfil.de_sostenedor)
     if superadmin and getattr(request, "establecimiento", None) is None:
         est = Establecimiento(nombre="Plataforma Pupitre")
-    extra = {"es_superadmin": superadmin,
+    elif de_sostenedor and getattr(request, "establecimiento", None) is None:
+        est = Establecimiento(nombre=perfil.sostenedor.nombre)
+    extra = {"es_superadmin": superadmin, "de_sostenedor": de_sostenedor,
+             "nombre_sostenedor": perfil.sostenedor.nombre if de_sostenedor else "",
              "mod_convivencia": est.tiene_modulo("convivencia") if est.pk else True,
              "mod_funcionarios": est.tiene_modulo("funcionarios") if est.pk else True}
     gestion = es_gestion(request.user)

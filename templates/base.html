@@ -28,7 +28,13 @@
     {% if establecimiento.pk %}<form method="post" action="{% url 'plataforma_salir' %}" class="px-2 small">{% csrf_token %}
       <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · salir</button></form>{% endif %}
     {% endif %}
-    {% if not es_superadmin or establecimiento.pk %}
+    {% if de_sostenedor %}
+    <div class="titulo">{{ nombre_sostenedor }}</div>
+    <a href="{% url 'red' %}" class="{% if '/red/' in p %}activo{% endif %}"><i class="bi bi-diagram-2"></i> Mis establecimientos</a>
+    {% if establecimiento.pk %}<form method="post" action="{% url 'red_salir' %}" class="px-2 small">{% csrf_token %}
+      <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · cambiar</button></form>{% endif %}
+    {% endif %}
+    {% if not es_superadmin and not de_sostenedor or establecimiento.pk %}
     <a href="{% url 'inicio' %}" class="{% if p == '/' %}activo{% endif %}"><i class="bi bi-house"></i> Inicio</a>
     <div class="titulo">Académico</div>
     <a href="{% url 'cursos' %}" class="{% if '/cursos/' in p or '/notas/' in p and '/clases/' not in p and '/asistente/' not in p and '/evaluacion-unidad/' not in p or '/evaluaciones/' in p %}activo{% endif %}"><i class="bi bi-grid-1x2"></i> Cursos y notas</a>

@@ -48,11 +48,13 @@ class PerfilInline(admin.StackedInline):
     verbose_name_plural = "Rol en la plataforma"
 
     def get_exclude(self, request, obj=None):
-        return None if es_superadmin(request.user) else ("establecimiento",)
+        return None if es_superadmin(request.user) else ("establecimiento", "sostenedor")
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == "rol" and not es_superadmin(request.user):
-            kwargs["choices"] = [c for c in Perfil.Rol.choices if c[0] != Perfil.Rol.SUPERADMIN]
+            # Los cargos del nivel sostenedor se crean desde «Mis establecimientos» o el panel de la plataforma.
+            kwargs["choices"] = [c for c in Perfil.Rol.choices
+                                 if c[0] not in (Perfil.Rol.SUPERADMIN, Perfil.Rol.ADMIN_SOSTENEDOR)]
         return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
@@ -102,7 +104,7 @@ class EstablecimientoAdmin(SoloGestion, admin.ModelAdmin):
         return qs.filter(pk=est.pk) if est is not None and not es_superadmin(request.user) else qs
 
     def get_exclude(self, request, obj=None):
-        return None if es_superadmin(request.user) else ("activo", "modulos")
+        return None if es_superadmin(request.user) else ("activo", "modulos", "sostenedor")
 
     def has_add_permission(self, request, *args):
         return es_superadmin(request.user) or (es_gestion(request.user) and not Establecimiento.objects.exists())

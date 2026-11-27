@@ -34,6 +34,26 @@ def modulos_por_defecto():
     return [m[0] for m in MODULOS_DISPONIBLES]
 
 
+class Sostenedor(models.Model):
+    """Entidad sostenedora (corporación, fundación, DAEM/SLEP, etc.) que agrupa uno o más establecimientos.
+
+    Niveles de la plataforma: superadministrador › sostenedor (con su propio administrador de plataforma) ›
+    establecimiento (con su administrador de plataforma). Un establecimiento sin sostenedor funciona «solo».
+    """
+
+    nombre = models.CharField(max_length=200)
+    rut = models.CharField("RUT", max_length=15, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "sostenedor"
+        verbose_name_plural = "sostenedores"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
 class Establecimiento(models.Model):
     """Un establecimiento de la plataforma, con sus datos, usuarios, cursos y estudiantes."""
 
@@ -45,6 +65,9 @@ class Establecimiento(models.Model):
         COMPLETO = "COMPLETO", "Básica y Media"
 
     nombre = models.CharField(max_length=200)
+    sostenedor = models.ForeignKey(Sostenedor, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="establecimientos",
+                                   help_text="Vacío = establecimiento independiente (con su propio administrador).")
     oferta = models.CharField("tipo de establecimiento", max_length=20, choices=Oferta.choices, default=Oferta.BASICA)
     activo = models.BooleanField(default=True)
     modulos = models.JSONField("módulos activos", default=modulos_por_defecto, blank=True)
@@ -97,7 +120,9 @@ class Establecimiento(models.Model):
 class Perfil(models.Model):
     class Rol(models.TextChoices):
         SUPERADMIN = "SUPERADMIN", "Superadministrador(a) de la plataforma"
+        ADMIN_SOSTENEDOR = "ADMIN_SOSTENEDOR", "Administrador(a) de plataforma del sostenedor"
         SOSTENEDOR = "SOSTENEDOR", "Sostenedor(a)"
+        ADMIN = "ADMIN", "Administrador(a) de plataforma del establecimiento"
         DIRECTOR = "DIRECTOR", "Director(a)"
         UTP = "UTP", "Jefe(a) de UTP"
         INSPECTOR = "INSPECTOR", "Inspector(a) general"
@@ -109,7 +134,10 @@ class Perfil(models.Model):
     rut = models.CharField("RUT", max_length=15, blank=True, validators=[validar_rut])
     establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
                                         related_name="perfiles",
-                                        help_text="Vacío solo para el superadministrador de la plataforma.")
+                                        help_text="Vacío solo para el superadministrador y los usuarios de un sostenedor.")
+    sostenedor = models.ForeignKey(Sostenedor, on_delete=models.CASCADE, null=True, blank=True,
+                                   related_name="perfiles",
+                                   help_text="Solo para usuarios del sostenedor: trabajan en todos sus establecimientos.")
 
     class Meta:
         verbose_name = "perfil"
@@ -121,11 +149,22 @@ class Perfil(models.Model):
     @property
     def es_gestion(self):
         """Dirección y UTP: editan todo y configuran la plataforma."""
-        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.SUPERADMIN)
+        return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.SUPERADMIN, self.Rol.ADMIN,
+                            self.Rol.ADMIN_SOSTENEDOR)
 
     @property
     def es_superadmin(self):
         return self.rol == self.Rol.SUPERADMIN
+
+    @property
+    def de_sostenedor(self):
+        """Usuario del nivel sostenedor: trabaja en todos los establecimientos de su sostenedor."""
+        return bool(self.sostenedor_id) and self.rol in (self.Rol.SOSTENEDOR, self.Rol.ADMIN_SOSTENEDOR)
+
+    @property
+    def administra(self):
+        """Administradores de plataforma (crean usuarios y configuran el establecimiento)."""
+        return self.rol in (self.Rol.SUPERADMIN, self.Rol.ADMIN_SOSTENEDOR, self.Rol.ADMIN)
 
     @property
     def ve_todo(self):
@@ -135,12 +174,14 @@ class Perfil(models.Model):
     @property
     def gestiona_convivencia(self):
         return self.rol in (self.Rol.DIRECTOR, self.Rol.UTP, self.Rol.INSPECTOR, self.Rol.CONVIVENCIA,
-                            self.Rol.SUPERADMIN)
+                            self.Rol.SUPERADMIN, self.Rol.ADMIN, self.Rol.ADMIN_SOSTENEDOR)
 
     def save(self, *args, **kwargs):
         if self.rut:
             self.rut = normalizar_rut(self.rut)
-        if not self.establecimiento_id and self.rol != self.Rol.SUPERADMIN:
+        if self.rol not in (self.Rol.SOSTENEDOR, self.Rol.ADMIN_SOSTENEDOR):
+            self.sostenedor = None
+        if not self.establecimiento_id and self.rol != self.Rol.SUPERADMIN and not self.de_sostenedor:
             from .tenencia import establecimiento_por_defecto
             self.establecimiento = establecimiento_por_defecto()
         super().save(*args, **kwargs)

@@ -69,6 +69,7 @@ class Command(BaseCommand):
                 with en_establecimiento(liceo):
                     self.demo_libro(anio, cursos=1)
                     self.demo_resultados(liceo)
+        self.demo_red(escuela)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -447,6 +448,27 @@ class Command(BaseCommand):
             recalcular_asistencia(curso)
 
     # ------------------------------------------------------------------ Plataforma con varios establecimientos
+
+    def demo_red(self, escuela):
+        """Niveles: un sostenedor ficticio con los tres liceos y la escuela como establecimiento independiente.
+        Solo crea lo que falta y solo asigna liceos que aún no tienen sostenedor."""
+        from academico.models import Sostenedor
+
+        def usuario(username, nombre, apellido, **perfil):
+            u, creado = User.objects.get_or_create(username=username, defaults={"first_name": nombre,
+                                                                                "last_name": apellido})
+            if creado:
+                u.set_password("demo1234")
+                u.save()
+            Perfil.objects.get_or_create(usuario=u, defaults=perfil)
+
+        sost, _ = Sostenedor.objects.get_or_create(nombre="Corporación Educacional Ñuble (demo)",
+                                                   defaults={"rut": "65.123.456-7"})
+        Establecimiento.objects.filter(nombre__in=[d["nombre"] for d in LICEOS], sostenedor__isnull=True).update(
+            sostenedor=sost)
+        usuario("admin.red", "Carolina", "Fuentes Lagos", rol=Perfil.Rol.ADMIN_SOSTENEDOR, sostenedor=sost)
+        usuario("sostenedor.red", "Hernán", "Muñoz Parra", rol=Perfil.Rol.SOSTENEDOR, sostenedor=sost)
+        usuario("admin.escuela", "Marcela", "Riquelme Soto", rol=Perfil.Rol.ADMIN, establecimiento=escuela)
 
     def demo_superadmin(self):
         u, creado = User.objects.get_or_create(username="superadmin", defaults={

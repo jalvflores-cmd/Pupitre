@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Mis establecimientos{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-diagram-2 text-primary"></i> {{ sostenedor.nombre }}</h3>
+    <div class="sub">Resumen {{ anio }} de los establecimientos del sostenedor. Entre a uno para ver sus cursos, notas, alertas y resultados.</div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for f in filas %}
+  <div class="col-md-6 col-xxl-4">
+    <div class="card p-3 h-100{% if not f.est.activo %} opacity-50{% endif %}">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><h6 class="mb-0">{{ f.est.nombre }}</h6>
+          <div class="small text-muted">{{ f.est.get_oferta_display }}{% if f.est.rbd %} · RBD {{ f.est.rbd }}{% endif %}{% if f.est.comuna %} · {{ f.est.comuna }}{% endif %}</div></div>
+        {% if not f.est.activo %}<span class="badge bg-secondary">Desactivado</span>{% elif f.est.pk == actual_id %}<span class="badge bg-success">Trabajando aquí</span>{% endif %}
+      </div>
+      <div class="d-flex flex-wrap gap-3 my-2 small">
+        <span><b>{{ f.n_estudiantes }}</b> estudiantes</span><span><b>{{ f.n_cursos }}</b> cursos</span>
+        <span>Promedio <b>{% if f.promedio is not None %}{{ f.promedio|floatformat:1 }}{% else %}—{% endif %}</b></span>
+        <span>Asistencia <b>{% if f.asistencia is not None %}{{ f.asistencia|floatformat:1 }} %{% else %}—{% endif %}</b></span>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-3 small">
+        <span class="badge {% if f.alertas_notas %}bg-danger-subtle text-danger-emphasis{% else %}bg-light text-secondary border{% endif %}"><i class="bi bi-exclamation-triangle"></i> {{ f.alertas_notas }} con bajas notas</span>
+        <span class="badge {% if f.alertas_asistencia %}bg-warning-subtle text-warning-emphasis{% else %}bg-light text-secondary border{% endif %}"><i class="bi bi-calendar-x"></i> {{ f.alertas_asistencia }} con baja asistencia</span>
+      </div>
+      <form class="mt-auto" method="post" action="{% url 'red_entrar' f.est.pk %}">{% csrf_token %}
+        <button class="btn btn-sm btn-primary"{% if not f.est.activo %} disabled{% endif %}><i class="bi bi-box-arrow-in-right"></i> Entrar</button></form>
+    </div>
+  </div>
+  {% empty %}<div class="col-12"><div class="card p-4 text-muted">El sostenedor aún no tiene establecimientos asignados. Los asigna el superadministrador de la plataforma.</div></div>{% endfor %}
+</div>
+
+{% if filas|length > 1 %}
+<div class="row g-4 mb-4">
+  <div class="col-xl-6"><div class="card p-3"><h6>Promedio general por establecimiento</h6>{{ g_promedio }}</div></div>
+  <div class="col-xl-6"><div class="card p-3"><h6>Asistencia promedio por establecimiento</h6>{{ g_asistencia }}<div class="small text-muted">▲ en rojo: bajo 85 %.</div></div></div>
+</div>
+<details class="card p-3 mb-4"><summary>Ver tabla comparativa</summary>
+  <div class="table-responsive mt-2"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Establecimiento</th><th class="text-end">Estudiantes</th><th class="text-end">Promedio</th><th class="text-end">% promovidos (proyección)</th><th class="text-end">Asistencia</th><th class="text-end">Bajas notas</th><th class="text-end">Baja asistencia</th></tr></thead>
+    <tbody>{% for f in filas %}<tr><td>{{ f.est.nombre }}</td><td class="text-end">{{ f.n_estudiantes }}</td>
+      <td class="text-end">{{ f.promedio|floatformat:1|default:"—" }}</td><td class="text-end">{% if f.aprobacion is not None %}{{ f.aprobacion|floatformat:0 }} %{% else %}—{% endif %}</td>
+      <td class="text-end">{% if f.asistencia is not None %}{{ f.asistencia|floatformat:1 }} %{% else %}—{% endif %}</td>
+      <td class="text-end">{{ f.alertas_notas }}</td><td class="text-end">{{ f.alertas_asistencia }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</details>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-xl-6"><div class="card p-3 h-100">
+    <h6>Usuarios del sostenedor</h6>
+    <p class="small text-muted">Trabajan en todos los establecimientos. El administrador(a) de plataforma crea usuarios y configura cada establecimiento; el sostenedor(a) consulta sin modificar.</p>
+    <ul class="list-group list-group-flush">
+      {% for u in usuarios %}<li class="list-group-item px-0 d-flex justify-content-between"><span>{{ u.get_full_name|default:u.username }} <span class="text-muted small">({{ u.username }})</span></span><span class="small text-muted">{{ u.perfil.get_rol_display }}</span></li>{% endfor %}
+    </ul>
+  </div></div>
+  {% if admin %}
+  <div class="col-xl-6"><div class="card p-3 h-100">
+    <h6>Crear usuario</h6>
+    <p class="small text-muted">Cree la primera cuenta de cada establecimiento (por ejemplo, su administrador(a) de plataforma o su director(a)); esa cuenta crea luego a los demás usuarios.</p>
+    <form method="post">{% csrf_token %}
+      {% for e in form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+      <div class="row g-2">
+        {% for f in form %}<div class="{% if f.name == 'destino' %}col-12{% else %}col-md-6{% endif %}">
+          <label class="form-label small mb-0" for="{{ f.id_for_label }}">{{ f.label|capfirst }}</label>{{ f }}
+          {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
+      </div>
+      <button class="btn btn-primary btn-sm mt-3"><i class="bi bi-person-plus"></i> Crear usuario</button>
+    </form>
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}
