@@ -1143,3 +1143,18 @@ class HorariosTests(BaseDatos):
         self.assertContains(r, "Matemática")
         self.assertNotContains(r, "Generar horario")
         self.assertEqual(self.client.post(reverse("horarios"), {"accion": "generar", "curso": "todos"}).status_code, 403)
+
+
+class AsistenciaDiariaHoraTests(BaseDatos):
+    def test_toma_la_clase_de_las_diez(self):
+        import datetime
+        from .libro import asistencia_diaria
+        from .models import AsistenciaClase, Clase
+        dia = datetime.date(2026, 4, 6)
+        temprano = Clase.objects.create(asignatura_curso=self.mat, fecha=dia, hora_inicio=datetime.time(8, 0),
+                                        bloques=2, objetivo="x", asistencia_registrada=True)
+        diez = Clase.objects.create(asignatura_curso=self.len, fecha=dia, hora_inicio=datetime.time(9, 45),
+                                    bloques=2, objetivo="y", asistencia_registrada=True)
+        AsistenciaClase.objects.create(clase=temprano, estudiante=self.est, estado="A")  # llegó tarde al colegio
+        AsistenciaClase.objects.create(clase=diez, estudiante=self.est, estado="P")
+        self.assertEqual(asistencia_diaria(self.curso)[(self.est.pk, dia)], "P")

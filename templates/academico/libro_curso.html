@@ -30,7 +30,7 @@
     </tbody>
   </table>
   </div>
-  <div class="small text-muted px-2 py-2">• Presente · A Ausente · T Atrasado(a) · R Retirado(a). Se considera la primera clase de cada día. El % anual es el que usan los informes y la promoción (mínimo 85 %).</div>
+  <div class="small text-muted px-2 py-2">• Presente · A Ausente · T Atrasado(a) · R Retirado(a). La asistencia del día es la de la clase en curso a las {{ establecimiento.hora_asistencia|time:"H:i" }} (o la más cercana). El % anual es el que usan los informes y la promoción (mínimo 85 %).</div>
   {% else %}<p class="text-muted px-2">No hay asistencia registrada este mes.</p>{% endif %}
 </div>
 <div class="card p-2">

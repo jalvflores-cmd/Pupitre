@@ -765,7 +765,7 @@ def pdf_asistencia_mes(curso, datos, mes_txt):
     historia.append(t)
     historia.append(Spacer(1, 4))
     historia.append(Paragraph("• Presente · A Ausente · T Atrasado(a) · R Retirado(a) antes del término. "
-                              "La asistencia diaria corresponde a la primera clase registrada de cada día.", E_MINI))
+                              f"La asistencia diaria corresponde a la clase en curso a las {curso.establecimiento.hora_asistencia:%H:%M} (o la más cercana).", E_MINI))
     if datos["clases"]:
         historia.append(Spacer(1, 10))
         historia.append(Paragraph("<b>Clases del mes</b>", E_NORMAL))

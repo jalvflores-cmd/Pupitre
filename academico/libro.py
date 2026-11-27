@@ -50,21 +50,32 @@ def estudiantes_de(ac):
 
 
 def asistencia_diaria(curso, desde=None, hasta=None):
-    """{(estudiante_id, fecha): estado} tomando, para cada día, la primera clase registrada de ese estudiante.
+    """{(estudiante_id, fecha): estado} de cada día, tomado de la clase en curso a la hora de asistencia del
+    establecimiento (10:00 por defecto) o, si ninguna la cubre, de la clase que empieza más cerca de esa hora.
 
-    Es la asistencia diaria que exige la normativa (se pasa en la primera hora). Atrasos y retiros cuentan
-    como asistencia; solo la ausencia la descuenta.
+    Atrasos y retiros cuentan como asistencia; solo la ausencia la descuenta.
     """
+    hora = getattr(curso.establecimiento, "hora_asistencia", None) or datetime.time(10, 0)
+    objetivo = hora.hour * 60 + hora.minute
     qs = AsistenciaClase.objects.filter(clase__asignatura_curso__curso=curso, clase__asistencia_registrada=True)
     if desde:
         qs = qs.filter(clase__fecha__gte=desde)
     if hasta:
         qs = qs.filter(clase__fecha__lte=hasta)
-    qs = qs.order_by("clase__fecha", F("clase__hora_inicio").asc(nulls_last=True), "clase_id")
-    diario = {}
-    for est_id, fecha, estado in qs.values_list("estudiante_id", "clase__fecha", "estado"):
-        diario.setdefault((est_id, fecha), estado)
-    return diario
+    mejor = {}
+    for est_id, fecha, ini, bloques, clase_id, estado in qs.values_list(
+            "estudiante_id", "clase__fecha", "clase__hora_inicio", "clase__bloques", "clase_id", "estado"):
+        if ini is None:
+            distancia = 10_000  # sin hora: solo si no hay otra clase ese día
+        else:
+            inicio = ini.hour * 60 + ini.minute
+            fin = inicio + 45 * (bloques or 1)
+            distancia = 0 if inicio <= objetivo < fin else min(abs(inicio - objetivo), abs(fin - objetivo))
+        clave = (est_id, fecha)
+        candidato = (distancia, ini is None, ini or datetime.time(0), clase_id)
+        if clave not in mejor or candidato < mejor[clave][0]:
+            mejor[clave] = (candidato, estado)
+    return {clave: estado for clave, (_, estado) in mejor.items()}
 
 
 def recalcular_asistencia(curso):

@@ -1,3 +1,4 @@
+from datetime import time as datetime_time
 from decimal import Decimal
 
 from django.conf import settings
@@ -89,6 +90,9 @@ class Establecimiento(models.Model):
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
         help_text="Concentración de alumnos prioritarios (Ley 20.248). Define la asignación por alta concentración.")
     rural = models.BooleanField("establecimiento rural", default=False)
+    hora_asistencia = models.TimeField(
+        "hora de la asistencia diaria", default=datetime_time(10, 0),
+        help_text="La asistencia del día se toma de la clase que está en curso a esta hora (o la más cercana).")
     logo = models.BinaryField("logo institucional", null=True, blank=True, editable=False)
     color_principal = models.CharField(
         "color institucional", max_length=7, blank=True,

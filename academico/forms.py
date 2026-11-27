@@ -323,14 +323,21 @@ class ConfiguracionEstablecimientoForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Establecimiento
         fields = ["nombre", "rbd", "direccion", "comuna", "region", "telefono", "director", "jefe_utp",
-                  "resolucion_reconocimiento", "alta_concentracion", "color_principal", "pie_documentos"]
-        widgets = {"color_principal": forms.TextInput(attrs={"type": "color"})}
+                  "resolucion_reconocimiento", "alta_concentracion", "hora_asistencia", "color_principal",
+                  "pie_documentos"]
+        widgets = {"color_principal": forms.TextInput(attrs={"type": "color"}),
+                   "hora_asistencia": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["color_principal"].widget.attrs["class"] = "form-control form-control-color"
+        self.fields["hora_asistencia"].required = False
         if not self.instance.color_principal:
             self.initial["color_principal"] = "#24476B"
+
+    def clean_hora_asistencia(self):
+        import datetime
+        return self.cleaned_data.get("hora_asistencia") or self.instance.hora_asistencia or datetime.time(10, 0)
 
     def clean_color_principal(self):
         import re
