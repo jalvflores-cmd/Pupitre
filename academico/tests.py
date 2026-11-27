@@ -990,3 +990,20 @@ class AlertasTests(BaseDatos):
         self.assertContains(r, "Nivelación")
         anterior = curriculo.oas_para(self.mat, anteriores=True).filter(grado=4).first()
         self.assertEqual(self.client.get(reverse("asistente_clase", args=[self.mat.pk]), {"oa": anterior.pk}).status_code, 200)
+
+
+class ResultadosTests(BaseDatos):
+    def test_gestion_registra_simce_y_profesor_no_entra(self):
+        from .models import ResultadoSimce
+        self.client.force_login(User.objects.get(username="utp"))
+        self.assertEqual(self.client.get(reverse("resultados")).status_code, 200)
+        datos = {"s-anio": 2024, "s-nivel": "4B", "s-prueba": "LEC", "s-puntaje": 265, "s-puntaje_nacional": 262,
+                 "guardar_simce": "1"}
+        self.client.post(reverse("resultados") + "?ver=simce", datos)
+        datos["s-puntaje"] = 270  # mismo año, nivel y prueba: actualiza
+        self.client.post(reverse("resultados") + "?ver=simce", datos)
+        self.assertEqual(ResultadoSimce.objects.count(), 1)
+        self.assertEqual(ResultadoSimce.objects.get().puntaje, 270)
+        self.assertContains(self.client.get(reverse("resultados") + "?ver=simce"), "<svg")
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("resultados")).status_code, 403)

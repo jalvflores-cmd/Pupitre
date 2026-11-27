@@ -36,6 +36,7 @@
     <a href="{% url 'curriculum' %}" class="{% if '/curriculum/' in p %}activo{% endif %}"><i class="bi bi-diagram-3"></i> Currículum (OA)</a>
     <a href="{% url 'estudiantes' %}" class="{% if '/estudiantes/' in p %}activo{% endif %}"><i class="bi bi-people"></i> Estudiantes</a>
     {% if mod_convivencia %}<a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>{% endif %}
+    {% if ve_todo %}<a href="{% url 'resultados' %}" class="{% if '/resultados/' in p %}activo{% endif %}"><i class="bi bi-bar-chart-line"></i> Resultados</a>{% endif %}
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
     {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}

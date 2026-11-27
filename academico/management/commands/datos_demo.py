@@ -60,6 +60,7 @@ class Command(BaseCommand):
             self.demo_escuela(anio)
             self.demo_libro(anio, cursos=2)
             self.demo_alertas(anio)
+            self.demo_resultados(escuela)
         self.demo_superadmin()
         for datos in LICEOS:
             self.demo_liceo(anio, datos)
@@ -67,6 +68,7 @@ class Command(BaseCommand):
             if liceo:
                 with en_establecimiento(liceo):
                     self.demo_libro(anio, cursos=1)
+                    self.demo_resultados(liceo)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -333,6 +335,35 @@ class Command(BaseCommand):
                     nota = Decimal(str(round(min(7, max(2, random.gauss(5.7, 0.8))), 1)))
                     notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
         Calificacion.objects.bulk_create(notas, ignore_conflicts=True)
+
+    def demo_resultados(self, est):
+        """SIMCE y PAES ficticios (solo si el establecimiento no tiene resultados registrados)."""
+        from academico.models import ResultadoPaes, ResultadoSimce
+
+        if ResultadoSimce.objects.exists() or ResultadoPaes.objects.exists():
+            return
+        rnd = random.Random(f"resultados-{est.nombre}")
+        basica = est.oferta == Establecimiento.Oferta.BASICA
+        niveles = {"4B": (262, 260), "8B": (243, 255)} if basica else {"2M": (250, 252)}
+        tp = est.oferta == Establecimiento.Oferta.TP
+        for nivel, (lec_nac, mat_nac) in niveles.items():
+            for prueba, nac in (("LEC", lec_nac), ("MAT", mat_nac)):
+                base = nac + rnd.randint(-25, 10) - (12 if tp else 0)
+                for anio in (2018, 2019, 2022, 2023, 2024):
+                    base += rnd.randint(-8, 10)
+                    ResultadoSimce.objects.create(
+                        anio=anio, nivel=nivel, prueba=prueba, puntaje=base, puntaje_nacional=nac + rnd.randint(-4, 4),
+                        puntaje_gse=nac - 12 + rnd.randint(-5, 5), evaluados=rnd.randint(25, 70),
+                        pct_adecuado=Decimal(str(round(rnd.uniform(15, 40), 1))),
+                        pct_insuficiente=Decimal(str(round(rnd.uniform(25, 50), 1))))
+        if not basica:
+            for prueba, nac in (("CL", 560), ("M1", 545), ("M2", 520), ("HI", 550)):
+                base = nac - rnd.randint(40, 90) - (40 if tp else 0)
+                for anio in (2023, 2024, 2025, 2026):
+                    base += rnd.randint(-10, 15)
+                    ResultadoPaes.objects.create(anio=anio, prueba=prueba, puntaje=base,
+                                                 puntaje_nacional=nac + rnd.randint(-6, 6),
+                                                 rindieron=rnd.randint(8, 30) if prueba in ("M2", "HI") else rnd.randint(30, 60))
 
     def demo_alertas(self, anio):
         """Para que la demo muestre alertas de bajo rendimiento: solo si no hay ninguna nota roja."""

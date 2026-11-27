@@ -425,3 +425,18 @@ class ObjetivoForm(BootstrapMixin, forms.ModelForm):
         model = ObjetivoAprendizaje
         fields = ["asignatura", "grado", "numero", "texto", "unidad"]
         widgets = {"texto": forms.Textarea(attrs={"rows": 3})}
+
+
+class SimceForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        from .models import ResultadoSimce
+        model = ResultadoSimce
+        fields = ["anio", "nivel", "prueba", "puntaje", "puntaje_nacional", "puntaje_gse", "evaluados",
+                  "pct_adecuado", "pct_insuficiente"]
+
+
+class PaesForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        from .models import ResultadoPaes
+        model = ResultadoPaes
+        fields = ["anio", "prueba", "puntaje", "puntaje_nacional", "rindieron"]

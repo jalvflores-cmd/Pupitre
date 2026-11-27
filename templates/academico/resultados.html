@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load academico_extras %}
+{% block titulo %}Resultados{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-bar-chart-line text-primary"></i> Resultados</h3>
+    <div class="sub">Rendimiento interno del año {{ anio }} y resultados de evaluaciones externas{% if tiene_media %} (SIMCE y PAES){% else %} (SIMCE){% endif %}.</div></div>
+</div>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link{% if pestana == 'interno' %} active{% endif %}" href="?ver=interno">Rendimiento interno</a></li>
+  <li class="nav-item"><a class="nav-link{% if pestana == 'simce' %} active{% endif %}" href="?ver=simce">SIMCE</a></li>
+  {% if tiene_media %}<li class="nav-item"><a class="nav-link{% if pestana == 'paes' %} active{% endif %}" href="?ver=paes">PAES</a></li>{% endif %}
+</ul>
+
+{% if pestana == 'interno' %}
+<div class="row g-4">
+  <div class="col-xl-6"><div class="card p-3"><h6>Promedio general por curso</h6>{{ g_promedio }}</div></div>
+  <div class="col-xl-6"><div class="card p-3"><h6>Promedio por asignatura (todos los cursos)</h6>{{ g_asignaturas }}</div></div>
+  <div class="col-xl-6"><div class="card p-3"><h6>% de estudiantes promovidos (proyección con notas y asistencia actuales)</h6>{{ g_aprobacion }}<div class="small text-muted">▲ en rojo: bajo 85 %.</div></div></div>
+  <div class="col-xl-6"><div class="card p-3"><h6>Asistencia promedio por curso</h6>{{ g_asistencia }}</div></div>
+  <div class="col-12"><div class="card p-3">
+    <h6>Situación final proyectada</h6>
+    <div class="d-flex flex-wrap gap-3">{% for s, n in situaciones %}<div class="border rounded-3 px-3 py-2"><div class="fs-4 fw-semibold">{{ n }}</div><div class="small text-muted">{{ s }}</div></div>{% endfor %}</div>
+    <details class="mt-3"><summary class="small">Ver tabla de datos por curso</summary>
+      <table class="table table-sm mt-2"><thead><tr><th>Curso</th><th class="text-center">Estudiantes</th><th class="text-center">Promedio</th><th class="text-center">% promovidos</th><th class="text-center">% asistencia</th></tr></thead>
+      <tbody>{% for c in por_curso %}<tr><td>{{ c.curso.nombre_corto }}</td><td class="text-center">{{ c.n }}</td><td class="text-center">{{ c.promedio|nota }}</td><td class="text-center">{{ c.aprobacion|floatformat:0|default:"—" }}</td><td class="text-center">{{ c.asistencia|floatformat:1|default:"—" }}</td></tr>{% endfor %}</tbody></table>
+    </details>
+  </div></div>
+</div>
+
+{% elif pestana == 'simce' %}
+<div class="row g-4">
+  <div class="{% if puede %}col-xl-8{% else %}col-12{% endif %}">
+    <div class="row g-3">
+    {% for t in tarjetas %}
+    <div class="col-lg-6"><div class="card p-3 h-100">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <h6 class="mb-1">{{ t.prueba }} · {{ t.nivel }}</h6>
+        <div class="small">Último ({{ t.ultimo.anio }}): <b>{{ t.ultimo.puntaje }} pts.</b>
+          {% if t.variacion is not None %} · {% if t.variacion >= 0 %}<span class="text-success">▲ +{{ t.variacion }}</span>{% else %}<span class="text-danger">▼ {{ t.variacion }}</span>{% endif %} vs. medición anterior{% endif %}
+          {% if t.vs_nacional is not None %} · {% if t.vs_nacional >= 0 %}+{% endif %}{{ t.vs_nacional }} vs. nacional{% endif %}</div>
+      </div>
+      {{ t.grafico }}
+      <details><summary class="small">Ver tabla</summary>
+        <table class="table table-sm small mt-2"><thead><tr><th>Año</th><th>Puntaje</th><th>Nacional</th><th>GSE similar</th><th>Evaluados</th><th>% adecuado</th><th>% insuficiente</th>{% if puede %}<th></th>{% endif %}</tr></thead>
+        <tbody>{% for r in t.filas %}<tr><td>{{ r.anio }}</td><td>{{ r.puntaje }}</td><td>{{ r.puntaje_nacional|default_if_none:"—" }}</td><td>{{ r.puntaje_gse|default_if_none:"—" }}</td><td>{{ r.evaluados|default_if_none:"—" }}</td><td>{{ r.pct_adecuado|default_if_none:"—" }}</td><td>{{ r.pct_insuficiente|default_if_none:"—" }}</td>
+          {% if puede %}<td><form method="post" onsubmit="return confirm('¿Eliminar este resultado?');">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" name="eliminar_simce" value="{{ r.pk }}"><i class="bi bi-trash"></i></button></form></td>{% endif %}</tr>{% endfor %}</tbody></table>
+      </details>
+    </div></div>
+    {% empty %}<div class="col-12 alert alert-info">Aún no hay resultados SIMCE registrados.{% if puede %} Agréguelos con el formulario (están en el informe de resultados de la Agencia de Calidad de la Educación).{% endif %}</div>{% endfor %}
+    </div>
+  </div>
+  {% if puede %}<div class="col-xl-4"><div class="card p-3">
+    <h6>Registrar resultado SIMCE</h6>
+    <p class="small text-muted">Si ya existe el mismo año, nivel y prueba, se actualiza.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="guardar_simce" value="1">
+      <div class="row g-2">{% for f in simce_form %}<div class="col-6"><label class="form-label small mb-0">{{ f.label|capfirst }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}</div>
+      <button class="btn btn-primary btn-sm mt-3">Guardar</button></form>
+  </div></div>{% endif %}
+</div>
+
+{% else %}
+<div class="row g-4">
+  <div class="{% if puede %}col-xl-8{% else %}col-12{% endif %}">
+    <div class="row g-3">
+    {% for t in tarjetas %}
+    <div class="col-lg-6"><div class="card p-3 h-100">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <h6 class="mb-1">{{ t.prueba }}</h6>
+        <div class="small">Admisión {{ t.ultimo.anio }}: <b>{{ t.ultimo.puntaje }} pts.</b>
+          {% if t.variacion is not None %} · {% if t.variacion >= 0 %}<span class="text-success">▲ +{{ t.variacion }}</span>{% else %}<span class="text-danger">▼ {{ t.variacion }}</span>{% endif %}{% endif %}
+          {% if t.vs_nacional is not None %} · {% if t.vs_nacional >= 0 %}+{% endif %}{{ t.vs_nacional }} vs. nacional{% endif %}</div>
+      </div>
+      {{ t.grafico }}
+      <details><summary class="small">Ver tabla</summary>
+        <table class="table table-sm small mt-2"><thead><tr><th>Admisión</th><th>Puntaje promedio</th><th>Nacional</th><th>Rindieron</th>{% if puede %}<th></th>{% endif %}</tr></thead>
+        <tbody>{% for r in t.filas %}<tr><td>{{ r.anio }}</td><td>{{ r.puntaje }}</td><td>{{ r.puntaje_nacional|default_if_none:"—" }}</td><td>{{ r.rindieron|default_if_none:"—" }}</td>
+          {% if puede %}<td><form method="post" onsubmit="return confirm('¿Eliminar este resultado?');">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" name="eliminar_paes" value="{{ r.pk }}"><i class="bi bi-trash"></i></button></form></td>{% endif %}</tr>{% endfor %}</tbody></table>
+      </details>
+    </div></div>
+    {% empty %}<div class="col-12 alert alert-info">Aún no hay resultados PAES registrados.{% if puede %} Agréguelos con el formulario (informe DEMRE por establecimiento).{% endif %}</div>{% endfor %}
+    </div>
+  </div>
+  {% if puede %}<div class="col-xl-4"><div class="card p-3">
+    <h6>Registrar resultado PAES</h6>
+    <form method="post">{% csrf_token %}<input type="hidden" name="guardar_paes" value="1">
+      <div class="row g-2">{% for f in paes_form %}<div class="col-6"><label class="form-label small mb-0">{{ f.label|capfirst }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}</div>
+      <button class="btn btn-primary btn-sm mt-3">Guardar</button></form>
+  </div></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import alertas, libro, plataforma, views
+from . import alertas, libro, plataforma, resultados, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
@@ -30,6 +30,7 @@ urlpatterns = [
     path("notas/<int:ac_pk>/evaluacion-unidad/", libro.evaluacion_unidad, name="evaluacion_unidad"),
     path("curriculum/", libro.curriculum, name="curriculum"),
     path("alertas/", alertas.alertas, name="alertas"),
+    path("resultados/", resultados.resultados, name="resultados"),
     path("clases/<int:pk>/", libro.clase_detalle, name="clase_detalle"),
     path("clases/<int:pk>/editar/", libro.clase_form, name="clase_editar"),
     path("clases/<int:pk>/eliminar/", libro.clase_eliminar, name="clase_eliminar"),

@@ -879,3 +879,57 @@ class ObjetivoAprendizaje(models.Model):
     def disponibles(cls):
         est = Establecimiento.actual()
         return cls.objects.filter(models.Q(establecimiento__isnull=True) | models.Q(establecimiento_id=est.pk))
+
+
+class ResultadoSimce(DeEstablecimiento):
+    class Nivel(models.TextChoices):
+        B2 = "2B", "2° básico"
+        B4 = "4B", "4° básico"
+        B6 = "6B", "6° básico"
+        B8 = "8B", "8° básico"
+        M2 = "2M", "II medio"
+
+    class Prueba(models.TextChoices):
+        LECTURA = "LEC", "Lectura"
+        MATEMATICA = "MAT", "Matemática"
+        CIENCIAS = "CN", "Ciencias Naturales"
+        HISTORIA = "HIS", "Historia, Geografía y Cs. Sociales"
+        ESCRITURA = "ESC", "Escritura"
+
+    anio = models.PositiveSmallIntegerField("año de aplicación")
+    nivel = models.CharField(max_length=2, choices=Nivel.choices)
+    prueba = models.CharField(max_length=3, choices=Prueba.choices)
+    puntaje = models.PositiveSmallIntegerField("puntaje promedio del establecimiento")
+    puntaje_nacional = models.PositiveSmallIntegerField("promedio nacional", null=True, blank=True)
+    puntaje_gse = models.PositiveSmallIntegerField("promedio del grupo socioeconómico similar", null=True, blank=True)
+    evaluados = models.PositiveSmallIntegerField("estudiantes evaluados", null=True, blank=True)
+    pct_adecuado = models.DecimalField("% nivel adecuado", max_digits=4, decimal_places=1, null=True, blank=True)
+    pct_insuficiente = models.DecimalField("% nivel insuficiente", max_digits=4, decimal_places=1, null=True, blank=True)
+
+    class Meta:
+        ordering = ["nivel", "prueba", "anio"]
+        verbose_name = "resultado SIMCE"
+        verbose_name_plural = "resultados SIMCE"
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "anio", "nivel", "prueba"],
+                                               name="simce_unico")]
+
+
+class ResultadoPaes(DeEstablecimiento):
+    class Prueba(models.TextChoices):
+        LECTORA = "CL", "Competencia Lectora"
+        M1 = "M1", "Competencia Matemática 1 (M1)"
+        M2 = "M2", "Competencia Matemática 2 (M2)"
+        CIENCIAS = "CI", "Ciencias"
+        HISTORIA = "HI", "Historia y Ciencias Sociales"
+
+    anio = models.PositiveSmallIntegerField("año del proceso de admisión")
+    prueba = models.CharField(max_length=2, choices=Prueba.choices)
+    puntaje = models.PositiveSmallIntegerField("puntaje promedio del establecimiento")
+    puntaje_nacional = models.PositiveSmallIntegerField("promedio nacional", null=True, blank=True)
+    rindieron = models.PositiveSmallIntegerField("estudiantes que rindieron", null=True, blank=True)
+
+    class Meta:
+        ordering = ["prueba", "anio"]
+        verbose_name = "resultado PAES"
+        verbose_name_plural = "resultados PAES"
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "anio", "prueba"], name="paes_unico")]
