@@ -7,6 +7,7 @@
     <div class="sub">Profesor(a): {{ ac.profesor.get_full_name|default:"sin asignar" }} · {{ horas_realizadas }} horas pedagógicas realizadas · {{ n_firmadas }} clases firmadas{% if n_planificadas %} · {{ n_planificadas }} planificadas{% endif %}</div></div>
   <div class="d-flex gap-2">
     {% if editable %}<a class="btn btn-primary btn-sm" href="{% url 'clase_crear' ac.pk %}"><i class="bi bi-plus-lg"></i> Nueva clase</a>{% endif %}
+    <a class="btn btn-outline-warning btn-sm" href="{% url 'evaluacion_unidad' ac.pk %}"><i class="bi bi-stars"></i> Sugerir evaluación de la unidad</a>
     <a class="btn btn-outline-danger btn-sm" href="{% url 'leccionario_pdf' ac.pk %}"><i class="bi bi-file-pdf"></i> Leccionario PDF</a>
   </div>
 </div>

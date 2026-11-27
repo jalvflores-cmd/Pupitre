@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Evaluación de la unidad · {{ ac }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'libro' %}">Libro de clases</a> / <a href="{% url 'leccionario' ac.pk %}">{{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</a> / Evaluación sugerida</div>
+    <h3>Evaluación sugerida según lo planificado</h3>
+    <div class="sub">El asistente revisa las clases del leccionario, los OA trabajados y cuántas clases dedicó a cada uno.</div></div>
+  {% if unidades %}
+  <form class="d-flex gap-2 align-items-center"><label class="small text-muted">Unidad</label>
+    <select name="unidad" class="form-select form-select-sm" onchange="this.form.submit()">
+      {% for u in unidades %}<option value="{{ u }}"{% if u == unidad %} selected{% endif %}>{{ u }}</option>{% endfor %}
+      <option value=""{% if not unidad %} selected{% endif %}>Todas las unidades</option>
+    </select></form>
+  {% endif %}
+</div>
+{% if not p %}
+  <div class="alert alert-info">Aún no hay clases planificadas{% if unidad %} en esta unidad{% endif %}. Planifique clases en el leccionario y vuelva aquí.</div>
+{% else %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card p-4">
+      <h5><i class="bi bi-clipboard-data text-primary"></i> Evaluación sumativa: {{ p.tipo }}</h5>
+      <p class="mb-2">{{ p.descripcion }}</p>
+      <p class="small text-muted">Habilidad predominante: {{ p.nivel }} · {{ p.n_clases }} clases en {{ p.unidad }}{% if p.sin_oa %} ({{ p.sin_oa }} sin OA marcado: se usó el objetivo escrito){% endif %}.</p>
+      <h6 class="mt-2">Tabla de especificaciones</h6>
+      <table class="table table-sm align-middle">
+        <thead><tr><th>Objetivo</th><th>Habilidad</th><th class="text-center">Peso</th><th class="text-center">Ítems aprox.</th></tr></thead>
+        <tbody>{% for f in p.tabla %}<tr><td class="small">{{ f.oa|truncatechars:150 }}</td><td class="small">{{ f.nivel }}</td><td class="text-center text-nowrap">{{ f.porcentaje }} %</td><td class="text-center">{{ f.items }}</td></tr>{% endfor %}</tbody>
+      </table>
+      <p class="small text-muted mb-0">El peso de cada objetivo es proporcional a las clases que se le dedicaron. Ajústelo si alguna clase fue de repaso o refuerzo.</p>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 mb-4">
+      <h5><i class="bi bi-list-check text-success"></i> Rúbrica sugerida</h5>
+      <table class="table table-sm small mb-0"><thead><tr><th>Criterio</th>{% for n in p.niveles_logro %}<th class="text-center">{{ n }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for c in p.rubrica %}<tr><td class="fw-semibold">{{ c }}</td><td>Lo demuestra de forma completa y autónoma.</td><td>Lo demuestra con algunos errores u omisiones.</td><td>No lo demuestra o requiere apoyo constante.</td></tr>{% endfor %}</tbody></table>
+    </div>
+    <div class="card p-4 mb-4">
+      <h5><i class="bi bi-arrow-repeat text-warning"></i> Evaluaciones formativas antes de la prueba</h5>
+      <ul class="small mb-0">{% for f in p.formativas %}<li><b>{{ f.nombre }}:</b> {{ f.descripcion }}</li>{% endfor %}</ul>
+    </div>
+    {% if editable %}
+    <a class="btn btn-primary" href="{% url 'clase_crear' ac.pk %}?evaluacion={{ nombre_sugerido|urlencode }}&objetivo={{ objetivo_sugerido|urlencode }}"><i class="bi bi-calendar-plus"></i> Agendar la evaluación en el leccionario</a>
+    <div class="form-text">Crea una clase de evaluación: la evaluación aparece en el libro de notas con la fecha que elija.</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

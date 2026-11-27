@@ -1,0 +1,121 @@
+1° básico | OA3 | Identificar y representar cantidades del 0 al 20 de forma concreta, gráfica y simbólica.
+1° básico | OA4 | Ordenar números del 0 al 20 de menor a mayor o al revés, con material concreto o software.
+1° básico | OA6 | Descomponer y componer números del 0 al 20 mediante sumas, en los tres niveles de representación.
+1° básico | OA8 | Identificar unidades y decenas en números del 0 al 20, agrupando de a diez.
+1° básico | OA9 | Comprender sumas y restas de dos sumandos hasta 20, con lenguaje, representaciones, simbolismo y resolución y creación de problemas.
+1° básico | OA11 | Reconocer, describir, crear y continuar patrones repetitivos y numéricos hasta 20, crecientes y decrecientes.
+1° básico | OA13 | Describir la ubicación de objetos y personas respecto de uno mismo y de otros, con lenguaje común.
+1° básico | OA14 | Reconocer figuras 3D y 2D en el entorno y relacionarlas, con material concreto.
+1° básico | OA18 | Identificar y comparar longitudes de objetos usando términos como largo y corto.
+1° básico | OA19 | Recopilar y registrar datos para responder preguntas estadísticas, usando bloques, tablas de conteo y pictogramas.
+1° básico | OA20 | Construir, leer e interpretar pictogramas.
+2° básico | OA2 | Leer números del 0 al 100 y representarlos de forma concreta, pictórica y simbólica.
+2° básico | OA3 | Comparar y ordenar números del 0 al 100 en ambos sentidos, con material concreto, monedas o software.
+2° básico | OA5 | Descomponer y componer números del 0 al 100 mediante sumas, en los tres niveles de representación.
+2° básico | OA7 | Identificar decenas y unidades en números del 0 al 100 según su valor posicional.
+2° básico | OA9 | Comprender sumas y restas hasta 100: representaciones, registro simbólico, algoritmo sin reserva y resolución y creación de problemas.
+2° básico | OA11 | Comprender la multiplicación como suma de sumandos iguales, usando las tablas del 2, 5 y 10 y resolviendo problemas.
+2° básico | OA12 | Crear, representar y continuar patrones numéricos y completar sus elementos faltantes.
+2° básico | OA13 | Demostrar, explicar y registrar igualdad y desigualdad del 0 al 20 con los símbolos =, > y <.
+2° básico | OA15 | Describir, comparar y construir figuras 2D con material concreto.
+2° básico | OA16 | Describir, comparar y construir figuras 3D con diversos materiales.
+2° básico | OA19 | Medir longitudes con unidades no estandarizadas y estandarizadas (cm y m) para resolver problemas.
+2° básico | OA20 | Recopilar y registrar datos sobre juegos con monedas y dados, usando bloques, tablas de conteo y pictogramas.
+2° básico | OA22 | Construir, leer e interpretar pictogramas con escala y gráficos de barras simples.
+3° básico | OA2 | Leer y representar números hasta 1000 de forma concreta, pictórica y simbólica.
+3° básico | OA3 | Comparar y ordenar números hasta 1000 con recta numérica o tabla posicional.
+3° básico | OA5 | Identificar unidades, decenas y centenas hasta 1000 según su valor posicional.
+3° básico | OA6 | Comprender la adición y sustracción hasta 1000 con estrategias, problemas y algoritmos, con y sin reserva.
+3° básico | OA8 | Comprender las tablas de multiplicar hasta 10 y aplicar sus resultados sin realizar cálculos.
+3° básico | OA9 | Comprender la división como repartición y agrupación, y su relación inversa con la multiplicación.
+3° básico | OA10 | Resolver problemas rutinarios con dinero que involucren las cuatro operaciones no combinadas.
+3° básico | OA11 | Comprender fracciones de uso común (1/4, 1/3, 1/2, 2/3, 3/4) como partes de un todo y compararlas.
+3° básico | OA12 | Generar, describir y registrar patrones numéricos en tablas del 100.
+3° básico | OA15 | Relacionar figuras 3D y 2D construyendo figuras 3D a partir de redes y desplegándolas.
+3° básico | OA21 | Comprender el perímetro de figuras regulares e irregulares, incluido el de cuadrados y rectángulos.
+3° básico | OA22 | Comprender la medida de peso en gramos y kilogramos, relacionarlos y estimar pesos de objetos.
+3° básico | OA25 | Construir, leer e interpretar pictogramas y gráficos de barra simple con escala.
+4° básico | OA1 | Representar, leer, escribir, comparar y ordenar números hasta 10 000, según su valor posicional.
+4° básico | OA2 | Aplicar cálculo mental con conteo hacia adelante y atrás, dobles, mitades y descomposición.
+4° básico | OA3 | Comprender la adición y sustracción hasta 1000 con estrategias, estimación, problemas y algoritmos.
+4° básico | OA5 | Multiplicar números de tres dígitos por uno de un dígito con estrategias, estimación y algoritmo.
+4° básico | OA6 | Dividir dividendos de dos dígitos por divisores de un dígito, relacionando división y multiplicación.
+4° básico | OA7 | Resolver problemas rutinarios y no rutinarios con dinero, seleccionando la operación apropiada.
+4° básico | OA8 | Comprender fracciones con denominadores 100, 12, 10, 8, 6, 5, 4, 3 y 2 en distintas representaciones.
+4° básico | OA9 | Resolver sumas y restas de fracciones con igual denominador, de forma concreta y pictórica.
+4° básico | OA13 | Identificar y describir patrones numéricos en tablas que involucren una operación.
+4° básico | OA14 | Resolver ecuaciones e inecuaciones de un paso con sumas y restas, comprobando resultados.
+4° básico | OA17 | Comprender la línea de simetría: identificar, crear y dibujar líneas de simetría en figuras 2D.
+4° básico | OA18 | Trasladar, rotar y reflejar figuras 2D.
+4° básico | OA19 | Construir ángulos con transportador y compararlos.
+4° básico | OA22 | Medir longitudes en m y cm, y transformar entre ambas unidades en la resolución de problemas.
+4° básico | OA23 | Comprender el área de rectángulos y cuadrados en cm² y m², y construir rectángulos de igual área.
+4° básico | OA24 | Comprender el volumen de un cuerpo, midiéndolo y registrándolo en unidades de cubo.
+4° básico | OA25 | Realizar encuestas, analizar datos y comparar resultados con muestras aleatorias usando tablas y gráficos.
+4° básico | OA27 | Leer e interpretar pictogramas y gráficos de barra simple con escala, comunicando conclusiones.
+5° básico | OA1 | Representar y describir números naturales de más de seis dígitos y menores que mil millones.
+5° básico | OA3 | Multiplicar números de dos dígitos por dos dígitos con estimación, cálculo mental, algoritmo y problemas.
+5° básico | OA4 | Dividir dividendos de tres dígitos por divisores de un dígito, interpretando el resto.
+5° básico | OA6 | Resolver problemas con las cuatro operaciones y sus combinaciones, usando calculadora y computador.
+5° básico | OA7 | Comprender fracciones propias, sus equivalencias mediante simplificación y amplificación, y su comparación.
+5° básico | OA10 | Determinar el decimal que corresponde a fracciones con denominador 2, 4, 5 y 10.
+5° básico | OA11 | Comparar y ordenar decimales hasta la milésima.
+5° básico | OA13 | Resolver problemas con sumas y restas de fracciones propias o decimales hasta la milésima.
+5° básico | OA14 | Descubrir una regla que explique una sucesión dada y permita hacer predicciones.
+5° básico | OA15 | Resolver problemas con ecuaciones e inecuaciones de un paso con sumas y restas.
+5° básico | OA17 | Describir y ejemplificar aristas, caras y lados paralelos, que se intersectan o son perpendiculares.
+5° básico | OA18 | Comprender la congruencia mediante traslación, reflexión y rotación en cuadrículas y software.
+5° básico | OA19 | Medir longitudes en m, cm y mm en la resolución de problemas.
+5° básico | OA21 | Diseñar y construir rectángulos dados su perímetro, su área o ambos, y sacar conclusiones.
+5° básico | OA22 | Calcular áreas de triángulos, paralelogramos y trapecios, y estimar áreas de figuras irregulares.
+5° básico | OA23 | Calcular el promedio de un conjunto de datos e interpretarlo en su contexto.
+5° básico | OA24 | Describir la posibilidad de ocurrencia de un evento aleatorio con los términos seguro, posible, poco posible e imposible.
+5° básico | OA26 | Leer, interpretar y completar tablas y gráficos de barra y de línea, comunicando conclusiones.
+6° básico | OA2 | Realizar cálculos con las cuatro operaciones en la resolución de problemas, usando calculadora sobre 10 000.
+6° básico | OA3 | Comprender el concepto de razón de manera concreta, pictórica y simbólica.
+6° básico | OA4 | Comprender el concepto de porcentaje de manera concreta, pictórica y simbólica.
+6° básico | OA5 | Comprender fracciones y números mixtos, sus equivalencias con impropias y su ubicación en la recta numérica.
+6° básico | OA7 | Multiplicar y dividir decimales por naturales de un dígito, múltiplos de 10 y decimales hasta la milésima.
+6° básico | OA8 | Resolver problemas con sumas y restas de fracciones propias, impropias, mixtos o decimales hasta la milésima.
+6° básico | OA11 | Resolver ecuaciones de primer grado con una incógnita, usando balanza o procedimientos formales.
+6° básico | OA13 | Comprender el área de cubos y paralelepípedos calculando el área de sus redes.
+6° básico | OA16 | Identificar los ángulos opuestos por el vértice y complementarios que se forman entre dos rectas que se cortan.
+6° básico | OA18 | Calcular la superficie de cubos y paralelepípedos expresándola en cm² y m².
+6° básico | OA19 | Calcular el volumen de cubos y paralelepípedos expresándolo en cm³, m³ y mm³.
+6° básico | OA23 | Conjeturar la tendencia de resultados al repetir experimentos con dados, monedas u otros.
+6° básico | OA24 | Leer e interpretar gráficos de barra doble y circulares, comunicando sus conclusiones.
+7° básico | OA1 | Sumar y restar números enteros en la recta numérica, de forma concreta, pictórica y simbólica, y resolver problemas cotidianos.
+7° básico | OA3 | Multiplicar y dividir fracciones y decimales positivos de forma concreta, pictórica y simbólica, y resolver problemas.
+7° básico | OA4 | Comprender el porcentaje: representarlo pictóricamente, calcularlo de varias formas y aplicarlo a situaciones sencillas.
+7° básico | OA6 | Usar el lenguaje algebraico para generalizar relaciones, formular reglas y propiedades, y construir ecuaciones.
+7° básico | OA8 | Comprender proporciones directas e inversas mediante tablas, gráficos, análisis de sus características y resolución de problemas.
+7° básico | OA11 | Relacionar radio, diámetro y perímetro del círculo, estimar su perímetro y área, y aplicarlos en problemas.
+7° básico | OA12 | Construir de forma manual o con software rectas y puntos notables, y triángulos y cuadriláteros congruentes.
+7° básico | OA14 | Identificar puntos en el plano cartesiano usando pares ordenados y vectores, de forma concreta y pictórica.
+7° básico | OA16 | Representar datos de una muestra con tablas de frecuencias absolutas y relativas y gráficos apropiados.
+7° básico | OA18 | Explicar probabilidades de experimentos mediante estimación intuitiva, frecuencias relativas, razones, fracciones o porcentajes.
+8° básico | OA1 | Multiplicar y dividir números enteros de forma concreta, pictórica y simbólica, aplicando la regla de los signos y resolviendo problemas.
+8° básico | OA2 | Multiplicar y dividir números racionales en problemas, usando la recta numérica y fracciones, decimales y enteros.
+8° básico | OA3 | Explicar la multiplicación y división de potencias de base y exponente natural hasta 3, de forma concreta, pictórica y simbólica.
+8° básico | OA4 | Estimar, representar y aplicar raíces cuadradas de números naturales en situaciones geométricas y de la vida diaria.
+8° básico | OA8 | Modelar situaciones cotidianas y de otras asignaturas con ecuaciones lineales de distintas formas.
+8° básico | OA10 | Comprender la función afín como suma de una constante y una función lineal, y aplicarla a problemas como el interés simple.
+8° básico | OA12 | Explicar la validez del teorema de Pitágoras y aplicarlo en problemas geométricos y de la vida cotidiana.
+8° básico | OA13 | Describir traslaciones, rotaciones y reflexiones de figuras 2D usando vectores, ejes del plano y puntos del plano.
+8° básico | OA15 | Comprender percentiles y cuartiles, representarlos con diagramas como el de cajón y usarlos para comparar poblaciones.
+8° básico | OA16 | Evaluar la presentación de datos comparando gráficos, justificando su elección y detectando manipulaciones.
+8° básico | OA17 | Explicar el principio combinatorio multiplicativo con situaciones, tablas y árboles, y calcular probabilidades compuestas.
+I medio | OA1 | Calcular operaciones con números racionales en forma simbólica.
+I medio | OA2 | Comprender potencias de base racional y exponente entero, sus propiedades, el crecimiento o decrecimiento y su uso en problemas.
+I medio | OA3 | Desarrollar productos notables de forma concreta, pictórica y simbólica, incluyendo completar el cuadrado del binomio.
+I medio | OA4 | Resolver sistemas de ecuaciones lineales 2x2 de problemas reales mediante representaciones gráficas y simbólicas.
+I medio | OA8 | Comprender la homotecia, relacionándola con la perspectiva, construyendo objetos y resolviendo problemas.
+I medio | OA10 | Aplicar propiedades de semejanza y proporcionalidad a modelos a escala y situaciones de la vida diaria.
+I medio | OA12 | Registrar distribuciones de dos características de una población en tablas de doble entrada y nubes de puntos.
+I medio | OA14 | Desarrollar las reglas aditiva, multiplicativa y combinada de probabilidades para resolver problemas.
+II medio | OA1 | Realizar cálculos y estimaciones con números reales, usando descomposición y propiedades de raíces, en problemas diversos.
+II medio | OA2 | Relacionar potencias, raíces enésimas y logaritmos, convirtiendo entre ellas y resolviendo problemas.
+II medio | OA3 | Comprender la función cuadrática, representarla en tablas y gráficos, determinar puntos especiales y usarla como modelo.
+II medio | OA5 | Comprender la inversa de una función mediante tablas, gráficos y reflexión, y calcularla en casos lineales y cuadráticos.
+II medio | OA8 | Comprender razones trigonométricas de seno, coseno y tangente en triángulos rectángulos y aplicarlas para calcular ángulos y lados.
+II medio | OA11 | Usar permutaciones y combinatoria sencilla para calcular probabilidades de eventos y resolver problemas.

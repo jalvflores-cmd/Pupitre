@@ -37,6 +37,9 @@ class Command(BaseCommand):
     def handle(self, *args, **opciones):
         random.seed(42)
         anio = anio_actual()
+        from academico.curriculo import cargar_oficiales
+        from academico.models import ObjetivoAprendizaje
+        cargar_oficiales(ObjetivoAprendizaje)
         datos_escuela = {"nombre": "Escuela Gabriela Mistral", "rbd": "3660", "comuna": "Chillán", "region": "Ñuble",
                          "director": "Jorge Sandoval Morales", "jefe_utp": "Pedro Castillo Mena"}
         escuela = Establecimiento.objects.order_by("pk").first()
@@ -347,8 +350,11 @@ class Command(BaseCommand):
             d += timedelta(days=1)
         lista = (Curso.objects.filter(anio=anio, profesor_jefe__isnull=False)
                  .order_by("-nivel__orden", "letra")[:cursos])
+        from academico.curriculo import oas_para
+
         for curso in lista:
             acs = list(curso.asignaturas_curso.filter(profesor__isnull=False).select_related("asignatura", "profesor"))
+            oas_de = {ac.pk: list(oas_para(ac)) for ac in acs}
             estudiantes = list(curso.estudiantes.filter(activo=True))
             faltador = {e.id: rnd.choice([0.02, 0.03, 0.04, 0.06]) for e in estudiantes}
             for d in dias:
@@ -358,10 +364,16 @@ class Command(BaseCommand):
                 for slot, ac in enumerate(del_dia[:5]):
                     n = Clase.objects.filter(asignatura_curso=ac).count()
                     oa, actividad = _contenido_demo(ac.asignatura.nombre, n)
+                    oficiales = oas_de[ac.pk]
+                    oficial = oficiales[(n // 2) % len(oficiales)] if oficiales else None
+                    if oficial:
+                        oa = f"OA {oficial.numero}: {oficial.texto}"
                     clase = Clase.objects.create(
                         asignatura_curso=ac, fecha=d, hora_inicio=HORARIO[slot],
                         bloques=2, unidad=f"Unidad {3 if semestre_de(d) == 2 else 1}", objetivo=oa,
                         actividades=actividad, recursos="Texto escolar, guía de trabajo, proyector", creada_por=ac.profesor)
+                    if oficial:
+                        clase.oas.add(oficial)
                     if d > hoy:
                         if n == 6:
                             ev = Evaluacion.objects.create(asignatura_curso=ac, nombre="Prueba de unidad", fecha=d,

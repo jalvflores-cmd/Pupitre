@@ -19,8 +19,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import ClaseForm, VisadoForm
-from .models import AsignaturaCurso, AsistenciaClase, Clase, Curso, Estudiante, Evaluacion, anio_actual
+from django.http import JsonResponse
+
+from . import curriculo
+from .forms import ClaseForm, ObjetivoForm, VisadoForm
+from .models import (
+    GRADOS_CURRICULUM, AsignaturaCurso, Establecimiento, AsistenciaClase, Clase, Curso, Estudiante, Evaluacion, ObjetivoAprendizaje,
+    anio_actual,
+)
 from .permisos import (
     asignaturas_curso_visibles, es_gestion, es_solo_lectura, exigir, puede_editar_notas, puede_ver_asignatura_curso,
     puede_ver_informe_curso,
@@ -160,18 +166,26 @@ def clase_form(request, ac_pk=None, pk=None):
     if clase.firmada:
         messages.warning(request, "La clase ya está firmada y no se puede modificar.")
         return redirect("clase_detalle", pk=clase.pk)
-    form = ClaseForm(request.POST or None, instance=clase)
+    oas = curriculo.oas_para(ac)
+    inicial = {}
+    if not pk and request.GET.get("evaluacion"):
+        inicial = {"es_evaluacion": True, "nombre_evaluacion": request.GET["evaluacion"][:100]}
+        if request.GET.get("objetivo"):
+            inicial["objetivo"] = request.GET["objetivo"][:2000]
+    form = ClaseForm(request.POST or None, instance=clase, oas=oas, initial=inicial)
     if request.method == "POST" and form.is_valid():
         with transaction.atomic():
             clase = form.save(commit=False)
             if not clase.pk:
                 clase.creada_por = request.user
             clase.save()
+            form.save_m2m()
             _sincronizar_evaluacion(request, clase, form.cleaned_data)
         messages.success(request, "Clase guardada en el leccionario.")
         return redirect("clase_detalle", pk=clase.pk)
     return render(request, "academico/clase_form.html", {
-        "form": form, "ac": ac, "clase": clase,
+        "form": form, "ac": ac, "clase": clase, "hay_oas": oas.exists(),
+        "grado_txt": dict(GRADOS_CURRICULUM).get(curriculo.grado_de_curso(ac.curso), ""),
         "titulo": f"{'Editar' if pk else 'Planificar'} clase – {ac.asignatura} · {ac.curso.nombre_corto}",
     })
 
@@ -356,3 +370,94 @@ def asistencia_mes_pdf(request, pk):
     datos = datos_mes(curso, anio, mes)
     nombre = f"asistencia_{slugify(curso.nombre_corto)}_{anio}-{mes:02d}.pdf"
     return _pdf(pdf_asistencia_mes(curso, datos, f"{NOMBRES_MES[mes]} {anio}"), nombre)
+
+
+# --------------------------------------------------------------------------- asistente de planificación
+
+@login_required
+def asistente_clase(request, ac_pk):
+    """Propuesta de clase y evaluaciones para un OA (JSON, sin internet ni IA)."""
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura"), pk=ac_pk)
+    exigir(puede_ver_asignatura_curso(request.user, ac))
+    texto = ""
+    if request.GET.get("oa"):
+        oa = get_object_or_404(curriculo.oas_para(ac), pk=request.GET["oa"])
+        texto = f"OA {oa.numero}: {oa.texto}"
+    texto = texto or request.GET.get("texto", "").strip()
+    if not texto:
+        return JsonResponse({"error": "Elija un OA o escriba el objetivo de la clase."}, status=400)
+    try:
+        bloques = max(1, min(6, int(request.GET.get("bloques") or 2)))
+    except ValueError:
+        bloques = 2
+    propuesta = curriculo.proponer_clase(texto, curriculo.clave_asignatura(ac.asignatura.nombre), bloques)
+    propuesta["objetivo"] = texto
+    return JsonResponse(propuesta)
+
+
+@login_required
+def evaluacion_unidad(request, ac_pk):
+    """Sugerencia de evaluación sumativa y formativas según lo planificado en el leccionario."""
+    ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura", "profesor"), pk=ac_pk)
+    exigir(puede_ver_asignatura_curso(request.user, ac))
+    unidades = [u for u in ac.clases.order_by("fecha").values_list("unidad", flat=True).distinct() if u]
+    unidades = list(dict.fromkeys(unidades))
+    unidad = request.GET.get("unidad", unidades[-1] if unidades else "")
+    propuesta = curriculo.evaluacion_de_unidad(ac, unidad or None)
+    return render(request, "academico/evaluacion_unidad.html", {
+        "ac": ac, "unidades": unidades, "unidad": unidad, "p": propuesta,
+        "editable": puede_editar_notas(request.user, ac) and not es_solo_lectura(request.user),
+        "nombre_sugerido": f"Evaluación {unidad}".strip() if unidad else "Evaluación sumativa",
+        "objetivo_sugerido": (f"Evaluación sumativa ({propuesta['tipo'].lower()}) de: "
+                              + "; ".join(f["oa"].split(":")[0] for f in propuesta["tabla"]))[:2000] if propuesta else "",
+    })
+
+
+@login_required
+def curriculum(request):
+    """Catálogo de OA: oficiales precargados y los propios del establecimiento."""
+    qs = ObjetivoAprendizaje.disponibles()
+    asig = request.GET.get("asignatura", "")
+    grado = request.GET.get("grado", "")
+    q = request.GET.get("q", "").strip()
+    if asig:
+        qs = qs.filter(asignatura=asig)
+    if grado.isdigit():
+        qs = qs.filter(grado=int(grado))
+    if q:
+        qs = qs.filter(texto__icontains=q)
+    puede = es_gestion(request.user) and not es_solo_lectura(request.user)
+    form = ObjetivoForm(request.POST or None, initial={"asignatura": asig or None, "grado": grado or None})
+    if request.method == "POST":
+        exigir(puede)
+        if request.POST.get("eliminar"):
+            oa = get_object_or_404(ObjetivoAprendizaje.objects.filter(establecimiento_id=Establecimiento.actual().pk),
+                                   pk=request.POST["eliminar"])
+            oa.delete()
+            messages.success(request, "OA eliminado.")
+            return redirect(request.get_full_path())
+        if request.FILES.get("archivo"):
+            from .importacion import importar_oas
+
+            try:
+                n = importar_oas(request.FILES["archivo"])
+                messages.success(request, f"Se importaron {n} OA.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect(request.get_full_path())
+        if form.is_valid():
+            oa = form.save(commit=False)
+            oa.establecimiento = Establecimiento.actual()
+            if ObjetivoAprendizaje.objects.filter(establecimiento=oa.establecimiento, asignatura=oa.asignatura,
+                                                  grado=oa.grado, numero=oa.numero).exists():
+                form.add_error("numero", "Ya existe un OA propio con ese número para esa asignatura y nivel.")
+            else:
+                oa.save()
+                messages.success(request, f"{oa.codigo} agregado.")
+                return redirect(f"{request.path}?asignatura={oa.asignatura}&grado={oa.grado}")
+    total = qs.count()
+    return render(request, "academico/curriculum.html", {
+        "oas": qs.order_by("asignatura", "grado", "numero")[:400], "total": total, "form": form, "puede": puede,
+        "asignaturas": ObjetivoAprendizaje._meta.get_field("asignatura").choices, "grados": GRADOS_CURRICULUM,
+        "asig": asig, "grado": grado, "q": q,
+    })

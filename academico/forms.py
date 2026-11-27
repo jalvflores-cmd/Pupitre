@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 
 from .models import (
-    Anotacion, Asignatura, Clase, Entrevista, Establecimiento, Estudiante, Evaluacion, Funcionario, OpcionCatalogo, RedApoyo,
+    Anotacion, Asignatura, Clase, Entrevista, Establecimiento, Estudiante, Evaluacion, Funcionario, ObjetivoAprendizaje, OpcionCatalogo, RedApoyo,
 )
 from .lectores import EXTENSIONES
 from .rut import normalizar_rut, validar_rut
@@ -384,17 +384,22 @@ class ClaseForm(BootstrapMixin, forms.ModelForm):
 
     class Meta:
         model = Clase
-        fields = ["fecha", "hora_inicio", "bloques", "unidad", "objetivo", "actividades", "recursos", "observaciones"]
+        fields = ["fecha", "hora_inicio", "bloques", "unidad", "oas", "objetivo", "actividades", "recursos",
+                  "observaciones"]
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "hora_inicio": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
             "objetivo": forms.Textarea(attrs={"rows": 2}),
             "actividades": forms.Textarea(attrs={"rows": 5}),
             "observaciones": forms.Textarea(attrs={"rows": 2}),
+            "oas": forms.CheckboxSelectMultiple,
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, oas=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["oas"].queryset = oas if oas is not None else self.fields["oas"].queryset.none()
+        self.fields["oas"].widget.attrs["class"] = "form-check-input"
+        self.fields["oas"].label = "OA del currículum nacional que trabaja esta clase"
         ev = self.instance.evaluacion if self.instance.pk else None
         if ev:
             self.fields["es_evaluacion"].initial = True
@@ -413,3 +418,10 @@ class VisadoForm(BootstrapMixin, forms.ModelForm):
         model = Clase
         fields = ["visado_utp"]
         widgets = {"visado_utp": forms.Textarea(attrs={"rows": 2})}
+
+
+class ObjetivoForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = ObjetivoAprendizaje
+        fields = ["asignatura", "grado", "numero", "texto", "unidad"]
+        widgets = {"texto": forms.Textarea(attrs={"rows": 3})}

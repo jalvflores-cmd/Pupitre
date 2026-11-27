@@ -907,3 +907,58 @@ class LibroDeClasesTests(BaseDatos):
         self.client.post(reverse("clase_detalle", args=[futura.pk]), {"accion": "guardar"})
         futura.refresh_from_db()
         self.assertFalse(futura.asistencia_registrada)
+
+
+class AsistentePlanificacionTests(BaseDatos):
+    def test_oa_precargados_y_mapeo(self):
+        from . import curriculo
+        from .models import ObjetivoAprendizaje
+        self.assertGreater(ObjetivoAprendizaje.objects.filter(establecimiento__isnull=True).count(), 400)
+        self.assertEqual(curriculo.clave_asignatura("Lengua y Literatura"), "lenguaje")
+        self.assertEqual(curriculo.clave_asignatura("Educación Física y Salud"), "educacion_fisica")
+        self.assertEqual(curriculo.grado_desde_texto("II Medio"), 10)
+        oas = curriculo.oas_para(self.mat)  # 5° básico Matemática
+        self.assertTrue(oas.filter(numero=22, texto__icontains="áreas").exists())
+        self.assertEqual(curriculo.nivel_bloom("Resolver problemas con fracciones"), "aplicar")
+        self.assertEqual(curriculo.nivel_bloom("Escribir artículos informativos"), "crear")
+
+    def test_asistente_propone_y_planificacion_guarda_oa(self):
+        from . import curriculo
+        oa = curriculo.oas_para(self.mat).first()
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("asistente_clase", args=[self.mat.pk]), {"oa": oa.pk, "bloques": 2})
+        datos = r.json()
+        self.assertIn("Inicio", datos["actividades"])
+        self.assertTrue(datos["formativas"] and datos["sumativa"]["rubrica"])
+        r = self.client.get(reverse("clase_crear", args=[self.mat.pk]))
+        self.assertContains(r, "Asistente de planificación")
+        self.client.post(reverse("clase_crear", args=[self.mat.pk]), {
+            "fecha": "2026-05-04", "bloques": 2, "unidad": "Unidad 2", "objetivo": datos["objetivo"],
+            "actividades": datos["actividades"], "oas": [oa.pk]})
+        from .models import Clase
+        clase = Clase.objects.get(unidad="Unidad 2")
+        self.assertEqual(list(clase.oas.all()), [oa])
+        r = self.client.get(reverse("evaluacion_unidad", args=[self.mat.pk]) + "?unidad=Unidad+2")
+        self.assertContains(r, "Tabla de especificaciones")
+        self.assertContains(r, "100 %")
+        # otro profesor no usa el asistente de esta asignatura
+        self.client.force_login(self.profe_len)
+        self.client.force_login(User.objects.create_user("otro", password="x"))
+        self.assertEqual(self.client.get(reverse("asistente_clase", args=[self.mat.pk]), {"oa": oa.pk}).status_code, 403)
+
+    def test_utp_agrega_e_importa_oa_propios_aislados(self):
+        from .models import Establecimiento, ObjetivoAprendizaje
+        from .tenencia import en_establecimiento
+        self.client.force_login(self.utp)
+        self.client.post(reverse("curriculum"), {"asignatura": "otra", "grado": 5, "numero": 1,
+                                                 "texto": "Cultivar un huerto escolar"})
+        archivo = xlsx([["Asignatura", "Nivel", "OA", "Texto"], ["Inglés", "5° básico", 3, "Leer textos breves"]])
+        self.client.post(reverse("curriculum"), {"archivo": archivo})
+        propios = ObjetivoAprendizaje.objects.filter(establecimiento__isnull=False)
+        self.assertEqual(sorted(propios.values_list("asignatura", flat=True)), ["ingles", "otra"])
+        otro = Establecimiento.objects.create(nombre="Otro")
+        with en_establecimiento(otro):
+            self.assertFalse(ObjetivoAprendizaje.disponibles().filter(texto__icontains="huerto").exists())
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.post(reverse("curriculum"), {"asignatura": "otra", "grado": 5, "numero": 2,
+                                                                  "texto": "x"}).status_code, 403)

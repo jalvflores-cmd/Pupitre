@@ -1,0 +1,86 @@
+1° básico | OA1 | Reconocer que los seres vivos crecen, responden a estímulos, se reproducen y necesitan agua, alimento y aire.
+1° básico | OA5 | Reconocer y comparar plantas y animales de Chile según sus rasgos observables y proponer medidas para cuidarlos.
+1° básico | OA6 | Identificar la ubicación y función de los sentidos y proponer medidas para protegerlos y prevenir riesgos.
+1° básico | OA8 | Explorar tipos de materiales, clasificarlos según sus propiedades e identificar su uso en la vida cotidiana.
+1° básico | OA9 | Observar y describir cambios en los materiales al aplicarles fuerza, luz, calor y agua.
+1° básico | OA11 | Describir y registrar el ciclo día-noche y sus efectos en los seres vivos y el ambiente.
+2° básico | OA3 | Comparar las etapas del ciclo de vida de mamíferos, aves, insectos y anfibios, relacionándolas con su hábitat.
+2° básico | OA5 | Identificar animales nativos en peligro de extinción y el deterioro de su hábitat, y proponer medidas de protección.
+2° básico | OA7 | Ubicar y explicar la función del corazón, pulmones, estómago, esqueleto y músculos.
+2° básico | OA8 | Explicar la importancia de la actividad física para los músculos y el corazón, y proponer formas de practicarla.
+2° básico | OA9 | Investigar el agua: escurre, adapta su forma al recipiente, disuelve sal y azúcar, se evapora y congela.
+2° básico | OA11 | Describir el ciclo del agua y proponer acciones cotidianas para cuidar este recurso.
+2° básico | OA12 | Reconocer características del tiempo atmosférico, como precipitaciones, viento y temperatura, y sus cambios anuales.
+2° básico | OA14 | Relacionar los cambios del tiempo con las estaciones del año y sus efectos en los seres vivos y el ambiente.
+3° básico | OA2 | Observar, registrar e identificar plantas de Chile, incluyendo especies autóctonas y cultivos principales.
+3° básico | OA4 | Describir la importancia de las plantas para los seres vivos, las personas y el ambiente, y proponer medidas de cuidado.
+3° básico | OA5 | Explicar el uso adecuado de los recursos y proponer acciones para reutilizarlos, reducirlos y reciclarlos.
+3° básico | OA6 | Clasificar los alimentos según sus efectos en la salud y proponer hábitos alimenticios saludables.
+3° básico | OA9 | Investigar la luz: viaja en línea recta, se refleja y se separa en colores.
+3° básico | OA10 | Investigar el sonido: se propaga, se refleja o absorbe, viaja por materiales y tiene tono e intensidad.
+3° básico | OA11 | Describir componentes del Sistema Solar según su tamaño, ubicación, apariencia y distancia a la Tierra.
+3° básico | OA12 | Explicar con modelos los movimientos de rotación y traslación de la Tierra y sus efectos.
+4° básico | OA1 | Reconocer que los ecosistemas están formados por elementos vivos y no vivos que interactúan entre sí.
+4° básico | OA2 | Comparar adaptaciones de plantas y animales para sobrevivir en los ecosistemas según su estructura y conducta.
+4° básico | OA3 | Dar ejemplos de cadenas alimentarias e identificar productores, consumidores y descomponedores en ecosistemas de Chile.
+4° básico | OA6 | Explicar con modelos cómo músculos, huesos y articulaciones mueven el cuerpo y los beneficios de la actividad física.
+4° básico | OA7 | Identificar estructuras del sistema nervioso y explicar su función de conducción (médula, nervios) y control (cerebro).
+4° básico | OA9 | Demostrar experimentalmente que la materia tiene masa y ocupa espacio, usando materiales del entorno.
+4° básico | OA10 | Comparar los estados sólido, líquido y gaseoso según su capacidad de fluir y cambiar de forma y volumen.
+4° básico | OA12 | Demostrar experimentalmente cómo las fuerzas cambian la forma, la rapidez y la dirección de los objetos.
+4° básico | OA15 | Describir con modelos la estructura en capas de la Tierra (corteza, manto y núcleo) y sus características.
+4° básico | OA16 | Explicar los cambios de la superficie terrestre por la interacción de sus capas y el movimiento de las placas tectónicas.
+5° básico | OA1 | Explicar que los seres vivos están formados por células organizadas en tejidos, órganos y sistemas.
+5° básico | OA5 | Analizar la dieta diaria (variedad, porciones y frecuencia) y reconocer alimentos para crecer, repararse y moverse.
+5° básico | OA6 | Investigar y comunicar los daños del cigarrillo en los sistemas respiratorio y circulatorio.
+5° básico | OA7 | Investigar microorganismos (bacterias, virus, hongos) benéficos y dañinos, y proponer medidas de cuidado e higiene.
+5° básico | OA10 | Distinguir conductores (cobre, aluminio) y aislantes (plásticos, goma) de electricidad y manejar circuitos con seguridad.
+5° básico | OA11 | Explicar la importancia de la energía eléctrica en la vida diaria y proponer medidas de ahorro y uso responsable.
+5° básico | OA12 | Describir y comparar el agua dulce y salada de la Tierra, reconociendo la escasez relativa de agua dulce.
+5° básico | OA14 | Investigar efectos humanos sobre océanos, ríos y glaciares, y proponer acciones para proteger reservas hídricas en Chile.
+6° básico | OA1 | Explicar experimentalmente la fotosíntesis (agua, CO2, luz) y la liberación de oxígeno, con aportes científicos históricos.
+6° básico | OA2 | Modelar el flujo de energía y materia desde productores hacia otros seres vivos, mediante cadenas y redes alimentarias.
+6° básico | OA4 | Identificar y describir funciones de las principales estructuras del sistema reproductor femenino y masculino.
+6° básico | OA6 | Reconocer beneficios de la actividad física regular y el cuidado de la higiene corporal durante la pubertad.
+6° básico | OA8 | Explicar que la energía permite cambios en objetos y procesos vitales, y que casi todos los recursos vienen del Sol.
+6° básico | OA10 | Demostrar experimentalmente que el calor pasa de un objeto caliente a uno frío hasta igualar temperaturas.
+6° básico | OA11 | Clasificar recursos energéticos en renovables y no renovables y proponer medidas de uso responsable.
+6° básico | OA13 | Demostrar experimentalmente los cambios de estado de la materia (fusión, evaporación, condensación, etc.).
+6° básico | OA16 | Describir atmósfera, litósfera e hidrósfera, que permiten la vida y proveen recursos, y proponer medidas de protección.
+6° básico | OA18 | Explicar las consecuencias de la erosión (viento, agua, actividades humanas) en la superficie terrestre.
+7° básico | OA1 | Explicar los aspectos biológicos, afectivos y sociales de la sexualidad, incluyendo pubertad y responsabilidad individual.
+7° básico | OA2 | Explicar cómo se forma un nuevo individuo: ciclo menstrual, gametos, métodos anticonceptivos y responsabilidad parental.
+7° básico | OA3 | Describir mediante investigación las ITS (como VIH y herpes): transmisión, prevención, síntomas y secuelas.
+7° básico | OA5 | Comparar virus, bacterias y hongos en estructura, rasgos de seres vivos y efectos positivos y negativos sobre la salud.
+7° básico | OA7 | Investigar experimentalmente los efectos de las fuerzas gravitacional, de roce y elástica en situaciones cotidianas.
+7° básico | OA9 | Explicar con tectónica de placas la distribución de volcanes y sismos, sus tipos de interacción y la deriva continental.
+7° básico | OA12 | Modelar que el clima es dinámico, influido por presión, temperatura, humedad, circulación y movimientos de la Tierra.
+7° básico | OA13 | Investigar gases ideales ante presión, volumen y temperatura, explicándolos con sus leyes y la teoría cinético-molecular.
+7° básico | OA14 | Clasificar la materia en sustancias puras y mezclas, y explicar métodos de separación y su uso industrial.
+8° básico | OA2 | Modelar la relación entre función celular y sus partes, distinguiendo células eucariontes, procariontes y tipos celulares.
+8° básico | OA4 | Crear modelos de la respuesta de las plantas a estímulos mediante estructuras especializadas, como en el cuerpo humano.
+8° básico | OA5 | Explicar la interacción de sistemas digestivo, circulatorio, respiratorio y excretor, y prevenir enfermedades asociadas.
+8° básico | OA7 | Evaluar factores de un cuerpo saludable y proponer un plan con alimentación balanceada, ejercicio y evitar drogas.
+8° básico | OA10 | Analizar circuitos domiciliarios y comparar serie y paralelo en energía, voltaje, corriente, potencia y resistencia.
+8° básico | OA11 | Explicar el calor como transferencia de energía térmica: propagación, efectos, cantidad cedida y escalas de temperatura.
+8° básico | OA12 | Analizar la evolución del conocimiento de la materia: desde Dalton hasta los modelos atómicos de Thomson, Rutherford y Bohr.
+8° básico | OA14 | Usar la tabla periódica para predecir propiedades de elementos: número y masa atómica, conductividad, brillo y enlaces.
+I medio | OA2 | Evidenciar con datos que la biodiversidad es producto de la evolución (fósiles, ADN, selección natural).
+I medio | OA4 | Explicar cómo se organizan e interactúan los seres vivos en ecosistemas de Chile, como depredación y mutualismo.
+I medio | OA7 | Explicar cómo la fotosíntesis y la respiración celular sostienen el flujo de energía y el ciclo de la materia.
+I medio | OA8 | Evaluar efectos humanos y naturales en el equilibrio de ecosistemas y recursos, y medidas para el desarrollo sustentable.
+I medio | OA10 | Explicar con el modelo ondulatorio fenómenos del sonido (eco, resonancia, Doppler), sus cualidades y aplicaciones.
+I medio | OA11 | Explicar la reflexión, refracción e interferencia de la luz con modelos corpuscular y ondulatorio, y sus aplicaciones.
+I medio | OA14 | Crear modelos de fases lunares, eclipses, estaciones y comparación de planetas con la Tierra en el sistema solar.
+I medio | OA16 | Investigar la astronomía en Chile y el mundo: ventajas del clima, tecnología, información de la luz y aportes chilenos.
+I medio | OA17 | Mostrar con evidencias que fermentación, combustión y oxidación son reacciones químicas, y representarlas con ecuaciones.
+I medio | OA20 | Relacionar cuantitativamente reactantes y productos (estequiometría) y explicar la formación de glucosa en la fotosíntesis.
+II medio | OA1 | Explicar cómo el sistema nervioso coordina respuestas a estímulos y sus cuidados, como el sueño y evitar drogas.
+II medio | OA3 | Explicar la sexualidad y reproducción humanas considerando dimensiones biológicas, afectivas, sociales y la responsabilidad.
+II medio | OA6 | Argumentar con evidencias la herencia del material genético; comparar mitosis y meiosis, y anomalías como el cáncer.
+II medio | OA8 | Explicar aplicaciones de la manipulación genética en alimentos y fármacos, y evaluar sus implicancias éticas y sociales.
+II medio | OA9 | Analizar, mediante experimentos, el movimiento rectilíneo uniforme y acelerado usando posición, velocidad y aceleración.
+II medio | OA10 | Explicar con experimentos los efectos de una fuerza neta sobre un objeto, usando leyes de Newton y diagrama de cuerpo libre.
+II medio | OA13 | Demostrar que el conocimiento del Universo cambia con nuevas evidencias: modelos geocéntrico, heliocéntrico y Big Bang.
+II medio | OA15 | Explicar con modelos y experimentos las propiedades de soluciones: estado, soluto, solvente y concentración.
+II medio | OA17 | Crear modelos del carbono y explicar sus propiedades como base de biomoléculas y de hidrocarburos como el petróleo.

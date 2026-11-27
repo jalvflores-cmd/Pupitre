@@ -617,3 +617,43 @@ def _usa_libro(curso):
     from .libro import curso_usa_libro
 
     return curso.pk is not None and curso_usa_libro(curso)
+
+
+# --------------------------------------------------------------------------- Currículum (OA propios)
+
+def importar_oas(archivo):
+    """Importa OA propios del establecimiento. Columnas: Asignatura, Nivel, OA, Texto (y opcional Unidad)."""
+    from .curriculo import clave_asignatura, grado_desde_texto
+    from .models import Establecimiento, ObjetivoAprendizaje
+
+    columnas = {"asignatura": "asignatura", "nivel": "nivel", "curso": "nivel", "oa": "numero", "numero": "numero",
+                "n": "numero", "texto": "texto", "objetivo": "texto", "objetivodeaprendizaje": "texto",
+                "unidad": "unidad"}
+    try:
+        indices, filas = _filas_con_encabezado(archivo, columnas)
+    except ErrorImportacion as e:
+        raise ValueError(str(e))
+    faltan = {"asignatura", "nivel", "numero", "texto"} - set(indices)
+    if faltan:
+        raise ValueError("El archivo debe tener las columnas Asignatura, Nivel, OA y Texto.")
+    est = Establecimiento.actual()
+    errores, n = [], 0
+    with transaction.atomic():
+        for fila, d in filas:
+            grado = grado_desde_texto(_texto(d["nivel"]))
+            try:
+                numero = int(re.sub(r"\D", "", _texto(d["numero"])) or "x")
+            except ValueError:
+                numero = None
+            texto = _texto(d["texto"])
+            if not grado or not numero or not texto:
+                errores.append(f"Fila {fila}: revise nivel (ej. «5° básico», «I medio»), N° de OA y texto.")
+                continue
+            ObjetivoAprendizaje.objects.update_or_create(
+                establecimiento=est, asignatura=clave_asignatura(_texto(d["asignatura"])), grado=grado, numero=numero,
+                defaults={"texto": texto, "unidad": _texto(d.get("unidad"))[:120]})
+            n += 1
+        if errores:
+            transaction.set_rollback(True)
+            raise ValueError(" ".join(errores[:10]))
+    return n

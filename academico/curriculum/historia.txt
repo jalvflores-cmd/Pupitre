@@ -1,0 +1,113 @@
+1° básico | OA2 | Ordenar hechos cotidianos propios y familiares con referencias temporales relativas, como antes/después o ayer/hoy/mañana.
+1° básico | OA4 | Obtener y comunicar la historia de su familia (costumbres, fiestas, roles) preguntando a adultos cercanos.
+1° básico | OA6 | Reconocer expresiones culturales, fiestas y tradiciones locales y nacionales como elementos de identidad.
+1° básico | OA7 | Conocer la vida de personas que aportaron a Chile en distintos ámbitos, como fundadores, científicos o artistas.
+1° básico | OA9 | Ubicar Chile en mapas, junto con la cordillera, el océano Pacífico, Santiago, su región, capital y localidad.
+1° básico | OA10 | Describir paisajes locales con vocabulario geográfico y ubicación relativa (derecha, izquierda, delante, detrás).
+1° básico | OA12 | Conocer cómo viven niños de otros países mediante imágenes y relatos, ubicándolos en mapas y comparándolos con Chile.
+1° básico | OA14 | Explicar y aplicar normas de convivencia, seguridad y autocuidado en la familia, la escuela y la vía pública.
+1° básico | OA15 | Identificar el aporte a la comunidad de la escuela, la municipalidad, el hospital o la posta, Carabineros y su personal.
+2° básico | OA1 | Describir la vida de pueblos originarios chilenos precolombinos: territorio, roles, herramientas, creencias y fiestas.
+2° básico | OA2 | Comparar la vida actual de pueblos indígenas (mapuche, aimara, rapa nui) con la precolombina: continuidades y cambios.
+2° básico | OA3 | Distinguir aportes de pueblos originarios y españoles a la sociedad chilena, y reconocerla como mestiza.
+2° básico | OA4 | Reconocer la influencia de inmigrantes europeos, orientales, árabes y latinoamericanos en la diversidad de Chile.
+2° básico | OA7 | Ubicar Chile, Santiago, su región y capital, y situar países vecinos y sudamericanos usando puntos cardinales.
+2° básico | OA8 | Clasificar paisajes de las zonas norte, centro y sur de Chile usando imágenes, fuentes y vocabulario geográfico.
+2° básico | OA14 | Proponer, aplicar y explicar normas para cuidarse, convivir en un ambiente acogedor y cuidar el patrimonio y el entorno.
+2° básico | OA15 | Identificar el aporte a la comunidad de transportes, comunicaciones, el mercado y las instituciones que protegen el patrimonio.
+2° básico | OA16 | Practicar y proponer acciones para cuidar los espacios públicos, dentro y fuera de la escuela, como responsabilidad colectiva.
+3° básico | OA3 | Explicar, con ejemplos, cómo culturas antiguas como griegos y romanos enfrentaron las necesidades humanas comunes.
+3° básico | OA4 | Comparar la vida en la Antigüedad con la actual: costumbres, trabajos, creencias, vestimenta y ciudades.
+3° básico | OA5 | Investigar un tema de interés sobre civilizaciones antiguas, con diversas fuentes, y comunicar lo aprendido.
+3° básico | OA7 | Distinguir hemisferios, ecuador, trópicos, polos, continentes y océanos en mapas y globos terráqueos.
+3° básico | OA8 | Ubicar en mapas las zonas climáticas del mundo, ejemplificar sus paisajes y las estrategias humanas para habitarlos.
+3° básico | OA11 | Asumir deberes como estudiante y en la vida cotidiana: tareas, orden, limpieza, pertenencias, salud e higiene.
+3° básico | OA14 | Reconocer que los niños tienen derechos que la sociedad debe garantizar para aprender y desarrollarse, con ejemplos.
+3° básico | OA15 | Investigar instituciones públicas y privadas (como JUNAEB, SERNAC o SII) y los servicios y trabajos que ofrecen.
+3° básico | OA16 | Participar responsable y activamente en el hogar y la escuela, cumpliendo compromisos en tareas y campañas solidarias.
+4° básico | OA4 | Analizar y comparar rasgos clave de las civilizaciones mayas, aztecas e incas.
+4° básico | OA5 | Investigar sobre pueblos indígenas actuales y la herencia maya, azteca e inca en cultura, comidas y lengua.
+4° básico | OA8 | Describir paisajes de América considerando climas, ríos, población, idiomas, países y ciudades, con vocabulario geográfico.
+4° básico | OA9 | Ubicar los principales recursos naturales de América, su uso y la importancia de cuidarlos para un desarrollo sostenible.
+4° básico | OA10 | Comparar paisajes de su región con los de América, identificando formas de adaptación y transformación humana.
+4° básico | OA11 | Distinguir actores de la organización política chilena (Presidente, ministros, senadores, diputados, alcaldes) y cómo se eligen.
+4° básico | OA12 | Reconocer derechos cotidianos, como educación, salud, alimentación, vivienda y protección, y cómo ejercerlos.
+4° básico | OA17 | Diseñar y participar en un proyecto grupal que resuelva un problema de la comunidad escolar.
+5° básico | OA2 | Describir la conquista de América y Chile: actores, expediciones, conflictos y fundación de ciudades.
+5° básico | OA3 | Analizar el impacto de la conquista en Europa y América en diversos ámbitos.
+5° básico | OA4 | Investigar los efectos de la conquista en los pueblos indígenas americanos, con fuentes del docente.
+5° básico | OA6 | Explicar aspectos centrales de la Colonia: dependencia de la metrópoli, rol de la Iglesia y sociedad mestiza.
+5° básico | OA7 | Explicar relaciones entre españoles y mapuches en la Colonia (guerra, mestizaje, trabajo, evangelización, parlamentos).
+5° básico | OA9 | Caracterizar las grandes zonas de Chile y sus paisajes: ubicación, clima, relieve, hidrografía, población y recursos.
+5° básico | OA10 | Ubicar en mapas recursos naturales de Chile, distinguir renovables de no renovables y explicar su cuidado sostenible.
+5° básico | OA12 | Investigar los riesgos naturales de su localidad (sismos, maremotos, inundaciones) y formas de protegerse.
+5° básico | OA13 | Reconocer que todas las personas son sujetos de derechos, sin importar etnia, sexo, origen u otras características.
+5° básico | OA14 | Reconocer que los derechos generan deberes para personas y Estado, incluida la participación pública y el sufragio.
+5° básico | OA18 | Diseñar y participar en un proyecto que solucione un problema escolar, con plan y presupuesto.
+5° básico | OA22 | Informarse y opinar sobre temas relevantes del país y del mundo mediante periódicos y TIC.
+6° básico | OA1 | Explicar antecedentes de la independencia americana y que la de Chile se enmarca en un proceso continental.
+6° básico | OA2 | Explicar la independencia de Chile: actores, bandos, avances y retrocesos, cabildo de 1810, batallas y Declaración.
+6° básico | OA3 | Describir la organización de la república: dificultades, grupos políticos, Constitución de 1833 y reformas liberales.
+6° básico | OA5 | Describir la formación del territorio chileno en el siglo XIX: colonización, Rapa Nui, Araucanía y Guerra del Pacífico.
+6° básico | OA7 | Explicar la democratización de la sociedad chilena en el siglo XX: acceso al voto, participación femenina y educación.
+6° básico | OA8 | Comparar visiones sobre el quiebre de la democracia, el régimen militar y la recuperación democrática del siglo XX.
+6° básico | OA9 | Explicar aspectos de la sociedad chilena que se mantienen y otros que han cambiado a lo largo de su historia.
+6° básico | OA11 | Caracterizar geográficamente las regiones político-administrativas de Chile según rasgos físicos y humanos.
+6° básico | OA12 | Comparar ambientes naturales de Chile y cómo las personas aprovechan y superan sus oportunidades y dificultades.
+6° básico | OA15 | Explicar la democracia chilena: división de poderes, cargos de elección popular y participación ciudadana.
+6° básico | OA16 | Reconocer que la Constitución organiza el país, garantiza derechos y libertades, y establece un sistema democrático.
+6° básico | OA17 | Comprender que los derechos de todas las personas deben ser respetados por pares, comunidad y Estado.
+6° básico | OA18 | Explicar que los derechos generan deberes y responsabilidades, clave para la convivencia y el bien común.
+6° básico | OA23 | Participar en proyectos de aporte a la escuela, comunidad o sociedad, como voluntariado, con plan y presupuesto.
+7° básico | OA2 | Explicar que agricultura, sedentarización y comercio fueron procesos de larga duración que transformaron el espacio.
+7° básico | OA3 | Explicar en las primeras civilizaciones la centralización del poder, ciudades, estratificación, religión y escritura.
+7° básico | OA6 | Analizar la democracia ateniense, su contraste con otras formas de gobierno antiguas y su relevancia actual.
+7° básico | OA7 | Relacionar la civilización romana (derecho, ejército, infraestructura) con la extensión de su imperio y el cristianismo.
+7° básico | OA9 | Explicar la formación de Europa tras la fragmentación imperial, con la Iglesia como articuladora de tradiciones.
+7° básico | OA12 | Analizar transformaciones europeas desde el siglo XII: vida urbana, demografía, tecnología, comercio y universidades.
+7° básico | OA13 | Identificar rasgos de las civilizaciones maya y azteca: tecnologías para transformar el territorio y redes comerciales.
+7° básico | OA16 | Reconocer en la cultura latinoamericana actual el legado de civilizaciones americanas, griegas, romanas y europeas.
+7° básico | OA18 | Comparar conceptos políticos y sociales clásicos y medievales (ciudadanía, república, gremio) con la sociedad actual.
+7° básico | OA19 | Reconocer la diversidad como enriquecimiento, con aportes árabes, germanos y otros a Europa antigua y medieval.
+7° básico | OA20 | Reconocer convivencia y conflicto entre culturas antiguas y debatir sobre respeto, tolerancia y resolución pacífica.
+7° básico | OA21 | Reconocer adaptaciones entre sociedad y medio y factores de asentamiento, como recursos, fertilidad o vulnerabilidad.
+7° básico | OA22 | Explicar impactos mutuos entre acción humana y medio, y evaluar medidas para mitigar efectos negativos.
+8° básico | OA2 | Comparar sociedad medieval y moderna: ruptura religiosa, Estado centralizado, imprenta y revolución científica.
+8° básico | OA3 | Caracterizar el Estado moderno (poder del rey, burocracia, fisco, ejércitos) y contrastarlo con la Edad Media.
+8° básico | OA4 | Caracterizar la economía mercantilista del siglo XVI: metales preciosos, rutas comerciales, expansión y competencia.
+8° básico | OA7 | Evaluar el impacto de la conquista en la cultura europea: nuevo mundo conocido y debates morales sobre los indígenas.
+8° básico | OA11 | Analizar la formación de la sociedad colonial: evangelización, trabajo forzado, mestizaje y sociedad de castas.
+8° básico | OA12 | Analizar la convivencia y conflictos entre españoles, mestizos y mapuches tras el fracaso de la conquista de Arauco.
+8° básico | OA14 | Caracterizar la Ilustración: razón, constitucionalismo, división de poderes, libertad, igualdad y soberanía popular.
+8° básico | OA16 | Explicar la independencia hispanoamericana como proceso continental, y analizar en ese marco la de Chile.
+8° básico | OA18 | Explicar los Derechos del Hombre y del Ciudadano surgidos en la Ilustración y su vigencia actual en los DD.HH.
+8° básico | OA20 | Explicar criterios que definen una región (físicos y humanos) y dar ejemplos de tipos de regiones en Chile y América.
+8° básico | OA21 | Analizar problemáticas regionales de Chile: conexión o aislamiento, demografía y migración, y su impacto social.
+8° básico | OA22 | Aplicar el concepto de desarrollo a regiones de Chile: IDH, diversidad productiva y sustentabilidad.
+I medio | OA1 | Relacionar ideas republicanas y liberales con transformaciones políticas y económicas del siglo XIX en América y Europa.
+I medio | OA3 | Describir hitos de la organización republicana chilena, grupos conservadores y liberales, Constitución de 1833 y reformas.
+I medio | OA7 | Explicar la democratización del siglo XX en Chile: más acceso al voto, participación de la mujer y educación y cultura.
+I medio | OA8 | Comparar visiones sobre el quiebre democrático, el régimen militar y la recuperación de la democracia a fines del XX.
+I medio | OA10 | Explicar la inserción de Chile en mercados internacionales del siglo XIX con exportación de recursos y economía rural.
+I medio | OA12 | Describir la exploración estatal del territorio para conocer población, recursos y fronteras, con apoyo de las ciencias.
+I medio | OA14 | Explicar la ocupación de la Araucanía como política estatal que afectó a la sociedad mapuche: acción militar y reducciones.
+I medio | OA15 | Analizar la Guerra del Pacífico: disputa por el salitre, impacto social, ampliación territorial y relaciones con vecinos.
+I medio | OA18 | Analizar cambios sociales de inicios del siglo XX: cuestión social, demandas populares, lucha obrera y sectores medios.
+I medio | OA20 | Explicar cómo funciona el mercado (precios, oferta, demanda) y qué lo altera: monopolio, colusión, inflación.
+I medio | OA23 | Explicar cómo problemas sociales generan respuestas políticas distintas, como las posturas frente a la cuestión social.
+I medio | OA24 | Evaluar con fuentes relaciones de conflicto y convivencia con pueblos indígenas en el pasado y presente.
+I medio | OA25 | Analizar el impacto de la industrialización en el medioambiente y su proyección actual, vinculado al desarrollo sostenible.
+II medio | OA2 | Analizar la crisis del Estado liberal tras 1929, con totalitarismos, populismo latinoamericano y Estado de Bienestar.
+II medio | OA4 | Evaluar consecuencias de la Segunda Guerra Mundial: superpotencias, descolonización, paz y creación de la ONU y DUDH.
+II medio | OA7 | Evaluar cómo nuevos actores sociales y la cultura de masas democratizaron la sociedad chilena a mediados del siglo XX.
+II medio | OA8 | Analizar la Guerra Fría como confrontación ideológica y sus efectos en política, cultura, deporte y ciencia.
+II medio | OA10 | Caracterizar la movilización latinoamericana entre revolución y reforma, con golpes, dictaduras y violaciones de DD.HH.
+II medio | OA11 | Analizar el fin de la Guerra Fría: crisis de la URSS, auge del neoliberalismo y aceleración de la globalización.
+II medio | OA12 | Caracterizar la pobreza chilena de mediados del XX y el impacto de la migración campo-ciudad en vivienda y segregación.
+II medio | OA15 | Analizar y comparar interpretaciones historiográficas sobre el golpe de Estado de 1973 y el quiebre de la democracia.
+II medio | OA16 | Explicar la supresión del Estado de Derecho y las violaciones de DD.HH. en dictadura, y la defensa de víctimas.
+II medio | OA17 | Caracterizar el neoliberalismo de la dictadura: Estado reducido, libre mercado, privatizaciones y sus efectos sociales.
+II medio | OA19 | Explicar la recuperación democrática de los 80: crisis económica, protestas, rearticulación política y rol de la Iglesia.
+II medio | OA20 | Analizar la transición: plebiscito de 1988, acuerdos políticos, reformas constitucionales y políticas de reparación.
+II medio | OA22 | Analizar los DD.HH. por su universalidad, indivisibilidad, interdependencia e imprescriptibilidad, y su institucionalidad.
+II medio | OA25 | Reconocer la diversidad como expresión de libertad y dignidad y evaluar la globalización frente a toda discriminación.

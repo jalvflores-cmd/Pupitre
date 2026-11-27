@@ -25,6 +25,8 @@
       <h5><i class="bi bi-journal-bookmark text-primary"></i> Leccionario</h5>
       {% if clase.unidad %}<div class="small text-muted text-uppercase fw-semibold">Unidad</div><p>{{ clase.unidad }}</p>{% endif %}
       <div class="small text-muted text-uppercase fw-semibold">Objetivo de aprendizaje</div><p>{{ clase.objetivo|linebreaksbr }}</p>
+      {% with oas=clase.oas.all %}{% if oas %}<div class="small text-muted text-uppercase fw-semibold">OA del currículum nacional</div>
+      <ul class="small">{% for o in oas %}<li><b>{{ o.codigo }}</b> {{ o.texto }}</li>{% endfor %}</ul>{% endif %}{% endwith %}
       {% if clase.actividades %}<div class="small text-muted text-uppercase fw-semibold">Contenidos y actividades</div><p>{{ clase.actividades|linebreaksbr }}</p>{% endif %}
       {% if clase.recursos %}<div class="small text-muted text-uppercase fw-semibold">Recursos</div><p>{{ clase.recursos }}</p>{% endif %}
       {% if clase.evaluacion %}<div class="alert alert-warning py-2 mb-0"><i class="bi bi-pencil-square"></i> Evaluación: <b>{{ clase.evaluacion.nombre }}</b> ({{ clase.evaluacion.get_semestre_display }}). <a href="{% url 'libro_notas' ac.pk %}">Ingresar notas</a></div>{% endif %}

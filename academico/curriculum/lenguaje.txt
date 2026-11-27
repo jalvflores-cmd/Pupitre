@@ -1,0 +1,133 @@
+1° básico | OA1 | Reconocer que los textos escritos transmiten mensajes, escritos por alguien con un propósito.
+1° básico | OA3 | Identificar los sonidos de las palabras (conciencia fonológica), reconociendo, separando y combinando fonemas y sílabas.
+1° básico | OA4 | Leer palabras aisladas y en contexto aplicando la correspondencia letra-sonido, incluyendo sílabas complejas y dígrafos.
+1° básico | OA5 | Leer textos breves en voz alta para ganar fluidez: pronunciar con precisión, respetar los puntos y leer palabra a palabra.
+1° básico | OA8 | Comprender narraciones familiares: extraer información explícita e implícita, responder preguntas, recrear personajes y opinar.
+1° básico | OA9 | Leer habitualmente y disfrutar buenos poemas de autor y de la tradición oral adecuados a su edad.
+1° básico | OA10 | Leer de forma independiente textos no literarios sencillos, extrayendo información y formulando una opinión.
+1° básico | OA11 | Desarrollar el gusto por la lectura explorando libros y sus ilustraciones.
+1° básico | OA13 | Experimentar con la escritura para comunicar hechos, ideas y sentimientos.
+1° básico | OA18 | Comprender textos orales para obtener información, conectándolos con experiencias, preguntando, respondiendo y opinando.
+1° básico | OA21 | Participar en conversaciones grupales sobre textos o temas de interés, expresando ideas, mostrando interés y respetando turnos.
+1° básico | OA23 | Expresarse con coherencia sobre temas de interés, usando descripciones, vocabulario variado, buena pronunciación y postura adecuada.
+1° básico | OA25 | Desempeñar distintos roles para desarrollar el lenguaje, la autoestima y el trabajo en equipo.
+2° básico | OA1 | Leer textos significativos con hiatos, diptongos, grupos consonánticos y combinaciones ce-ci, que-qui, ge-gi, gue-gui, güe-güi.
+2° básico | OA2 | Leer en voz alta con fluidez: pronunciar con precisión, respetar puntos y leer sin detenerse en cada palabra.
+2° básico | OA5 | Demostrar comprensión de narraciones: secuencia de acciones, personajes, ambiente, relaciones con la experiencia y opinión.
+2° básico | OA6 | Leer poemas de autor y de la tradición oral adecuados a su edad, disfrutándolos habitualmente.
+2° básico | OA7 | Leer textos no literarios de forma independiente, comprendiendo información, ilustraciones, símbolos y formulando una opinión.
+2° básico | OA8 | Desarrollar el gusto por la lectura leyendo habitualmente diversos textos.
+2° básico | OA10 | Buscar información sobre un tema en una fuente entregada por el docente para llevar a cabo una investigación.
+2° básico | OA12 | Escribir con frecuencia poemas, diarios, anécdotas, cartas y recados para desarrollar la creatividad y expresar ideas.
+2° básico | OA16 | Planificar la escritura generando ideas a partir de imágenes y conversaciones sobre experiencias y otros temas.
+2° básico | OA17 | Escribir, revisar y editar textos con claridad: oraciones ordenadas, vocabulario variado, concordancia y ortografía correctas.
+2° básico | OA23 | Comprender textos orales para obtener información, identificando propósito, respondiendo preguntas y formulando opiniones.
+2° básico | OA25 | Participar en conversaciones grupales sobre textos o temas de interés, manteniendo el foco, preguntando y mostrando empatía.
+2° básico | OA27 | Expresarse con coherencia sobre temas de interés, con descripciones, vocabulario variado, buena dicción y postura adecuada.
+2° básico | OA29 | Desempeñar distintos roles para desarrollar el lenguaje, la autoestima y el trabajo en equipo.
+3° básico | OA1 | Leer en voz alta con fluidez textos variados: pronunciar con precisión, respetar la coma, el punto y los signos de exclamación e interrogación.
+3° básico | OA4 | Profundizar la comprensión de narraciones: información explícita e implícita, secuencia, personajes, ambiente y opiniones fundamentadas.
+3° básico | OA5 | Comprender poemas adecuados al nivel e interpretar su lenguaje figurado.
+3° básico | OA6 | Leer textos no literarios de forma independiente, usando organizadores, gráficos y lenguaje figurado, y formando una opinión fundamentada.
+3° básico | OA7 | Desarrollar el gusto por la lectura leyendo habitualmente diversos textos.
+3° básico | OA9 | Buscar información sobre un tema en libros, internet, diarios, revistas y enciclopedias para llevar a cabo una investigación.
+3° básico | OA12 | Escribir con frecuencia poemas, diarios, cuentos, cartas y comentarios sobre lecturas para desarrollar la creatividad.
+3° básico | OA17 | Planificar la escritura estableciendo propósito y destinatario, y generando ideas mediante conversaciones, investigación o lluvia de ideas.
+3° básico | OA18 | Escribir, revisar y editar textos con claridad: párrafos separados, conectores, vocabulario variado y ortografía correcta.
+3° básico | OA24 | Comprender textos orales variados para obtener información, relacionándolos con otros textos, preguntando y formando opiniones.
+3° básico | OA26 | Participar en conversaciones grupales sobre textos o temas de interés, manteniendo el foco, aclarando dudas y respetando turnos.
+3° básico | OA28 | Expresarse con coherencia en introducción y desarrollo, con ejemplos, vocabulario variado, gestos adecuados y material de apoyo.
+3° básico | OA30 | Caracterizar distintos personajes para desarrollar el lenguaje, la autoestima y el trabajo en equipo.
+4° básico | OA1 | Leer en voz alta con fluidez textos variados: pronunciar con precisión, respetar los signos de puntuación y leer con entonación y velocidad adecuadas.
+4° básico | OA4 | Profundizar la comprensión de narraciones: consecuencias de acciones, comparación de personajes y ambientes, problema y solución, y opiniones fundamentadas.
+4° básico | OA5 | Comprender poemas adecuados al nivel e interpretar su lenguaje figurado.
+4° básico | OA6 | Leer textos no literarios de forma independiente, comparando información, haciendo inferencias y fundamentando opiniones.
+4° básico | OA7 | Desarrollar el gusto por la lectura leyendo habitualmente diversos textos.
+4° básico | OA9 | Buscar y clasificar información sobre un tema en internet, libros, diarios, revistas y enciclopedias para una investigación.
+4° básico | OA11 | Escribir con frecuencia poemas, diarios, cuentos, cartas, comentarios de lectura y noticias para desarrollar la creatividad.
+4° básico | OA16 | Planificar la escritura estableciendo propósito y destinatario, y generando ideas mediante conversaciones, investigación o lluvia de ideas.
+4° básico | OA17 | Escribir, revisar y editar textos con claridad: párrafos, conectores, vocabulario preciso, registro adecuado y ortografía correcta.
+4° básico | OA23 | Comprender textos orales variados para obtener información, relacionándolos con otros textos, preguntando y formando opiniones.
+4° básico | OA25 | Participar en conversaciones grupales sobre textos o temas de interés, fundamentando opiniones, verificando comprensión y respetando turnos.
+4° básico | OA27 | Expresarse con coherencia en introducción, desarrollo y cierre, con ejemplos, vocabulario variado, gestos y material de apoyo.
+4° básico | OA29 | Caracterizar distintos personajes para desarrollar el lenguaje, la autoestima y el trabajo en equipo.
+5° básico | OA1 | Leer con fluidez textos variados: pronunciar bien, respetar la puntuación y decodificar palabras automáticamente.
+5° básico | OA3 | Leer literatura variada (poemas, cuentos, fábulas, leyendas, mitos, novelas, historietas) y reconocer su valor cultural.
+5° básico | OA4 | Analizar narraciones: lenguaje figurado, consecuencias, ambiente, personajes y comparación entre autores.
+5° básico | OA5 | Analizar poemas: lenguaje que evoca sentidos y emociones, personificaciones, comparaciones y rima, verso y estrofa.
+5° básico | OA6 | Comprender textos no literarios: extraer e inferir información, compararla, interpretar imágenes y fundamentar opiniones.
+5° básico | OA7 | Evaluar críticamente textos: identificar emisor, propósito y destinatario, y si la información basta para un fin.
+5° básico | OA9 | Leer habitualmente diversos textos y disfrutar la lectura.
+5° básico | OA11 | Buscar y seleccionar información relevante sobre un tema en internet, libros, prensa y otras fuentes para investigar.
+5° básico | OA14 | Escribir narraciones creativas, bien estructuradas, con conectores y descripciones o diálogos que enriquezcan la trama.
+5° básico | OA15 | Escribir artículos informativos: presentar el tema en una oración, una idea central por párrafo y citar fuentes.
+5° básico | OA17 | Planificar textos definiendo propósito y destinatario, generando ideas y organizándolas antes de escribir.
+5° básico | OA18 | Escribir, revisar y editar textos: ampliar ideas, usar vocabulario preciso, cuidar coherencia y corregir ortografía.
+5° básico | OA24 | Comprender textos orales: relacionar lo escuchado con experiencias, extraer información, preguntar y formular opiniones.
+5° básico | OA26 | Dialogar para desarrollar ideas y acordar: mantener el foco, aceptar sugerencias y fundamentar posturas con respeto.
+5° básico | OA28 | Exponer con coherencia (introducción, desarrollo y cierre), vocabulario variado, material de apoyo y postura adecuada.
+6° básico | OA1 | Leer con fluidez textos variados: pronunciar bien, respetar la puntuación y decodificar palabras automáticamente.
+6° básico | OA3 | Leer literatura variada (poemas, cuentos, fábulas, leyendas, mitos) y reconocer su valor social y cultural.
+6° básico | OA4 | Analizar narraciones: acciones clave, motivaciones de personajes, ambiente, lenguaje figurado y comparación entre autores.
+6° básico | OA5 | Analizar poemas: lenguaje que evoca sentidos, personificaciones, comparaciones, hipérboles y efectos sonoros.
+6° básico | OA6 | Comprender textos no literarios: inferir información, relacionar imágenes con el texto, comparar y fundamentar opiniones.
+6° básico | OA7 | Evaluar críticamente información: identificar emisor, propósito y destinatario, suficiencia y comparar noticias.
+6° básico | OA9 | Leer habitualmente diversos textos y disfrutar la lectura.
+6° básico | OA11 | Buscar y comparar información sobre un tema en internet, libros, prensa y enciclopedias para investigar.
+6° básico | OA14 | Escribir narraciones creativas con estructura clara, coherencia oracional, conectores y descripciones o diálogos.
+6° básico | OA15 | Escribir artículos informativos: estructura clara, una idea central por párrafo y citar las fuentes utilizadas.
+6° básico | OA17 | Planificar textos: definir propósito y destinatario, generar ideas desde conocimientos e investigación y organizarlas.
+6° básico | OA18 | Escribir, revisar y editar: agregar datos y ejemplos, usar vocabulario preciso, dar coherencia y corregir ortografía.
+6° básico | OA24 | Comprender textos orales: extraer información relevante, preguntar, comparar con otros textos y opinar fundamentadamente.
+6° básico | OA27 | Dialogar para desarrollar ideas: complementar lo dicho, aceptar sugerencias, respetar desacuerdos y fundamentar posturas.
+6° básico | OA29 | Exponer oralmente con claridad: ejemplos, estructura, vocabulario preciso, verbos correctos y sin leer el texto.
+7° básico | OA3 | Analizar narraciones: conflictos, personajes, efecto de acciones, narrador, orden temporal y vínculos con otros textos.
+7° básico | OA4 | Analizar poemas: lenguaje que evoca sentidos, figuras, efecto del ritmo y sonoridad, y vínculos con otros textos.
+7° básico | OA7 | Formular interpretaciones literarias considerando experiencia propia, dilemas del texto y su contexto histórico.
+7° básico | OA8 | Analizar textos argumentativos: postura y argumentos del autor, distinción entre hecho y opinión, y postura propia.
+7° básico | OA9 | Analizar medios de comunicación: propósitos, hechos versus opiniones, estereotipos, imágenes y efectos en los aludidos.
+7° básico | OA12 | Escribir creativamente textos de diversos géneros, eligiendo libremente tema, género y destinatario.
+7° básico | OA14 | Escribir textos persuasivos breves con afirmación, evidencias pertinentes y coherencia temática.
+7° básico | OA15 | Planificar, escribir, revisar y editar textos según contexto y destinatario, cuidando registro, cohesión y corrección.
+7° básico | OA17 | Usar recursos de correferencia léxica como sustitución, sinonimia e hiperonimia para lograr textos cohesivos.
+7° básico | OA20 | Evaluar textos orales y audiovisuales: postura propia, hechos principales, puntos de vista y vínculos con lo estudiado.
+7° básico | OA21 | Dialogar constructivamente para debatir: mantener el foco, comprender al interlocutor, fundamentar y negociar acuerdos.
+7° básico | OA24 | Investigar para complementar lecturas: delimitar el tema, organizar fuentes, registrar datos y comunicar hallazgos.
+7° básico | OA25 | Sintetizar, registrar y ordenar ideas principales de textos escuchados o leídos para estudiar o investigar.
+8° básico | OA3 | Analizar narraciones: conflictos, personajes, narrador, figuras tipo, prejuicios, orden temporal y vínculos entre obras.
+8° básico | OA4 | Analizar poemas: lenguaje que evoca sentidos, figuras, efectos de repeticiones y vínculos con otros textos.
+8° básico | OA8 | Interpretar textos literarios con una hipótesis coherente con el análisis, relacionándola con experiencia y contexto.
+8° básico | OA9 | Analizar textos argumentativos: tesis y argumentos, hecho versus opinión, intención de modos verbales y postura propia.
+8° básico | OA10 | Analizar medios de comunicación: propósitos, hechos y opiniones, estereotipos, suficiencia informativa y contraste de fuentes.
+8° básico | OA13 | Escribir creativamente textos de diversos géneros, eligiendo libremente tema, género y destinatario.
+8° básico | OA15 | Escribir textos persuasivos breves con afirmación, evidencias pertinentes y coherencia temática.
+8° básico | OA16 | Planificar, escribir, revisar y editar según contexto y destinatario: registro, coherencia, cohesión y corrección.
+8° básico | OA18 | Construir textos con referencias claras usando deícticos, pronombres, nominalización y elipsis sin perder el referente.
+8° básico | OA21 | Comprender y evaluar textos orales y audiovisuales: postura propia, hechos principales, prejuicios y puntos de vista.
+8° básico | OA22 | Dialogar constructivamente: mantener el foco, fundamentar posturas, negociar acuerdos y reformular comentarios.
+8° básico | OA25 | Investigar: evaluar confiabilidad de fuentes, descartar las irrelevantes, organizar la información y comunicar hallazgos.
+8° básico | OA26 | Sintetizar, registrar y ordenar ideas principales de textos escuchados o leídos para estudiar o investigar.
+I medio | OA3 | Analizar narraciones: conflictos, personajes, narrador, estereotipos, orden temporal y relaciones intertextuales.
+I medio | OA5 | Analizar textos dramáticos: conflicto humano, personajes y motivaciones, presagios, puesta en escena e intertextualidad.
+I medio | OA8 | Interpretar textos literarios con una hipótesis sobre su sentido, crítica con citas y relación con su contexto histórico.
+I medio | OA9 | Evaluar textos argumentativos: tesis y argumentos, hecho vs. opinión, suficiencia de evidencia y postura personal.
+I medio | OA10 | Analizar medios: propósitos, estrategias de persuasión, veracidad, recursos no verbales y contraste entre fuentes.
+I medio | OA12 | Aplicar escritura creativa y flexible: investigar las características del género y adecuar el texto al propósito.
+I medio | OA14 | Escribir ensayos persuasivos: hipótesis, evidencias literarias y no literarias, contraargumentos, conclusión y citas.
+I medio | OA15 | Planificar, escribir, revisar y editar textos según propósito y destinatario, cuidando coherencia y registro.
+I medio | OA17 | Usar frases nominales complejas para compactar información y correferir en textos expositivos y argumentativos.
+I medio | OA19 | Evaluar textos audiovisuales y orales: postura propia, jerarquía de información, estereotipos y persuasión.
+I medio | OA21 | Dialogar constructivamente: mantener el foco, parafrasear al interlocutor, distinguir evidencia y negociar acuerdos.
+I medio | OA24 | Investigar: delimitar el tema, seleccionar fuentes válidas, jerarquizar información y comunicar hallazgos.
+II medio | OA3 | Analizar narraciones: conflictos, personajes, narrador, estereotipos y recursos como flashback o historia paralela.
+II medio | OA5 | Analizar textos dramáticos: conflicto, personajes, atmósfera, estereotipos, puesta en escena e intertextualidad.
+II medio | OA8 | Interpretar textos literarios: hipótesis sobre su sentido, crítica con citas y antecedentes culturales e históricos.
+II medio | OA9 | Evaluar textos argumentativos: tesis, recursos emocionales, falacias, modalizadores y postura personal.
+II medio | OA10 | Analizar medios: propósitos, persuasión, evidencias omitidas, recursos verbales y visuales, y contraste entre fuentes.
+II medio | OA12 | Aplicar escritura creativa y flexible: investigar las características del género y adecuar el texto al propósito.
+II medio | OA14 | Escribir ensayos persuasivos: hipótesis, evidencias, contraargumentos, recursos variados, conclusión y citas.
+II medio | OA15 | Planificar, escribir, revisar y editar textos según propósito y destinatario, cuidando cohesión, registro y preposiciones.
+II medio | OA17 | Usar frases nominales complejas para compactar información y correferir en textos expositivos y argumentativos.
+II medio | OA19 | Evaluar textos audiovisuales y orales: postura, jerarquía de información, estereotipos, persuasión y puntos de vista.
+II medio | OA21 | Dialogar constructivamente: mantener el foco, parafrasear antes de aportar, distinguir evidencia y negociar acuerdos.
+II medio | OA24 | Investigar: delimitar el tema, elegir fuentes confiables según profundidad y jerarquizar información.

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Currículum nacional{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Currículum nacional</h3>
+    <div class="sub">Objetivos de aprendizaje (OA) que usa el asistente de planificación. Vienen precargados los OA basales de la Priorización Curricular (Mineduc) de Lenguaje, Matemática, Ciencias Naturales e Historia, de 1° básico a II medio, como síntesis fiel; el texto oficial completo está en curriculumnacional.cl.</div></div>
+</div>
+<form class="card p-3 mb-3"><div class="row g-2 align-items-end">
+  <div class="col-md-4"><label class="form-label small">Asignatura</label><select name="asignatura" class="form-select form-select-sm"><option value="">Todas</option>{% for k, n in asignaturas %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label small">Nivel</label><select name="grado" class="form-select form-select-sm"><option value="">Todos</option>{% for k, n in grados %}<option value="{{ k }}"{% if k|stringformat:"s" == grado %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><label class="form-label small">Buscar en el texto</label><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Ej.: fracciones, poema, ecosistema"></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Filtrar</button></div>
+</div></form>
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="card p-2"><div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Asignatura</th><th>Nivel</th><th>OA</th><th>Objetivo</th><th>Origen</th>{% if puede %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for o in oas %}
+        <tr><td class="small">{{ o.get_asignatura_display }}</td><td class="small text-nowrap">{{ o.get_grado_display }}</td><td class="text-nowrap fw-semibold">{{ o.codigo }}</td>
+          <td class="small">{{ o.texto }}{% if o.unidad %}<div class="text-muted">{{ o.unidad }}</div>{% endif %}</td>
+          <td>{% if o.establecimiento_id %}<span class="badge bg-info-subtle text-info-emphasis">Propio</span>{% else %}<span class="badge bg-success-subtle text-success-emphasis">Basal Mineduc</span>{% endif %}</td>
+          {% if puede %}<td>{% if o.establecimiento_id %}<form method="post" onsubmit="return confirm('¿Eliminar este OA?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger" name="eliminar" value="{{ o.pk }}"><i class="bi bi-trash"></i></button></form>{% endif %}</td>{% endif %}</tr>
+        {% empty %}<tr><td colspan="6" class="text-muted">No hay OA con esos filtros.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small text-muted p-2">{{ total }} OA{% if total > 400 %} (se muestran los primeros 400: use los filtros){% endif %}.</div></div>
+  </div>
+  {% if puede %}
+  <div class="col-xl-4">
+    <div class="card p-4 mb-4">
+      <h5>Agregar un OA propio</h5>
+      <p class="small text-muted">Para OA complementarios, otras asignaturas, talleres JEC o módulos TP.</p>
+      <form method="post">{% csrf_token %}
+        {% for f in form %}<div class="mb-2"><label class="form-label small">{{ f.label|capfirst }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
+        <button class="btn btn-primary btn-sm">Agregar</button>
+      </form>
+    </div>
+    <div class="card p-4">
+      <h5>Importar desde Excel</h5>
+      <p class="small text-muted">Columnas: <b>Asignatura</b>, <b>Nivel</b> (ej. «5° básico», «I medio»), <b>OA</b> (número), <b>Texto</b> y, si quiere, <b>Unidad</b>. Puede copiar los OA desde curriculumnacional.cl.</p>
+      <form method="post" enctype="multipart/form-data" class="d-flex gap-2">{% csrf_token %}
+        <input type="file" name="archivo" accept=".xlsx,.xls,.csv" class="form-control form-control-sm" required>
+        <button class="btn btn-sm btn-outline-primary">Importar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

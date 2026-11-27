@@ -1,37 +1,74 @@
 {% extends "base.html" %}
 {% block titulo %}{{ titulo }}{% endblock %}
 {% block contenido %}
-<div class="row justify-content-center"><div class="col-lg-9"><div class="card p-4">
-  <div class="miga mb-1"><a href="{% url 'leccionario' ac.pk %}">Leccionario {{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</a></div>
-  <h4 class="mb-3">{{ titulo }}</h4>
-  <form method="post">{% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="row">
-    {% for f in form %}{% if f.name not in "es_evaluacion nombre_evaluacion ponderacion" %}
-      <div class="{% if f.field.widget.attrs.rows %}col-12{% elif f.name == 'unidad' or f.name == 'recursos' %}col-md-6{% else %}col-md-2{% endif %}{% if f.name == 'fecha' %} col-md-3{% endif %} mb-3">
-        <label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}
-        {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
-        {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+<div class="miga mb-1"><a href="{% url 'leccionario' ac.pk %}">Leccionario {{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</a></div>
+<h4 class="mb-3">{{ titulo }}</h4>
+<form method="post">{% csrf_token %}
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="card p-4">
+      {{ form.non_field_errors }}
+      <div class="row">
+      {% for f in form %}{% if f.name not in "es_evaluacion nombre_evaluacion ponderacion oas" %}
+        <div class="{% if f.field.widget.attrs.rows %}col-12{% elif f.name == 'unidad' or f.name == 'recursos' %}col-md-6{% elif f.name == 'fecha' %}col-md-4{% else %}col-md-3{% endif %} mb-3">
+          <label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}
+          {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+          {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      {% endif %}{% endfor %}
       </div>
-    {% endif %}{% endfor %}
-    </div>
-    <div class="border rounded-3 p-3 mb-3 bg-light">
-      <div class="form-check">{{ form.es_evaluacion }} <label class="form-check-label fw-semibold" for="{{ form.es_evaluacion.id_for_label }}">{{ form.es_evaluacion.label }}</label></div>
-      <div class="form-text mb-2">{{ form.es_evaluacion.help_text }} Luego ingrese las notas en la pestaña Calificaciones.</div>
-      <div class="row" id="datos-evaluacion">
-        <div class="col-md-8 mb-2"><label class="form-label">{{ form.nombre_evaluacion.label }}</label>{{ form.nombre_evaluacion }}{% for e in form.nombre_evaluacion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="col-md-4 mb-2"><label class="form-label">{{ form.ponderacion.label }}</label>{{ form.ponderacion }}<div class="form-text">{{ form.ponderacion.help_text }}</div></div>
+      <div class="border rounded-3 p-3 mb-3 bg-light">
+        <div class="form-check">{{ form.es_evaluacion }} <label class="form-check-label fw-semibold" for="{{ form.es_evaluacion.id_for_label }}">{{ form.es_evaluacion.label }}</label></div>
+        <div class="form-text mb-2">{{ form.es_evaluacion.help_text }} Luego ingrese las notas en la pestaña Calificaciones.</div>
+        <div class="row" id="datos-evaluacion">
+          <div class="col-md-8 mb-2"><label class="form-label">{{ form.nombre_evaluacion.label }}</label>{{ form.nombre_evaluacion }}{% for e in form.nombre_evaluacion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-4 mb-2"><label class="form-label">{{ form.ponderacion.label }}</label>{{ form.ponderacion }}<div class="form-text">{{ form.ponderacion.help_text }}</div></div>
+        </div>
       </div>
+      <div><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+      <a class="btn btn-link" href="{% if clase.pk %}{% url 'clase_detalle' clase.pk %}{% else %}{% url 'leccionario' ac.pk %}{% endif %}">Cancelar</a></div>
     </div>
-    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
-    <a class="btn btn-link" href="{% if clase.pk %}{% url 'clase_detalle' clase.pk %}{% else %}{% url 'leccionario' ac.pk %}{% endif %}">Cancelar</a>
-  </form>
-  {% if clase.pk %}
-  <form method="post" action="{% url 'clase_eliminar' clase.pk %}" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar esta clase del leccionario?');">{% csrf_token %}
-    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar clase</button>
-  </form>
-  {% endif %}
-</div></div></div>
+  </div>
+  <div class="col-xl-5">
+    <div class="card p-4 asistente">
+      <h5 class="mb-1"><i class="bi bi-stars text-warning"></i> Asistente de planificación</h5>
+      <p class="small text-muted">Currículum nacional · {{ ac.asignatura }} · {{ grado_txt|default:ac.curso.nivel }}. Marque el o los OA de la clase y pida una propuesta: puede usarla tal cual o ajustarla.</p>
+      {% if hay_oas %}
+      <div class="lista-oa mb-2" style="max-height:320px; overflow:auto">
+        {% for o in form.oas %}
+        <div class="d-flex gap-2 align-items-start py-1 border-bottom">
+          <div class="form-check flex-grow-1 mb-0">{{ o.tag }} <label class="form-check-label small" for="{{ o.id_for_label }}">{{ o.choice_label }}</label></div>
+          <button type="button" class="btn btn-sm btn-outline-primary text-nowrap btn-proponer" data-oa="{{ o.data.value }}">Proponer</button>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-text mb-3">OA basales de la Priorización Curricular (síntesis; texto oficial en curriculumnacional.cl). UTP puede agregar más en <a href="{% url 'curriculum' %}">Currículum</a>.</div>
+      {% else %}
+      <div class="alert alert-secondary small">No hay OA precargados para esta asignatura y nivel. Escriba el objetivo y use «Proponer desde lo escrito», o pida a UTP que los agregue en <a href="{% url 'curriculum' %}">Currículum</a>.</div>
+      {% endif %}
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-3" id="proponer-texto"><i class="bi bi-magic"></i> Proponer desde el objetivo escrito</button>
+      <div id="propuesta" class="d-none">
+        <div class="small text-uppercase text-muted fw-semibold">Habilidad (Bloom): <span id="p-nivel"></span></div>
+        <div class="small fw-semibold mt-2">Clase propuesta</div>
+        <pre class="small bg-light p-2 rounded" style="white-space:pre-wrap" id="p-actividades"></pre>
+        <div class="small fw-semibold">Indicadores de evaluación</div><ul class="small mb-2" id="p-indicadores"></ul>
+        <div class="small fw-semibold">Evaluación formativa sugerida</div><ul class="small mb-2" id="p-formativas"></ul>
+        <div class="small fw-semibold">Evaluación sumativa sugerida</div><p class="small mb-2" id="p-sumativa"></p>
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-sm btn-primary" id="usar"><i class="bi bi-check2"></i> Usar esta propuesta</button>
+          <button type="button" class="btn btn-sm btn-outline-warning" id="usar-sumativa"><i class="bi bi-pencil-square"></i> Marcar como clase de evaluación</button>
+        </div>
+      </div>
+      <div id="p-error" class="text-danger small"></div>
+    </div>
+  </div>
+</div>
+</form>
+{% if clase.pk %}
+<form method="post" action="{% url 'clase_eliminar' clase.pk %}" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar esta clase del leccionario?');">{% csrf_token %}
+  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar clase</button>
+</form>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>
@@ -39,6 +76,49 @@
   var chk = document.getElementById('{{ form.es_evaluacion.id_for_label }}'), datos = document.getElementById('datos-evaluacion');
   function ver() { datos.style.display = chk.checked ? '' : 'none'; }
   chk.addEventListener('change', ver); ver();
+
+  var url = '{% url "asistente_clase" ac.pk %}', actual = null;
+  var $ = function (id) { return document.getElementById(id); };
+  function lista(el, items) { el.innerHTML = ''; items.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; el.appendChild(li); }); }
+  function pedir(params, oa) {
+    params.set('bloques', $('id_bloques').value || 2);
+    $('p-error').textContent = '';
+    fetch(url + '?' + params.toString()).then(function (r) { return r.json(); }).then(function (p) {
+      if (p.error) { $('p-error').textContent = p.error; return; }
+      actual = p;
+      if (oa) { var c = document.querySelector('input[name=oas][value="' + oa + '"]'); if (c) c.checked = true; }
+      $('propuesta').classList.remove('d-none');
+      $('p-nivel').textContent = p.nivel_nombre;
+      $('p-actividades').textContent = p.actividades;
+      lista($('p-indicadores'), p.indicadores);
+      lista($('p-formativas'), p.formativas.map(function (f) { return f.nombre + ': ' + f.descripcion; }));
+      $('p-sumativa').textContent = p.sumativa.tipo + '. ' + p.sumativa.descripcion + ' Rúbrica: ' + p.sumativa.rubrica.join(', ') + '.';
+    }).catch(function () { $('p-error').textContent = 'No se pudo generar la propuesta.'; });
+  }
+  document.querySelectorAll('.btn-proponer').forEach(function (b) {
+    b.addEventListener('click', function () { pedir(new URLSearchParams({oa: b.dataset.oa}), b.dataset.oa); });
+  });
+  $('proponer-texto').addEventListener('click', function () {
+    var t = $('id_objetivo').value.trim();
+    if (!t) { $('p-error').textContent = 'Escriba primero el objetivo de la clase o elija un OA de la lista.'; return; }
+    pedir(new URLSearchParams({texto: t}));
+  });
+  $('usar').addEventListener('click', function () {
+    if (!actual) return;
+    var obj = $('id_objetivo');
+    if (!obj.value.trim() || confirm('¿Reemplazar el objetivo escrito por el OA elegido?')) obj.value = actual.objetivo;
+    var act = $('id_actividades');
+    var bloque = actual.actividades + '\nIndicadores: ' + actual.indicadores.join(' ');
+    act.value = act.value.trim() ? act.value.trim() + '\n\n' + bloque : bloque;
+    if (!$('id_recursos').value.trim()) $('id_recursos').value = actual.recursos;
+    obj.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
+  $('usar-sumativa').addEventListener('click', function () {
+    if (!actual) return;
+    chk.checked = true; ver();
+    var n = $('id_nombre_evaluacion'); if (!n.value.trim()) n.value = actual.sumativa.tipo;
+    n.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
 })();
 </script>
 {% endblock %}

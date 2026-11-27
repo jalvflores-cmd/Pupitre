@@ -779,6 +779,8 @@ class Clase(models.Model):
     observaciones = models.TextField(blank=True)
     evaluacion = models.OneToOneField(Evaluacion, on_delete=models.SET_NULL, null=True, blank=True,
                                       related_name="clase", verbose_name="evaluación de esta clase")
+    oas = models.ManyToManyField("ObjetivoAprendizaje", blank=True, related_name="clases",
+                                 verbose_name="OA del currículum nacional")
     asistencia_registrada = models.BooleanField(default=False)
     firmada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name="clases_firmadas")
@@ -827,3 +829,53 @@ class AsistenciaClase(models.Model):
         verbose_name = "asistencia a clase"
         verbose_name_plural = "asistencia a clases"
         constraints = [models.UniqueConstraint(fields=["clase", "estudiante"], name="asistencia_unica")]
+
+
+ASIGNATURAS_CURRICULUM = [
+    ("lenguaje", "Lenguaje y Comunicación / Lengua y Literatura"),
+    ("matematica", "Matemática"),
+    ("ciencias", "Ciencias Naturales"),
+    ("historia", "Historia, Geografía y Ciencias Sociales"),
+    ("ingles", "Inglés"),
+    ("artes", "Artes Visuales"),
+    ("musica", "Música"),
+    ("educacion_fisica", "Educación Física y Salud"),
+    ("tecnologia", "Tecnología"),
+    ("orientacion", "Orientación"),
+    ("religion", "Religión"),
+    ("otra", "Otra / módulo o taller"),
+]
+GRADOS_CURRICULUM = [(g, f"{g}° básico") for g in range(1, 9)] + [
+    (9, "I medio"), (10, "II medio"), (11, "III medio"), (12, "IV medio")]
+
+
+class ObjetivoAprendizaje(models.Model):
+    """OA del currículum nacional. Los oficiales (sin establecimiento) los comparten todos los establecimientos;
+    cada establecimiento puede agregar los suyos (programas propios, talleres, módulos TP)."""
+    establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
+                                        editable=False, related_name="objetivos")
+    asignatura = models.CharField(max_length=20, choices=ASIGNATURAS_CURRICULUM)
+    grado = models.PositiveSmallIntegerField("nivel", choices=GRADOS_CURRICULUM)
+    numero = models.PositiveSmallIntegerField("N° de OA")
+    texto = models.TextField("objetivo de aprendizaje")
+    basal = models.BooleanField("aprendizaje basal (priorización)", default=False)
+    unidad = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        verbose_name = "objetivo de aprendizaje"
+        verbose_name_plural = "objetivos de aprendizaje"
+        ordering = ["asignatura", "grado", "numero"]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "asignatura", "grado", "numero"],
+                                               name="oa_unico")]
+
+    def __str__(self):
+        return f"OA {self.numero}: {self.texto}"
+
+    @property
+    def codigo(self):
+        return f"OA {self.numero}"
+
+    @classmethod
+    def disponibles(cls):
+        est = Establecimiento.actual()
+        return cls.objects.filter(models.Q(establecimiento__isnull=True) | models.Q(establecimiento_id=est.pk))
