@@ -12,21 +12,36 @@
   <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Filtrar</button></div>
 </div></form>
 <div class="row g-4">
-  <div class="col-xl-8">
-    <div class="card p-2"><div class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
-        <thead><tr><th>Asignatura</th><th>Nivel</th><th>OA</th><th>Objetivo</th><th>Origen</th>{% if puede %}<th></th>{% endif %}</tr></thead>
-        <tbody>
-        {% for o in oas %}
-        <tr><td class="small">{{ o.get_asignatura_display }}</td><td class="small text-nowrap">{{ o.get_grado_display }}</td><td class="text-nowrap fw-semibold">{{ o.codigo }}</td>
-          <td class="small">{{ o.texto }}{% if o.unidad %}<div class="text-muted">{{ o.unidad }}</div>{% endif %}</td>
-          <td>{% if o.establecimiento_id %}<span class="badge bg-info-subtle text-info-emphasis">Propio</span>{% else %}<span class="badge bg-success-subtle text-success-emphasis">Basal Mineduc</span>{% endif %}</td>
-          {% if puede %}<td>{% if o.establecimiento_id %}<form method="post" onsubmit="return confirm('¿Eliminar este OA?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger" name="eliminar" value="{{ o.pk }}"><i class="bi bi-trash"></i></button></form>{% endif %}</td>{% endif %}</tr>
-        {% empty %}<tr><td colspan="6" class="text-muted">No hay OA con esos filtros.</td></tr>{% endfor %}
-        </tbody>
-      </table>
+  <div class="{% if puede %}col-xl-8{% else %}col-12{% endif %}">
+    <p class="small text-muted mb-2">{{ total }} OA en {{ secciones|length }} asignatura{{ secciones|length|pluralize }}.{% if tiene_propias and not asig and not grado and not q %} Se abren de partida las asignaturas que usted enseña y se marcan sus niveles (<span class="badge bg-primary-subtle text-primary-emphasis">Mis cursos</span>).{% endif %} Haga clic en una asignatura y luego en un nivel para ver sus OA.</p>
+    <div class="accordion" id="curriculo">
+    {% for sec in secciones %}
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button{% if not sec.abierta %} collapsed{% endif %} fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#a-{{ sec.clave }}">
+          {{ sec.nombre }}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-2">{{ sec.total }} OA</span></button></h2>
+        <div id="a-{{ sec.clave }}" class="accordion-collapse collapse{% if sec.abierta %} show{% endif %}">
+          <div class="accordion-body p-2">
+          {% for niv in sec.niveles %}
+            <div class="border rounded-3 mb-2">
+              <a class="d-flex justify-content-between align-items-center px-3 py-2 text-decoration-none text-reset{% if not niv.abierto %} collapsed{% endif %}" data-bs-toggle="collapse" href="#n-{{ sec.clave }}-{{ niv.grado }}">
+                <span class="fw-semibold"><i class="bi bi-chevron-right me-1 flecha"></i>{{ niv.nombre }}{% if niv.mio %} <span class="badge bg-primary-subtle text-primary-emphasis ms-1">Mis cursos</span>{% endif %}</span>
+                <span class="small text-muted">{{ niv.oas|length }} OA</span></a>
+              <div id="n-{{ sec.clave }}-{{ niv.grado }}" class="collapse{% if niv.abierto %} show{% endif %}">
+                <table class="table table-sm align-middle mb-0">
+                {% for o in niv.oas %}
+                  <tr><td class="text-nowrap fw-semibold ps-3" style="width:4.5rem">{{ o.codigo }}</td>
+                    <td class="small">{{ o.texto }}{% if o.unidad %}<div class="text-muted">{{ o.unidad }}</div>{% endif %}</td>
+                    <td class="text-end" style="width:8rem">{% if o.establecimiento_id %}<span class="badge bg-info-subtle text-info-emphasis">Propio</span>{% if puede %}<form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este OA?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0 ms-1" name="eliminar" value="{{ o.pk }}"><i class="bi bi-trash"></i></button></form>{% endif %}{% else %}<span class="badge bg-success-subtle text-success-emphasis">Basal Mineduc</span>{% endif %}</td></tr>
+                {% endfor %}
+                </table>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% empty %}<div class="alert alert-secondary">No hay OA con esos filtros.</div>{% endfor %}
     </div>
-    <div class="small text-muted p-2">{{ total }} OA{% if total > 400 %} (se muestran los primeros 400: use los filtros){% endif %}.</div></div>
   </div>
   {% if puede %}
   <div class="col-xl-4">
@@ -50,3 +65,4 @@
   {% endif %}
 </div>
 {% endblock %}
+{% block scripts %}<style>[data-bs-toggle="collapse"] .flecha{transition:transform .15s;display:inline-block}[data-bs-toggle="collapse"]:not(.collapsed) .flecha{transform:rotate(90deg)}</style>{% endblock %}

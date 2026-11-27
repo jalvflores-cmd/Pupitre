@@ -7,7 +7,7 @@ Alimenta al resto de la plataforma:
 """
 import calendar
 import datetime
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from decimal import Decimal
 
 from django.contrib import messages
@@ -455,9 +455,30 @@ def curriculum(request):
                 oa.save()
                 messages.success(request, f"{oa.codigo} agregado.")
                 return redirect(f"{request.path}?asignatura={oa.asignatura}&grado={oa.grado}")
-    total = qs.count()
+    # agrupa por asignatura y nivel; abre de partida lo que el usuario enseña
+    propias = set()
+    for ac in asignaturas_curso_visibles(request.user).filter(curso__anio=anio_actual(), profesor=request.user):
+        g = curriculo.grado_de_curso(ac.curso)
+        if g:
+            propias.add((curriculo.clave_asignatura(ac.asignatura.nombre), g))
+    nombres_asig = dict(ObjetivoAprendizaje._meta.get_field("asignatura").choices)
+    nombres_grado = dict(GRADOS_CURRICULUM)
+    orden_asig = list(nombres_asig)
+    grupos = OrderedDict()
+    for oa in qs.order_by("grado", "numero"):
+        grupos.setdefault(oa.asignatura, OrderedDict()).setdefault(oa.grado, []).append(oa)
+    filtrado = bool(asig or grado or q)
+    secciones = []
+    for clave in sorted(grupos, key=orden_asig.index):
+        mios = sum(1 for g in grupos[clave] if (clave, g) in propias)
+        niveles = [{"grado": g, "nombre": nombres_grado[g], "oas": oas, "mio": (clave, g) in propias,
+                    "abierto": filtrado or ((clave, g) in propias and mios == 1)}
+                   for g, oas in grupos[clave].items()]
+        secciones.append({"clave": clave, "nombre": nombres_asig[clave], "niveles": niveles,
+                          "total": sum(len(n["oas"]) for n in niveles),
+                          "abierta": filtrado or any(n["mio"] for n in niveles)})
     return render(request, "academico/curriculum.html", {
-        "oas": qs.order_by("asignatura", "grado", "numero")[:400], "total": total, "form": form, "puede": puede,
+        "secciones": secciones, "total": qs.count(), "form": form, "puede": puede, "tiene_propias": bool(propias),
         "asignaturas": ObjetivoAprendizaje._meta.get_field("asignatura").choices, "grados": GRADOS_CURRICULUM,
         "asig": asig, "grado": grado, "q": q,
     })
