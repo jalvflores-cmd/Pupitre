@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import plataforma, views
+from . import libro, plataforma, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
@@ -20,6 +20,15 @@ urlpatterns = [
     path("notas/<int:ac_pk>/evaluacion/nueva/", views.evaluacion_form, name="evaluacion_crear"),
     path("evaluaciones/<int:pk>/editar/", views.evaluacion_form, name="evaluacion_editar"),
     path("evaluaciones/<int:pk>/eliminar/", views.evaluacion_eliminar, name="evaluacion_eliminar"),
+    path("libro/", libro.libro, name="libro"),
+    path("libro/curso/<int:pk>/", libro.libro_curso, name="libro_curso"),
+    path("libro/curso/<int:pk>/asistencia.pdf", libro.asistencia_mes_pdf, name="asistencia_mes_pdf"),
+    path("notas/<int:ac_pk>/clases/", libro.leccionario, name="leccionario"),
+    path("notas/<int:ac_pk>/clases/nueva/", libro.clase_form, name="clase_crear"),
+    path("notas/<int:ac_pk>/clases/leccionario.pdf", libro.leccionario_pdf, name="leccionario_pdf"),
+    path("clases/<int:pk>/", libro.clase_detalle, name="clase_detalle"),
+    path("clases/<int:pk>/editar/", libro.clase_form, name="clase_editar"),
+    path("clases/<int:pk>/eliminar/", libro.clase_eliminar, name="clase_eliminar"),
     path("estudiantes/", views.estudiantes, name="estudiantes"),
     path("estudiantes/nuevo/", views.estudiante_form, name="estudiante_crear"),
     path("estudiantes/<int:pk>/", views.estudiante_detalle, name="estudiante_detalle"),

@@ -757,3 +757,73 @@ def _nuevo_establecimiento(sender, instance, created, raw=False, **kwargs):
     if created and not raw:
         from .catalogos import sembrar_catalogos
         sembrar_catalogos(instance)
+
+
+# --------------------------------------------------------------------------- Libro de clases digital
+
+class Clase(models.Model):
+    """Una clase del libro de clases: planificación (leccionario), registro, asistencia y firma del docente."""
+    objects = PorEstablecimientoManager.por("asignatura_curso__curso__establecimiento")
+    todos = models.Manager()
+
+    asignatura_curso = models.ForeignKey(AsignaturaCurso, on_delete=models.CASCADE, related_name="clases")
+    fecha = models.DateField(default=timezone.localdate)
+    hora_inicio = models.TimeField("hora de inicio", null=True, blank=True)
+    bloques = models.PositiveSmallIntegerField("horas pedagógicas", default=2)
+    unidad = models.CharField("unidad", max_length=200, blank=True)
+    objetivo = models.TextField("objetivo de aprendizaje (OA)", help_text="Ej.: OA 3 – Leer y comprender textos…")
+    actividades = models.TextField(
+        "contenidos y actividades", blank=True,
+        help_text="Inicio, desarrollo y cierre de la clase. Al planificar se escribe lo previsto; al registrar, lo realizado.")
+    recursos = models.CharField("recursos", max_length=250, blank=True)
+    observaciones = models.TextField(blank=True)
+    evaluacion = models.OneToOneField(Evaluacion, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name="clase", verbose_name="evaluación de esta clase")
+    asistencia_registrada = models.BooleanField(default=False)
+    firmada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="clases_firmadas")
+    firmada_en = models.DateTimeField(null=True, blank=True)
+    visado_utp = models.TextField("observación de UTP", blank=True)
+    creada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="+")
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "clase"
+        verbose_name_plural = "libro de clases"
+        ordering = ["fecha", "hora_inicio", "id"]
+
+    def __str__(self):
+        return f"{self.asignatura_curso} · {self.fecha:%d-%m-%Y}"
+
+    @property
+    def firmada(self):
+        return self.firmada_en is not None
+
+    @property
+    def estado(self):
+        if self.firmada:
+            return "Firmada"
+        if self.asistencia_registrada:
+            return "Realizada (sin firma)"
+        return "Planificada"
+
+
+class AsistenciaClase(models.Model):
+    objects = PorEstablecimientoManager.por("clase__asignatura_curso__curso__establecimiento")
+    todos = models.Manager()
+
+    class Estado(models.TextChoices):
+        PRESENTE = "P", "Presente"
+        AUSENTE = "A", "Ausente"
+        ATRASO = "T", "Atrasado(a)"
+        RETIRADO = "R", "Retirado(a) antes del término"
+
+    clase = models.ForeignKey(Clase, on_delete=models.CASCADE, related_name="asistencias")
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="asistencias_clase")
+    estado = models.CharField(max_length=1, choices=Estado.choices, default=Estado.PRESENTE)
+
+    class Meta:
+        verbose_name = "asistencia a clase"
+        verbose_name_plural = "asistencia a clases"
+        constraints = [models.UniqueConstraint(fields=["clase", "estudiante"], name="asistencia_unica")]

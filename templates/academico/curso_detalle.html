@@ -7,12 +7,13 @@
     {% if curso.modalidad %}<div class="mb-1"><span class="badge {% if curso.modalidad == 'TP' %}bg-warning-subtle text-warning-emphasis{% else %}bg-info-subtle text-info-emphasis{% endif %}">{{ curso.descripcion_modalidad }}</span></div>{% endif %}
     <div class="sub">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · {{ resumenes|length }} estudiantes · <a href="{% url 'convivencia' %}?curso={{ curso.pk }}">{{ n_anotaciones }} anotaciones</a></div></div>
   {% if informes %}
+  <div class="d-flex gap-2"><a class="btn btn-primary btn-sm" href="{% url 'libro_curso' curso.pk %}"><i class="bi bi-journal-bookmark"></i> Libro de clases</a>
   <div class="btn-group">
     <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_notas_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Informes de notas</a>
     <a class="btn btn-outline-primary btn-sm" href="{% url 'informe_final_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Informes finales</a>
     <a class="btn btn-outline-primary btn-sm" href="{% url 'acta_final_pdf' curso.pk %}"><i class="bi bi-file-pdf"></i> Acta final</a>
     <a class="btn btn-outline-success btn-sm" href="{% url 'informe_final_excel' curso.pk %}"><i class="bi bi-file-excel"></i> Excel final</a>
-  </div>
+  </div></div>
   {% endif %}
 </div>
 <div class="card p-3 p-lg-4 mb-4">
@@ -38,7 +39,8 @@
           {% for u in profesores %}<option value="{{ u.pk }}"{% if u.pk == ac.profesor_id %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
         </select></td>
         <td><input name="horas_{{ ac.pk }}" class="form-control form-control-sm text-center" value="{{ ac.horas_semanales|floatformat:'-1'|default:'' }}" inputmode="decimal"></td>
-        <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{% url 'libro_notas' ac.pk %}"><i class="bi bi-journal-check"></i> Notas</a>
+        <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{% url 'leccionario' ac.pk %}"><i class="bi bi-journal-bookmark"></i> Leccionario</a>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'libro_notas' ac.pk %}"><i class="bi bi-journal-check"></i> Notas</a>
           <button class="btn btn-sm btn-link text-danger" form="quitar-{{ ac.pk }}" title="Quitar del curso"><i class="bi bi-x-lg"></i></button></td>
       </tr>
       {% endfor %}

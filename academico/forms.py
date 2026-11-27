@@ -1,7 +1,9 @@
+from decimal import Decimal
+
 from django import forms
 
 from .models import (
-    Anotacion, Asignatura, Entrevista, Establecimiento, Estudiante, Evaluacion, Funcionario, OpcionCatalogo, RedApoyo,
+    Anotacion, Asignatura, Clase, Entrevista, Establecimiento, Estudiante, Evaluacion, Funcionario, OpcionCatalogo, RedApoyo,
 )
 from .lectores import EXTENSIONES
 from .rut import normalizar_rut, validar_rut
@@ -367,3 +369,47 @@ class ConfiguracionEstablecimientoForm(BootstrapMixin, forms.ModelForm):
         if commit:
             est.save()
         return est
+
+
+class ClaseForm(BootstrapMixin, forms.ModelForm):
+    """Planificación / registro de una clase del leccionario."""
+    es_evaluacion = forms.BooleanField(
+        label="En esta clase se aplica una evaluación con nota", required=False,
+        help_text="Crea la evaluación en el libro de notas de la asignatura, con la fecha de la clase.")
+    nombre_evaluacion = forms.CharField(label="Nombre de la evaluación", max_length=100, required=False,
+                                        help_text="Ej.: Prueba Unidad 2, Disertación, Control de lectura.")
+    ponderacion = forms.DecimalField(label="Ponderación", max_digits=5, decimal_places=2, required=False,
+                                     min_value=Decimal("0.01"), initial=Decimal("1"),
+                                     help_text="Peso dentro del semestre (1 = todas pesan igual).")
+
+    class Meta:
+        model = Clase
+        fields = ["fecha", "hora_inicio", "bloques", "unidad", "objetivo", "actividades", "recursos", "observaciones"]
+        widgets = {
+            "fecha": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "hora_inicio": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "objetivo": forms.Textarea(attrs={"rows": 2}),
+            "actividades": forms.Textarea(attrs={"rows": 5}),
+            "observaciones": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ev = self.instance.evaluacion if self.instance.pk else None
+        if ev:
+            self.fields["es_evaluacion"].initial = True
+            self.fields["nombre_evaluacion"].initial = ev.nombre
+            self.fields["ponderacion"].initial = ev.ponderacion
+
+    def clean(self):
+        datos = super().clean()
+        if datos.get("es_evaluacion") and not (datos.get("nombre_evaluacion") or "").strip():
+            self.add_error("nombre_evaluacion", "Indique el nombre de la evaluación.")
+        return datos
+
+
+class VisadoForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = Clase
+        fields = ["visado_utp"]
+        widgets = {"visado_utp": forms.Textarea(attrs={"rows": 2})}

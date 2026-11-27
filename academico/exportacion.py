@@ -672,3 +672,113 @@ def pdf_entrevista(estudiante, entrevista=None):
     historia.append(Paragraph(f"{escape(est.comuna or '')}, {'____ de ______________ de ________' if blanco else _fecha_larga(e.fecha)}.",
                               ParagraphStyle("f", parent=E_NORMAL, alignment=2)))
     return _construir_pdf(historia, titulo="Registro de entrevista", interno=True)
+
+
+# --------------------------------------------------------------------------- Libro de clases
+
+def _firma_txt(clase):
+    if clase.firmada:
+        quien = clase.firmada_por.get_full_name() if clase.firmada_por else ""
+        return f"{escape(quien)}<br/><font size=6>Firma electrónica {timezone.localtime(clase.firmada_en):%d-%m-%Y %H:%M}</font>"
+    return "<font color='#C00000'>Sin firma</font>"
+
+
+def _corto(texto, maximo=420):
+    texto = (texto or "").strip()
+    return escape(texto if len(texto) <= maximo else texto[:maximo].rsplit(" ", 1)[0] + "…").replace("\n", "<br/>")
+
+
+def pdf_leccionario(ac, clases):
+    """Leccionario de una asignatura: registro clase a clase con asistencia y firma del docente."""
+    curso = ac.curso
+    historia = _membrete("Libro de clases · Leccionario", f"{escape(ac.asignatura.nombre)} · {escape(curso.nombre_corto)} · Año {curso.anio}",
+                         decreto=False)
+    profesor = ac.profesor.get_full_name() if ac.profesor else "Sin asignar"
+    realizadas = [c for c in clases if c.asistencia_registrada]
+    historia.append(_tabla_datos([
+        ("Asignatura", escape(ac.asignatura.nombre), "Curso", escape(curso.nombre_corto)),
+        ("Profesor(a)", escape(profesor), "Horas semanales", f"{ac.horas_semanales:g}" if ac.horas_semanales else "—"),
+        ("Clases registradas", f"{len(realizadas)} ({sum(c.bloques for c in realizadas)} horas pedagógicas)",
+         "Clases firmadas", str(sum(1 for c in clases if c.firmada))),
+    ], [3.4 * cm, 8.5 * cm, 3.4 * cm, 8.6 * cm]))
+    historia.append(Spacer(1, 8))
+    enc = ["N°", "Fecha", "Hrs", "Unidad y objetivo de aprendizaje", "Contenidos y actividades", "Aus.",
+           "Evaluación", "Firma docente"]
+    datos = [[Paragraph(f"<b>{t}</b>", E_CELDA_C) for t in enc]]
+    for i, c in enumerate(clases, 1):
+        oa = (f"<b>{escape(c.unidad)}</b><br/>" if c.unidad else "") + _corto(c.objetivo, 260)
+        act = _corto(c.actividades)
+        if c.observaciones:
+            act += f"<br/><i>Obs.: {_corto(c.observaciones, 160)}</i>"
+        if c.visado_utp:
+            act += f"<br/><font color='#1F4E79'><i>UTP: {_corto(c.visado_utp, 160)}</i></font>"
+        datos.append([
+            Paragraph(str(i), E_CELDA_C),
+            Paragraph(f"{c.fecha:%d-%m-%y}" + (f"<br/>{c.hora_inicio:%H:%M}" if c.hora_inicio else ""), E_CELDA_C),
+            Paragraph(str(c.bloques), E_CELDA_C), Paragraph(oa, E_CELDA), Paragraph(act or "—", E_CELDA),
+            Paragraph(str(c.ausentes) if c.asistencia_registrada else "—", E_CELDA_C),
+            Paragraph(escape(c.evaluacion.nombre) if c.evaluacion else "", E_CELDA),
+            Paragraph(_firma_txt(c), E_CELDA_C),
+        ])
+    if len(datos) == 1:
+        datos.append([Paragraph("Aún no hay clases registradas.", E_CELDA)] + [""] * 7)
+    t = Table(datos, colWidths=[0.8 * cm, 1.8 * cm, 0.9 * cm, 6.2 * cm, 7.4 * cm, 1.5 * cm, 2.3 * cm, 3 * cm],
+              repeatRows=1)
+    t.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    historia.append(t)
+    historia += _firmas([f"{escape(profesor)}<br/>Profesor(a) de asignatura", "Jefe(a) de UTP"], ancho_total=23.9 * cm,
+                        espacio=40)
+    return _construir_pdf(historia, horizontal=True, titulo="Leccionario", interno=True)
+
+
+def pdf_asistencia_mes(curso, datos, mes_txt):
+    """Registro mensual de asistencia diaria del curso, más las clases realizadas y su firma."""
+    historia = _membrete("Libro de clases · Registro de asistencia",
+                         f"{escape(curso.nombre_corto)} · {mes_txt.capitalize()}", decreto=False)
+    dias = datos["dias"]
+    simbolo = {"P": "•", "A": "A", "T": "T", "R": "R", "": ""}
+    enc = ["N°", "Estudiante"] + [f"{d.day}" for d in dias] + ["Aus.", "Atr.", "%"]
+    filas = [[Paragraph(f"<b>{t}</b>", E_CELDA_C) for t in enc]]
+    rojas = []
+    for i, f in enumerate(datos["filas"], 1):
+        fila = [str(i), Paragraph(escape(f["est"].nombre_completo), E_CELDA)]
+        for j, c in enumerate(f["celdas"]):
+            fila.append(simbolo.get(c, c))
+            if c == "A":
+                rojas.append((2 + j, i))
+        pct = f"{f['pct']:.1f}".replace(".", ",") if f["pct"] is not None else "—"
+        fila += [str(f["ausencias"]), str(f["atrasos"]), pct]
+        filas.append(fila)
+    ancho_util = 23.9 * cm
+    fijo = 0.7 * cm + 5.6 * cm + 3 * 1.1 * cm
+    ancho_dia = (ancho_util - fijo) / len(dias) if dias else 1 * cm
+    anchos = [0.7 * cm, 5.6 * cm] + [min(ancho_dia, 1 * cm)] * len(dias) + [1.1 * cm] * 3
+    t = Table(filas, colWidths=anchos, repeatRows=1)
+    estilo = [("GRID", (0, 0), (-1, -1), 0.4, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+              ("FONTSIZE", (0, 1), (-1, -1), 7.5), ("ALIGN", (2, 1), (-1, -1), "CENTER"),
+              ("ALIGN", (0, 1), (0, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE")]
+    estilo += [("TEXTCOLOR", celda, celda, ROJO) for celda in rojas]
+    t.setStyle(TableStyle(estilo))
+    historia.append(t)
+    historia.append(Spacer(1, 4))
+    historia.append(Paragraph("• Presente · A Ausente · T Atrasado(a) · R Retirado(a) antes del término. "
+                              "La asistencia diaria corresponde a la primera clase registrada de cada día.", E_MINI))
+    if datos["clases"]:
+        historia.append(Spacer(1, 10))
+        historia.append(Paragraph("<b>Clases del mes</b>", E_NORMAL))
+        historia.append(Spacer(1, 4))
+        cl = [[Paragraph(f"<b>{t}</b>", E_CELDA_C) for t in ["Fecha", "Asignatura", "Hrs", "Objetivo de aprendizaje", "Firma docente"]]]
+        for c in datos["clases"]:
+            cl.append([Paragraph(f"{c.fecha:%d-%m}", E_CELDA_C), Paragraph(escape(c.asignatura_curso.asignatura.nombre), E_CELDA),
+                       Paragraph(str(c.bloques), E_CELDA_C), Paragraph(_corto(c.objetivo, 200), E_CELDA),
+                       Paragraph(_firma_txt(c), E_CELDA_C)])
+        tc = Table(cl, colWidths=[1.5 * cm, 4.5 * cm, 1 * cm, 13.4 * cm, 3.5 * cm], repeatRows=1)
+        tc.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.4, GRIS_LINEA), ("BACKGROUND", (0, 0), (-1, 0), GRIS_FONDO),
+                                ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        historia.append(tc)
+    jefe = curso.profesor_jefe.get_full_name() if curso.profesor_jefe else ""
+    historia += _firmas([f"{escape(jefe)}<br/>Profesor(a) jefe", "Inspectoría General"], ancho_total=23.9 * cm, espacio=40)
+    return _construir_pdf(historia, horizontal=True, titulo="Registro de asistencia", interno=True)

@@ -5,15 +5,16 @@ Usuarios creados (contraseña: demo1234): sostenedor, director, utp, inspector, 
 profe.historia (profesor de asignatura), profe.matematica, profe.lenguaje, profe.ciencias (además profesores jefe)
 """
 import random
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from academico.models import (
-    Anotacion, Asignatura, AsignaturaCurso, Calificacion, Curso, Establecimiento, Estudiante, Evaluacion, Funcionario,
+    Anotacion, Asignatura, AsignaturaCurso, AsistenciaClase, Calificacion, Clase, Curso, Establecimiento, Estudiante, Evaluacion, Funcionario,
     Nivel,
     Perfil, Religion, anio_actual, Entrevista, RedApoyo,
 )
@@ -54,9 +55,14 @@ class Command(BaseCommand):
             escuela.save(update_fields=["oferta"])
         with en_establecimiento(escuela):
             self.demo_escuela(anio)
+            self.demo_libro(anio, cursos=2)
         self.demo_superadmin()
         for datos in LICEOS:
             self.demo_liceo(anio, datos)
+            liceo = Establecimiento.objects.filter(nombre=datos["nombre"]).first()
+            if liceo:
+                with en_establecimiento(liceo):
+                    self.demo_libro(anio, cursos=1)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -324,6 +330,58 @@ class Command(BaseCommand):
                     notas.append(Calificacion(evaluacion=ev, estudiante=est, nota=nota))
         Calificacion.objects.bulk_create(notas, ignore_conflicts=True)
 
+    # ------------------------------------------------------------------ Libro de clases
+    def demo_libro(self, anio, cursos=1):
+        """Leccionario y asistencia de las últimas semanas (solo si el establecimiento aún no tiene clases)."""
+        from academico.libro import recalcular_asistencia, semestre_de
+
+        hoy = date.today()
+        if Clase.objects.exists() or hoy.year != anio:
+            return
+        rnd = random.Random(f"libro-{anio}")
+        dias = []
+        d = hoy - timedelta(days=21)
+        while d <= hoy + timedelta(days=7):
+            if d.weekday() < 5:
+                dias.append(d)
+            d += timedelta(days=1)
+        lista = (Curso.objects.filter(anio=anio, profesor_jefe__isnull=False)
+                 .order_by("-nivel__orden", "letra")[:cursos])
+        for curso in lista:
+            acs = list(curso.asignaturas_curso.filter(profesor__isnull=False).select_related("asignatura", "profesor"))
+            estudiantes = list(curso.estudiantes.filter(activo=True))
+            faltador = {e.id: rnd.choice([0.02, 0.03, 0.04, 0.06]) for e in estudiantes}
+            for d in dias:
+                del_dia = [ac for i, ac in enumerate(acs)
+                           if d.weekday() in ({i % 5, (i + 2) % 5} if (ac.horas_semanales or 0) >= 4 else {i % 5})]
+                ausentes_hoy = {e.id for e in estudiantes if rnd.random() < faltador[e.id]}
+                for slot, ac in enumerate(del_dia[:5]):
+                    n = Clase.objects.filter(asignatura_curso=ac).count()
+                    oa, actividad = _contenido_demo(ac.asignatura.nombre, n)
+                    clase = Clase.objects.create(
+                        asignatura_curso=ac, fecha=d, hora_inicio=HORARIO[slot],
+                        bloques=2, unidad=f"Unidad {3 if semestre_de(d) == 2 else 1}", objetivo=oa,
+                        actividades=actividad, recursos="Texto escolar, guía de trabajo, proyector", creada_por=ac.profesor)
+                    if d > hoy:
+                        if n == 6:
+                            ev = Evaluacion.objects.create(asignatura_curso=ac, nombre="Prueba de unidad", fecha=d,
+                                                           semestre=semestre_de(d))
+                            clase.evaluacion = ev
+                            clase.save(update_fields=["evaluacion"])
+                        continue
+                    cursan = [e for e in estudiantes if e.cursa(ac.asignatura)]
+                    registros = []
+                    for e in cursan:
+                        estado = "A" if e.id in ausentes_hoy else ("T" if slot == 0 and rnd.random() < 0.03 else "P")
+                        registros.append(AsistenciaClase(clase=clase, estudiante=e, estado=estado))
+                    AsistenciaClase.objects.bulk_create(registros)
+                    clase.asistencia_registrada = True
+                    if d < hoy - timedelta(days=2):
+                        clase.firmada_por = ac.profesor
+                        clase.firmada_en = timezone.make_aware(datetime.combine(d, clase.hora_inicio)) + timedelta(hours=1, minutes=25)
+                    clase.save()
+            recalcular_asistencia(curso)
+
     # ------------------------------------------------------------------ Plataforma con varios establecimientos
 
     def demo_superadmin(self):
@@ -406,6 +464,39 @@ class Command(BaseCommand):
                                      else "Llega atrasado(a) reiteradamente a clases."),
                         fecha=date(anio, 6, rnd.randint(1, 28)), autor=curso.profesor_jefe)
         reordenar_niveles()
+
+
+HORARIO = [time(8, 0), time(9, 45), time(11, 30), time(14, 0), time(15, 30)]
+
+CONTENIDOS_DEMO = {
+    "lengua": ("OA 3: Leer y familiarizarse con un amplio repertorio de literatura para aumentar su conocimiento del mundo.",
+                 "Inicio: activación de conocimientos previos sobre el género narrativo.\nDesarrollo: lectura compartida y "
+                 "preguntas de comprensión en parejas.\nCierre: ticket de salida con la idea principal del texto."),
+    "matem": ("OA 6: Resolver problemas que involucren las cuatro operaciones con números naturales y fracciones.",
+              "Inicio: problema desafío en la pizarra.\nDesarrollo: trabajo guiado con material concreto y ejercicios "
+              "de la guía.\nCierre: puesta en común de estrategias de resolución."),
+    "historia": ("OA 2: Explicar los principales procesos históricos y su impacto en la sociedad chilena actual.",
+                 "Inicio: análisis de una fuente iconográfica.\nDesarrollo: lectura de fuentes primarias y línea de tiempo "
+                 "grupal.\nCierre: síntesis colectiva de causas y consecuencias."),
+    "ciencias": ("OA 4: Investigar experimentalmente y explicar fenómenos naturales usando el método científico.",
+                 "Inicio: pregunta de investigación.\nDesarrollo: experimento en grupos y registro de observaciones.\n"
+                 "Cierre: elaboración de conclusiones y comunicación de resultados."),
+    "inglés": ("OA 5: Comprender textos orales y escritos breves en inglés sobre temas conocidos.",
+               "Warm up: vocabulary game.\nDesarrollo: listening y actividad de comprensión.\nCierre: role play en parejas."),
+    "física": ("OA 1: Aplicar habilidades motrices básicas y específicas en diferentes juegos y deportes.",
+               "Inicio: calentamiento y movilidad articular.\nDesarrollo: circuito de habilidades y juego colectivo.\n"
+               "Cierre: vuelta a la calma e hidratación."),
+}
+
+
+def _contenido_demo(asignatura, n):
+    nombre = asignatura.lower()
+    for clave, (oa, act) in CONTENIDOS_DEMO.items():
+        if clave in nombre:
+            return oa, act
+    return (f"Desarrollar los objetivos de aprendizaje de {asignatura} correspondientes a la unidad en curso (clase {n + 1}).",
+            "Inicio: presentación del objetivo de la clase.\nDesarrollo: actividad práctica individual y grupal.\n"
+            "Cierre: retroalimentación y síntesis de lo aprendido.")
 
 
 FEMENINOS = {"Sofía", "Isidora", "Florencia", "Emilia", "Antonella", "Josefa", "Martina", "Catalina", "Trinidad"}

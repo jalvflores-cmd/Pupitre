@@ -816,3 +816,94 @@ class VariosEstablecimientosTests(TestCase):
         self.assertContains(r, "Módulos de la especialidad: Administración")
         for nombre in ("acta_final_pdf", "informe_final_pdf"):
             self.assertEqual(self.client.get(reverse(nombre, args=[tp.pk])).status_code, 200)
+
+
+class LibroDeClasesTests(BaseDatos):
+    def setUp(self):
+        import datetime
+
+        from .models import Clase
+        self.hoy = datetime.date(2026, 4, 6)  # lunes
+        self.clase = Clase.objects.create(asignatura_curso=self.mat, fecha=self.hoy, objetivo="OA 1: Sumar fracciones")
+        self.est2 = Estudiante.objects.create(rut="9.876.543-3", nombres="Pía", apellido_paterno="Vera", curso=self.curso)
+
+    def test_profesor_planifica_clase_de_evaluacion_y_alimenta_notas(self):
+        self.client.force_login(self.profe_mat)
+        r = self.client.post(reverse("clase_crear", args=[self.mat.pk]), {
+            "fecha": "2026-09-10", "bloques": 2, "objetivo": "OA 5: Resolver problemas", "es_evaluacion": "on",
+            "nombre_evaluacion": "Prueba Unidad 3", "ponderacion": "2"})
+        self.assertEqual(r.status_code, 302)
+        ev = Evaluacion.objects.get(nombre="Prueba Unidad 3")
+        self.assertEqual((ev.asignatura_curso, ev.semestre, ev.ponderacion), (self.mat, 2, Decimal("2")))
+        self.assertContains(self.client.get(reverse("libro_notas", args=[self.mat.pk])), "Prueba Unidad 3")
+        clase = ev.clase
+        self.client.post(reverse("clase_editar", args=[clase.pk]), {"fecha": "2026-09-10", "bloques": 2,
+                                                                     "objetivo": "OA 5"})
+        self.assertFalse(Evaluacion.objects.filter(nombre="Prueba Unidad 3").exists())
+
+    def test_otro_profesor_no_edita_y_jefe_solo_lee(self):
+        self.client.force_login(self.profe_len)  # profesor jefe del curso, no de Matemática
+        self.assertEqual(self.client.get(reverse("leccionario", args=[self.mat.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("clase_crear", args=[self.mat.pk])).status_code, 403)
+        r = self.client.post(reverse("clase_detalle", args=[self.clase.pk]), {"accion": "guardar"})
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(self.client.get(reverse("libro_curso", args=[self.curso.pk])).status_code, 200)
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("libro_curso", args=[self.curso.pk])).status_code, 403)
+
+    def test_asistencia_firma_y_porcentaje_para_informes(self):
+        from .models import AsistenciaClase, Clase
+        self.client.force_login(self.profe_mat)
+        url = reverse("clase_detalle", args=[self.clase.pk])
+        r = self.client.post(url, {"accion": "firmar", "clave": "mala", f"a_{self.est.pk}": "A"})
+        self.clase.refresh_from_db()
+        self.assertFalse(self.clase.firmada)
+        self.assertFalse(AsistenciaClase.objects.exists())
+        self.client.post(url, {"accion": "firmar", "clave": "clave-segura-123", f"a_{self.est.pk}": "A",
+                               f"a_{self.est2.pk}": "T"})
+        self.clase.refresh_from_db()
+        self.assertTrue(self.clase.firmada)
+        self.assertEqual(self.clase.firmada_por, self.profe_mat)
+        # segundo día: Ana presente → 50 %; Pía con atraso cuenta como presente → 100 %
+        otra = Clase.objects.create(asignatura_curso=self.len, fecha=self.hoy.replace(day=7), objetivo="OA 2")
+        self.client.force_login(self.profe_len)
+        self.client.post(reverse("clase_detalle", args=[otra.pk]), {"accion": "guardar"})
+        self.est.refresh_from_db()
+        self.est2.refresh_from_db()
+        self.assertEqual((self.est.porcentaje_asistencia, self.est2.porcentaje_asistencia), (Decimal("50.0"), Decimal("100.0")))
+        # firmada: ya no se modifica
+        self.client.force_login(self.profe_mat)
+        self.client.post(url, {"accion": "guardar", f"a_{self.est.pk}": "P"})
+        self.assertEqual(AsistenciaClase.objects.get(clase=self.clase, estudiante=self.est).estado, "A")
+        self.assertEqual(self.client.get(reverse("clase_editar", args=[self.clase.pk])).status_code, 302)
+        # UTP la reabre para corrección
+        self.client.force_login(self.utp)
+        self.client.post(url, {"accion": "reabrir"})
+        self.clase.refresh_from_db()
+        self.assertFalse(self.clase.firmada)
+        self.assertIn("Reabierta", self.clase.visado_utp)
+        # el informe final usa la asistencia del libro
+        r = self.client.get(reverse("libro_curso", args=[self.curso.pk]) + "?mes=2026-04")
+        self.assertContains(r, "50,0")
+
+    def test_pdfs_y_aislamiento(self):
+        from .models import Establecimiento
+        from .tenencia import en_establecimiento
+        self.client.force_login(self.utp)
+        r = self.client.get(reverse("leccionario_pdf", args=[self.mat.pk]))
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "application/pdf"))
+        r = self.client.get(reverse("asistencia_mes_pdf", args=[self.curso.pk]) + "?mes=2026-04")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.get(reverse("libro")).status_code, 200)
+        otro = Establecimiento.objects.create(nombre="Otro liceo")
+        with en_establecimiento(otro):
+            from .models import Clase
+            self.assertFalse(Clase.objects.filter(pk=self.clase.pk).exists())
+
+    def test_clase_futura_no_registra_asistencia(self):
+        from .models import Clase
+        futura = Clase.objects.create(asignatura_curso=self.mat, fecha="2099-03-01", objetivo="OA 9")
+        self.client.force_login(self.profe_mat)
+        self.client.post(reverse("clase_detalle", args=[futura.pk]), {"accion": "guardar"})
+        futura.refresh_from_db()
+        self.assertFalse(futura.asistencia_registrada)

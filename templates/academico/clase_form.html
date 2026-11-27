@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="row justify-content-center"><div class="col-lg-9"><div class="card p-4">
+  <div class="miga mb-1"><a href="{% url 'leccionario' ac.pk %}">Leccionario {{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</a></div>
+  <h4 class="mb-3">{{ titulo }}</h4>
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="row">
+    {% for f in form %}{% if f.name not in "es_evaluacion nombre_evaluacion ponderacion" %}
+      <div class="{% if f.field.widget.attrs.rows %}col-12{% elif f.name == 'unidad' or f.name == 'recursos' %}col-md-6{% else %}col-md-2{% endif %}{% if f.name == 'fecha' %} col-md-3{% endif %} mb-3">
+        <label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}
+        {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+        {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}{% endfor %}
+    </div>
+    <div class="border rounded-3 p-3 mb-3 bg-light">
+      <div class="form-check">{{ form.es_evaluacion }} <label class="form-check-label fw-semibold" for="{{ form.es_evaluacion.id_for_label }}">{{ form.es_evaluacion.label }}</label></div>
+      <div class="form-text mb-2">{{ form.es_evaluacion.help_text }} Luego ingrese las notas en la pestaña Calificaciones.</div>
+      <div class="row" id="datos-evaluacion">
+        <div class="col-md-8 mb-2"><label class="form-label">{{ form.nombre_evaluacion.label }}</label>{{ form.nombre_evaluacion }}{% for e in form.nombre_evaluacion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <div class="col-md-4 mb-2"><label class="form-label">{{ form.ponderacion.label }}</label>{{ form.ponderacion }}<div class="form-text">{{ form.ponderacion.help_text }}</div></div>
+      </div>
+    </div>
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+    <a class="btn btn-link" href="{% if clase.pk %}{% url 'clase_detalle' clase.pk %}{% else %}{% url 'leccionario' ac.pk %}{% endif %}">Cancelar</a>
+  </form>
+  {% if clase.pk %}
+  <form method="post" action="{% url 'clase_eliminar' clase.pk %}" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar esta clase del leccionario?');">{% csrf_token %}
+    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar clase</button>
+  </form>
+  {% endif %}
+</div></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var chk = document.getElementById('{{ form.es_evaluacion.id_for_label }}'), datos = document.getElementById('datos-evaluacion');
+  function ver() { datos.style.display = chk.checked ? '' : 'none'; }
+  chk.addEventListener('change', ver); ver();
+})();
+</script>
+{% endblock %}

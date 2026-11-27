@@ -12,6 +12,7 @@
     <a class="btn btn-outline-success btn-sm" href="{% url 'informe_asignatura_excel' ac.pk %}"><i class="bi bi-file-excel"></i> Exportar</a>
   </div>
 </div>
+{% with pestana="notas" %}{% include "academico/_pestanas_asignatura.html" %}{% endwith %}
 {% if editable %}
 <div class="collapse mb-3" id="excel"><div class="card p-3">
   <p class="mb-2">1. Descargue la <a href="{% url 'plantilla_notas' 'notas' ac.pk %}">plantilla de notas de este curso</a> (incluye la lista de estudiantes y las evaluaciones ya creadas). 2. Complete las notas y súbala aquí.</p>

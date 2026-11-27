@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Libro de clases {{ curso.nombre_corto }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'libro' %}">Libro de clases</a> / <a href="{% url 'curso_detalle' curso.pk %}">{{ curso.nombre_corto }}</a></div>
+    <h3>Libro de clases · {{ curso.nombre_corto }}</h3>
+    <div class="sub">Profesor(a) jefe: {{ curso.profesor_jefe.get_full_name|default:"sin asignar" }} · Asistencia de {{ mes_txt }}</div></div>
+  <div class="d-flex gap-2 align-items-center">
+    <a class="btn btn-outline-secondary btn-sm" href="?mes={{ previo }}"><i class="bi bi-chevron-left"></i></a>
+    <span class="fw-semibold text-capitalize">{{ mes_txt }}</span>
+    <a class="btn btn-outline-secondary btn-sm" href="?mes={{ proximo }}"><i class="bi bi-chevron-right"></i></a>
+    <a class="btn btn-outline-danger btn-sm" href="{% url 'asistencia_mes_pdf' curso.pk %}?mes={{ mes_param }}"><i class="bi bi-file-pdf"></i> PDF del mes</a>
+  </div>
+</div>
+{% if sin_firma %}<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle"></i> Hay {{ sin_firma }} clase(s) de este mes sin firma del docente.</div>{% endif %}
+<div class="card p-2 mb-4">
+  <h5 class="px-2 pt-2">Asistencia diaria</h5>
+  {% if dias %}
+  <div class="table-responsive">
+  <table class="table table-sm table-bordered mb-0 tabla-notas">
+    <thead><tr><th class="sticky-col">Estudiante</th>{% for d in dias %}<th class="text-center small">{{ d|date:"D" }}<br>{{ d|date:"j" }}</th>{% endfor %}<th class="text-center">Aus.</th><th class="text-center">Atr.</th><th class="text-center">% mes</th><th class="text-center">% anual</th></tr></thead>
+    <tbody>
+    {% for f in filas %}
+      <tr><td class="sticky-col"><a href="{% url 'estudiante_detalle' f.est.pk %}">{{ f.est.nombre_completo }}</a></td>
+        {% for c in f.celdas %}<td class="text-center {% if c == 'A' %}text-danger fw-bold{% elif c == 'T' or c == 'R' %}text-warning-emphasis fw-semibold{% else %}text-success{% endif %}">{% if c == 'P' %}•{% else %}{{ c }}{% endif %}</td>{% endfor %}
+        <td class="text-center">{{ f.ausencias }}</td><td class="text-center">{{ f.atrasos }}</td>
+        <td class="text-center {% if f.pct is not None and f.pct < 85 %}text-danger fw-semibold{% endif %}">{{ f.pct|default_if_none:"—" }}</td>
+        <td class="text-center {% if f.est.porcentaje_asistencia is not None and f.est.porcentaje_asistencia < 85 %}text-danger fw-semibold{% endif %}">{{ f.est.porcentaje_asistencia|default_if_none:"—" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="small text-muted px-2 py-2">• Presente · A Ausente · T Atrasado(a) · R Retirado(a). Se considera la primera clase de cada día. El % anual es el que usan los informes y la promoción (mínimo 85 %).</div>
+  {% else %}<p class="text-muted px-2">No hay asistencia registrada este mes.</p>{% endif %}
+</div>
+<div class="card p-2">
+  <h5 class="px-2 pt-2">Clases del mes</h5>
+  <div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Fecha</th><th>Asignatura</th><th class="text-center">Hrs</th><th>Objetivo</th><th>Docente</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for c in clases %}
+      <tr><td class="text-nowrap">{{ c.fecha|date:"D d/m" }} {% if c.hora_inicio %}<span class="text-muted small">{{ c.hora_inicio|time:"H:i" }}</span>{% endif %}</td>
+        <td><a href="{% url 'clase_detalle' c.pk %}">{{ c.asignatura_curso.asignatura }}</a>{% if c.evaluacion %} <i class="bi bi-pencil-square text-warning" title="Evaluación: {{ c.evaluacion.nombre }}"></i>{% endif %}</td>
+        <td class="text-center">{{ c.bloques }}</td><td class="small">{{ c.objetivo|truncatechars:90 }}</td>
+        <td class="small">{{ c.asignatura_curso.profesor.get_full_name|default:c.asignatura_curso.profesor.username|default:"—" }}</td>
+        <td>{% if c.firmada %}<span class="badge bg-success">Firmada</span>{% elif c.asistencia_registrada %}<span class="badge bg-warning text-dark">Sin firma</span>{% else %}<span class="badge bg-info-subtle text-info-emphasis">Planificada</span>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No hay clases registradas este mes.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

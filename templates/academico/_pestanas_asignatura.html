@@ -1,0 +1,4 @@
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link{% if pestana == 'libro' %} active{% endif %}" href="{% url 'leccionario' ac.pk %}"><i class="bi bi-journal-bookmark"></i> Libro de clases (leccionario)</a></li>
+  <li class="nav-item"><a class="nav-link{% if pestana == 'notas' %} active{% endif %}" href="{% url 'libro_notas' ac.pk %}"><i class="bi bi-journal-check"></i> Calificaciones</a></li>
+</ul>

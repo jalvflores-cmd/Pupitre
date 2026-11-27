@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Leccionario {{ ac }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'libro' %}">Libro de clases</a> / <a href="{% url 'curso_detalle' ac.curso.pk %}">{{ ac.curso.nombre_corto }}</a> / {{ ac.asignatura }}</div>
+    <h3>{{ ac.asignatura }} · {{ ac.curso.nombre_corto }}</h3>
+    <div class="sub">Profesor(a): {{ ac.profesor.get_full_name|default:"sin asignar" }} · {{ horas_realizadas }} horas pedagógicas realizadas · {{ n_firmadas }} clases firmadas{% if n_planificadas %} · {{ n_planificadas }} planificadas{% endif %}</div></div>
+  <div class="d-flex gap-2">
+    {% if editable %}<a class="btn btn-primary btn-sm" href="{% url 'clase_crear' ac.pk %}"><i class="bi bi-plus-lg"></i> Nueva clase</a>{% endif %}
+    <a class="btn btn-outline-danger btn-sm" href="{% url 'leccionario_pdf' ac.pk %}"><i class="bi bi-file-pdf"></i> Leccionario PDF</a>
+  </div>
+</div>
+{% with pestana="libro" %}{% include "academico/_pestanas_asignatura.html" %}{% endwith %}
+{% if not clases %}
+  <div class="alert alert-info">Aún no hay clases. {% if editable %}Con «Nueva clase» registre la planificación de cada clase (unidad, objetivo, actividades). El día de la clase, pase la asistencia y fírmela.{% endif %}</div>
+{% else %}
+<div class="card p-2"><div class="table-responsive">
+<table class="table table-sm align-middle mb-0">
+  <thead><tr><th>Fecha</th><th class="text-center">Hrs</th><th>Unidad y objetivo</th><th class="text-center">Ausentes</th><th>Evaluación</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+  {% for c in clases %}
+  <tr>
+    <td class="text-nowrap">{{ c.fecha|date:"D d/m" }}{% if c.hora_inicio %}<div class="small text-muted">{{ c.hora_inicio|time:"H:i" }}</div>{% endif %}</td>
+    <td class="text-center">{{ c.bloques }}</td>
+    <td>{% if c.unidad %}<div class="small text-muted">{{ c.unidad }}</div>{% endif %}{{ c.objetivo|truncatechars:140 }}</td>
+    <td class="text-center">{% if c.asistencia_registrada %}{{ c.ausentes }}{% else %}—{% endif %}</td>
+    <td>{% if c.evaluacion %}<a class="badge bg-warning-subtle text-warning-emphasis text-decoration-none" href="{% url 'libro_notas' ac.pk %}"><i class="bi bi-pencil-square"></i> {{ c.evaluacion.nombre }}</a>{% endif %}</td>
+    <td>{% if c.firmada %}<span class="badge bg-success"><i class="bi bi-patch-check"></i> Firmada</span>
+        {% elif c.asistencia_registrada %}<span class="badge bg-warning text-dark">Sin firma</span>
+        {% elif c.fecha > hoy %}<span class="badge bg-info-subtle text-info-emphasis">Planificada</span>
+        {% else %}<span class="badge bg-danger-subtle text-danger-emphasis">Falta asistencia</span>{% endif %}</td>
+    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{% url 'clase_detalle' c.pk %}">{% if editable and not c.firmada and c.fecha <= hoy %}Registrar{% else %}Ver{% endif %}</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endif %}
+{% endblock %}

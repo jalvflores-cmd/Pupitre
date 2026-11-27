@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Libro de clases{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3>Libro de clases digital</h3>
+    <div class="sub">Leccionario clase a clase, asistencia y firma docente. Las evaluaciones pasan al libro de notas y la asistencia a los informes finales.</div></div>
+</div>
+{% if pendientes %}
+<div class="alert alert-warning">
+  <b><i class="bi bi-pen"></i> Clases por firmar ({{ pendientes|length }}{% if pendientes|length == 10 %}+{% endif %}):</b>
+  {% for c in pendientes %}<a class="ms-2" href="{% url 'clase_detalle' c.pk %}">{{ c.fecha|date:"d/m" }} {{ c.asignatura_curso.asignatura }} {{ c.asignatura_curso.curso.nombre_corto }}</a>{% if not forloop.last %} ·{% endif %}{% endfor %}
+</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card p-3 p-lg-4">
+      <h5><i class="bi bi-journal-bookmark text-primary"></i> {% if propias %}Mis asignaturas{% else %}Asignaturas{% endif %}</h5>
+      <div class="list-group list-group-flush lista-simple">
+      {% for curso, acs in por_curso.items %}
+        {% for ac in acs %}{% if not propias or ac.profesor_id == user.id %}
+        <a href="{% url 'leccionario' ac.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+          <span><b>{{ ac.asignatura }}</b> · {{ curso.nombre_corto }}<br><span class="text-muted small">{{ ac.profesor.get_full_name|default:"Sin profesor" }}</span></span>
+          <span class="text-nowrap"><span class="badge bg-primary-subtle text-primary-emphasis">{{ ac.n_clases }} clases</span>
+            {% if ac.n_clases %}<span class="badge bg-success-subtle text-success-emphasis">{{ ac.n_firmadas }} firmadas</span>{% endif %}</span>
+        </a>
+        {% endif %}{% endfor %}
+      {% empty %}<p class="text-muted mb-0">No tiene asignaturas este año.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+  {% if cursos %}
+  <div class="col-lg-5">
+    <div class="card p-3 p-lg-4">
+      <h5><i class="bi bi-calendar3 text-success"></i> Libro por curso</h5>
+      <p class="small text-muted">Asistencia diaria del mes y todas las clases del curso.</p>
+      <div class="d-flex flex-wrap gap-2">{% for c in cursos %}<a class="btn btn-outline-primary btn-sm" href="{% url 'libro_curso' c.pk %}">{{ c.nombre_corto }}</a>{% endfor %}</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

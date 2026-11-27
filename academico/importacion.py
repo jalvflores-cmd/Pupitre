@@ -343,8 +343,8 @@ def importar_nomina_sige(tabla, cursos_permitidos=None):
             for campo in ("telefono", "celular"):
                 if _texto(d.get(campo)) not in ("", "0"):
                     valores[campo] = _texto(d.get(campo))
-            if asistencia is not None:
-                valores["porcentaje_asistencia"] = asistencia
+            if asistencia is not None and not _usa_libro(cursos[clave_curso]):
+                valores["porcentaje_asistencia"] = asistencia  # si el curso usa el libro digital, manda el libro
             if not valores["nombres"] or not valores["apellido_paterno"]:
                 errores.append(f"Fila {n}: faltan nombres o apellido paterno")
                 continue
@@ -611,3 +611,9 @@ def plantilla_anotaciones():
         ayuda.append([linea])
     ayuda.column_dimensions["A"].width = 100
     return _libro_a_bytes(libro)
+
+
+def _usa_libro(curso):
+    from .libro import curso_usa_libro
+
+    return curso.pk is not None and curso_usa_libro(curso)
