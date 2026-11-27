@@ -1040,3 +1040,41 @@ class ParametrosPersonal(models.Model):
     def monto_tramo(self, tramo):
         return {"INICIAL": self.tramo_inicial, "TEMPRANO": self.tramo_temprano, "AVANZADO": self.tramo_avanzado,
                 "EXPERTO_I": self.tramo_experto_i, "EXPERTO_II": self.tramo_experto_ii}.get(tramo, 0)
+
+
+DIAS_SEMANA = [(1, "Lunes"), (2, "Martes"), (3, "Miércoles"), (4, "Jueves"), (5, "Viernes")]
+
+
+class BloqueHorario(DeEstablecimiento):
+    """Bloque (hora pedagógica) de la jornada del establecimiento. Los recreos son los espacios entre bloques."""
+
+    numero = models.PositiveSmallIntegerField("bloque")
+    inicio = models.TimeField()
+    fin = models.TimeField()
+    dias = models.CharField("días", max_length=5, default="12345", help_text="Días en que existe el bloque (1 = lunes).")
+
+    class Meta:
+        verbose_name = "bloque horario"
+        verbose_name_plural = "bloques horarios"
+        ordering = ["numero"]
+        constraints = [models.UniqueConstraint(fields=["establecimiento", "numero"], name="bloque_unico")]
+
+    def __str__(self):
+        return f"{self.numero}° ({self.inicio:%H:%M}–{self.fin:%H:%M})"
+
+
+class HorarioClase(models.Model):
+    """Una asignatura del curso en un día y bloque del horario semanal."""
+    objects = PorEstablecimientoManager.por("curso__establecimiento")
+    todos = models.Manager()
+
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name="horario")
+    asignatura_curso = models.ForeignKey(AsignaturaCurso, on_delete=models.CASCADE, related_name="horario")
+    dia = models.PositiveSmallIntegerField(choices=DIAS_SEMANA)
+    bloque = models.ForeignKey(BloqueHorario, on_delete=models.CASCADE, related_name="clases")
+    fijo = models.BooleanField(default=False, help_text="Puesto a mano: el generador no lo mueve.")
+
+    class Meta:
+        verbose_name = "clase del horario"
+        verbose_name_plural = "horario de clases"
+        constraints = [models.UniqueConstraint(fields=["curso", "dia", "bloque"], name="horario_celda_unica")]

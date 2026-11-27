@@ -71,6 +71,7 @@ class Command(BaseCommand):
                     self.demo_resultados(liceo)
         self.demo_red(escuela)
         self.demo_personal(escuela)
+        self.demo_horarios(anio)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -510,6 +511,17 @@ class Command(BaseCommand):
             ParametrosPersonal.objects.create(sostenedor=sost, **montos)
         if escuela.sostenedor_id is None and not ParametrosPersonal.objects.filter(establecimiento=escuela).exists():
             ParametrosPersonal.objects.create(establecimiento=escuela, **montos)
+
+    def demo_horarios(self, anio):
+        """Genera los horarios de cada establecimiento que aún no tiene ninguno."""
+        from academico.horarios import generar
+        from academico.models import HorarioClase
+
+        for est in Establecimiento.objects.all():
+            with en_establecimiento(est):
+                cursos = Curso.objects.filter(anio=anio)
+                if cursos.exists() and not HorarioClase.objects.exists():
+                    generar(cursos, semilla=1)
 
     def demo_superadmin(self):
         u, creado = User.objects.get_or_create(username="superadmin", defaults={

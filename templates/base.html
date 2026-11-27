@@ -41,6 +41,7 @@
     <a href="{% url 'cursos' %}" class="{% if '/cursos/' in p or '/notas/' in p and '/clases/' not in p and '/asistente/' not in p and '/evaluacion-unidad/' not in p or '/evaluaciones/' in p %}activo{% endif %}"><i class="bi bi-grid-1x2"></i> Cursos y notas</a>
     <a href="{% url 'libro' %}" class="{% if '/libro/' in p or '/clases/' in p or '/evaluacion-unidad/' in p %}activo{% endif %}"><i class="bi bi-journal-bookmark"></i> Libro de clases</a>
     <a href="{% url 'curriculum' %}" class="{% if '/curriculum/' in p %}activo{% endif %}"><i class="bi bi-diagram-3"></i> Currículum (OA)</a>
+    <a href="{% url 'horarios' %}" class="{% if '/horarios/' in p %}activo{% endif %}"><i class="bi bi-calendar-week"></i> Horarios</a>
     <a href="{% url 'estudiantes' %}" class="{% if '/estudiantes/' in p %}activo{% endif %}"><i class="bi bi-people"></i> Estudiantes</a>
     {% if mod_convivencia %}<a href="{% url 'convivencia' %}" class="{% if '/convivencia/' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>{% endif %}
     {% if ve_todo %}<a href="{% url 'resultados' %}" class="{% if '/resultados/' in p %}activo{% endif %}"><i class="bi bi-bar-chart-line"></i> Resultados</a>{% endif %}

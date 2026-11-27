@@ -1101,3 +1101,45 @@ class GestionPersonalTests(BaseDatos):
         self.assertEqual(self.client.get(reverse("personal") + "?exportar=excel").status_code, 200)
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("personal")).status_code, 403)
+
+
+class HorariosTests(BaseDatos):
+    def setUp(self):
+        from .models import anio_actual
+        Curso.objects.filter(pk__in=[self.curso.pk, self.otro_curso.pk]).update(anio=anio_actual())
+        AsignaturaCurso.objects.filter(pk=self.mat.pk).update(horas_semanales=Decimal("6"))
+        AsignaturaCurso.objects.filter(pk=self.len.pk).update(horas_semanales=Decimal("7.5"))
+        # el mismo profesor de matemática dicta en el otro curso
+        AsignaturaCurso.objects.create(curso=self.otro_curso, asignatura=self.mat.asignatura, profesor=self.profe_mat,
+                                       horas_semanales=Decimal("6"))
+
+    def test_genera_sin_topes_y_respeta_lo_fijado(self):
+        from .models import BloqueHorario, HorarioClase
+        self.client.force_login(self.utp)
+        self.client.get(reverse("horarios"))  # crea la jornada sugerida
+        b1 = BloqueHorario.objects.get(numero=1)
+        self.client.post(reverse("horarios"), {"accion": "celda", "curso": self.curso.pk, "dia": 1, "bloque": b1.pk,
+                                               "ac": self.len.pk})
+        self.client.post(reverse("horarios"), {"accion": "generar", "curso": "todos"})
+        self.assertEqual(HorarioClase.objects.filter(asignatura_curso=self.mat).count(), 6)
+        self.assertEqual(HorarioClase.objects.filter(asignatura_curso=self.len).count(), 8)  # 7,5 h -> 8 bloques
+        self.assertTrue(HorarioClase.objects.filter(curso=self.curso, dia=1, bloque=b1, fijo=True,
+                                                    asignatura_curso=self.len).exists())
+        slots = list(HorarioClase.objects.filter(asignatura_curso__profesor=self.profe_mat).values_list("dia", "bloque"))
+        self.assertEqual(len(slots), len(set(slots)))  # sin topes del profesor
+        # a mano: no permite poner al profesor en dos cursos a la vez
+        h = HorarioClase.objects.filter(asignatura_curso=self.mat).first()
+        otro = AsignaturaCurso.objects.get(curso=self.otro_curso)
+        HorarioClase.objects.filter(curso=self.otro_curso, dia=h.dia, bloque=h.bloque).delete()
+        r = self.client.post(reverse("horarios"), {"accion": "celda", "curso": self.otro_curso.pk, "dia": h.dia,
+                                                   "bloque": h.bloque_id, "ac": otro.pk}, follow=True)
+        self.assertContains(r, "ya tiene clase")
+
+    def test_profesor_ve_su_horario_y_no_edita(self):
+        from .horarios import generar
+        generar(Curso.objects.filter(pk__in=[self.curso.pk, self.otro_curso.pk]), semilla=1)
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("horarios"))
+        self.assertContains(r, "Matemática")
+        self.assertNotContains(r, "Generar horario")
+        self.assertEqual(self.client.post(reverse("horarios"), {"accion": "generar", "curso": "todos"}).status_code, 403)

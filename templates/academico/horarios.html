@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block titulo %}Horarios{% endblock %}
+{% block contenido %}
+<style>
+  .h-tabla td, .h-tabla th { vertical-align: middle; }
+  .h-celda { min-width: 8.5rem; height: 3.4rem; }
+  .h-asig { font-weight: 600; font-size: .85rem; line-height: 1.15; }
+  .h-sub { font-size: .75rem; color: var(--bs-secondary-color); }
+  .h-recreo td { background: #f6f7f9; font-size: .72rem; color: var(--bs-secondary-color); padding: .1rem .5rem !important; }
+  .h-celda select { font-size: .8rem; padding: .15rem 1.6rem .15rem .4rem; }
+  @media print { .p-sidebar, .no-imprimir, .p-topbar { display: none !important; } main, .p-main { margin: 0 !important; padding: 0 !important; }
+    .h-celda select { appearance: none; border: 0; padding: 0; } }
+</style>
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-calendar-week text-primary"></i> Horarios de clases {{ anio }}</h3>
+    <div class="sub">{% if profe %}Horario de {{ profe.get_full_name|default:profe.username }} · {{ horas }} hora{{ horas|pluralize }} semanales.{% elif curso %}{{ curso.nombre_corto }} · {{ horas }} de {{ horas_plan }} horas del plan ubicadas.{% endif %}</div></div>
+  <div class="d-flex flex-wrap gap-2 no-imprimir">
+    <form method="get" class="d-flex gap-2">
+      {% if cursos|length > 0 %}<select name="curso" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Curso">
+        {% if profe %}<option value="">Ver un curso…</option>{% endif %}
+        {% for c in cursos %}<option value="{{ c.pk }}"{% if curso and c.pk == curso.pk %} selected{% endif %}>{{ c.nombre_corto }}</option>{% endfor %}</select>{% endif %}
+    </form>
+    {% if profesores|length > 1 %}<form method="get"><select name="profesor" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Profesor">
+      <option value="">Ver un profesor(a)…</option>
+      {% for p in profesores %}<option value="{{ p.pk }}"{% if profe and p.pk == profe.pk %} selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></form>
+    {% elif not profe %}<a class="btn btn-sm btn-outline-secondary" href="?profesor={{ request.user.pk }}"><i class="bi bi-person"></i> Mi horario</a>{% endif %}
+    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+  </div>
+</div>
+
+{% if gestion %}
+<div class="card p-3 mb-3 no-imprimir">
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <form method="post" class="d-flex gap-2 align-items-center">{% csrf_token %}<input type="hidden" name="accion" value="generar">
+      <select name="curso" class="form-select form-select-sm" style="width:auto" aria-label="Generar para">
+        <option value="todos">Todos los cursos ({{ cursos|length }})</option>
+        {% if curso %}<option value="{{ curso.pk }}">Solo {{ curso.nombre_corto }}</option>{% endif %}
+      </select>
+      <button class="btn btn-sm btn-primary"><i class="bi bi-magic"></i> Generar horario</button>
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'jornada' %}"><i class="bi bi-clock"></i> Jornada y bloques</a>
+    {% if curso %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="liberar"><input type="hidden" name="curso" value="{{ curso.pk }}"><button class="btn btn-sm btn-link">Liberar clases fijadas</button></form>
+    <form method="post" onsubmit="return confirm('¿Vaciar el horario de {{ curso.nombre_corto }}?');">{% csrf_token %}<input type="hidden" name="accion" value="vaciar"><input type="hidden" name="curso" value="{{ curso.pk }}"><button class="btn btn-sm btn-link text-danger">Vaciar este curso</button></form>
+    {% endif %}
+  </div>
+  <div class="small text-muted mt-2">El generador reparte las horas semanales de la carga académica de cada curso sin topes de profesores, de a dos bloques seguidos y en días distintos para una misma asignatura. Lo que cambie a mano en la grilla queda fijo <i class="bi bi-pin-angle-fill"></i> y el generador no lo mueve.</div>
+</div>
+{% if sin_horario %}<div class="alert alert-info small no-imprimir">Aún no hay horarios: revise la jornada (bloques) y presione «Generar horario».</div>{% endif %}
+{% endif %}
+
+{% if filas %}
+<div class="card p-0 mb-4"><div class="table-responsive"><table class="table table-bordered h-tabla mb-0 text-center">
+  <thead class="table-light"><tr><th style="width:7rem">Bloque</th>{% for d, n in dias %}<th>{{ n }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for fila in filas %}
+    {% if fila.recreo %}<tr class="h-recreo"><td colspan="6">{{ fila.desde|time:"H:i" }}–{{ fila.bloque.inicio|time:"H:i" }} · recreo</td></tr>{% endif %}
+    <tr><th class="small fw-normal text-muted">{{ fila.bloque.numero }}°<br>{{ fila.bloque.inicio|time:"H:i" }}–{{ fila.bloque.fin|time:"H:i" }}</th>
+    {% for c in fila.celdas %}
+      <td class="h-celda{% if not c.existe %} bg-body-secondary{% endif %}">
+      {% if not c.existe %}
+      {% elif profe %}
+        {% if c.h %}<div class="h-asig">{{ c.h.asignatura_curso.asignatura.nombre }}</div><div class="h-sub">{{ c.h.curso.nombre_corto }}</div>{% endif %}
+      {% elif gestion %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="celda"><input type="hidden" name="curso" value="{{ curso.pk }}"><input type="hidden" name="dia" value="{{ c.dia }}"><input type="hidden" name="bloque" value="{{ fila.bloque.pk }}">
+          <select name="ac" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Asignatura">
+            <option value="">—</option>
+            {% for a in cargas %}<option value="{{ a.pk }}"{% if c.h and c.h.asignatura_curso_id == a.pk %} selected{% endif %}>{{ a.asignatura.nombre }}</option>{% endfor %}
+          </select></form>
+        {% if c.h %}<div class="h-sub mt-1">{% if c.h.fijo %}<i class="bi bi-pin-angle-fill" title="Fijada a mano"></i> {% endif %}{{ c.h.asignatura_curso.profesor.get_full_name|default:"Sin profesor(a)" }}</div>{% endif %}
+      {% elif c.h %}
+        <div class="h-asig">{{ c.h.asignatura_curso.asignatura.nombre }}</div><div class="h-sub">{{ c.h.asignatura_curso.profesor.get_full_name }}</div>
+      {% endif %}
+      </td>
+    {% endfor %}</tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% elif not cursos %}
+<div class="card p-4 text-muted">No hay cursos {{ anio }} para mostrar.</div>
+{% endif %}
+
+{% if gestion %}
+<div class="row g-4 no-imprimir">
+  {% if sobrecargados %}<div class="col-xl-6"><div class="card p-3 h-100 border-danger-subtle">
+    <h6 class="text-danger-emphasis"><i class="bi bi-exclamation-triangle"></i> Profesores con más horas que bloques en la semana</h6>
+    <p class="small text-muted">La semana tiene {{ capacidad }} bloques. Estas cargas no caben en un horario sin topes: revise la carga académica.</p>
+    <ul class="small mb-0">{% for p, h in sobrecargados %}<li>{{ p.get_full_name|default:p.username }}: {{ h }} horas</li>{% endfor %}</ul>
+  </div></div>{% endif %}
+  {% if pendientes %}<div class="col-xl-6"><div class="card p-3 h-100">
+    <h6><i class="bi bi-hourglass-split"></i> Horas sin ubicar ({{ pendientes|length }} asignatura{{ pendientes|length|pluralize }})</h6>
+    <div class="table-responsive" style="max-height:18rem"><table class="table table-sm small mb-0">
+      <thead><tr><th>Curso</th><th>Asignatura</th><th>Profesor(a)</th><th class="text-end">Ubicadas</th></tr></thead>
+      <tbody>{% for ac, plan, puestas in pendientes %}<tr><td><a href="?curso={{ ac.curso.pk }}">{{ ac.curso.nombre_corto }}</a></td><td>{{ ac.asignatura.nombre }}</td><td>{{ ac.profesor.get_full_name|default:"—" }}</td><td class="text-end">{{ puestas }} de {{ plan }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></div>{% elif not sin_horario %}<div class="col-xl-6"><div class="alert alert-success small mb-0"><i class="bi bi-check-circle"></i> Todas las horas de la carga académica están ubicadas.</div></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

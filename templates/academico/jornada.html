@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Jornada y bloques{% endblock %}
+{% block contenido %}
+<div class="row justify-content-center"><div class="col-xl-8"><div class="card p-4">
+  <div class="miga mb-1"><a href="{% url 'horarios' %}">Horarios</a></div>
+  <h4 class="mb-1">Jornada y bloques · {{ establecimiento_nombre }}</h4>
+  <p class="small text-muted">Cada bloque es una hora pedagógica. Los recreos y el almuerzo son los espacios entre un bloque y el siguiente. En «Días» escriba los días en que existe el bloque (1 = lunes … 5 = viernes): por ejemplo, 1234 si el viernes la jornada termina antes.</p>
+  <form method="post">{% csrf_token %}
+    {{ formset.management_form }}
+    {% for e in formset.non_form_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+    <table class="table table-sm align-middle">
+      <thead><tr><th style="width:6rem">N°</th><th>Inicio</th><th>Término</th><th style="width:8rem">Días</th><th>Quitar</th></tr></thead>
+      <tbody>{% for f in formset %}<tr>{% for h in f.hidden_fields %}{{ h }}{% endfor %}
+        <td>{{ f.numero }}</td><td>{{ f.inicio }}</td><td>{{ f.fin }}</td><td>{{ f.dias }}</td><td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td></tr>
+        {% for campo in f %}{% for e in campo.errors %}<tr><td colspan="5" class="text-danger small">{{ campo.label }}: {{ e }}</td></tr>{% endfor %}{% endfor %}
+      {% endfor %}</tbody>
+    </table>
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar jornada</button>
+    <a class="btn btn-link" href="{% url 'horarios' %}">Volver</a>
+  </form>
+</div></div></div>
+{% endblock %}
