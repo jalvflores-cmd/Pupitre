@@ -8,6 +8,7 @@ proporcionales a las horas de contrato). Reglas de la asignación por alta conce
 - Rural con 45 % a menos de 60 %: 10 % de la asignación de tramo.
 """
 from collections import Counter
+from math import ceil
 from decimal import Decimal
 
 from django import forms
@@ -86,10 +87,35 @@ class ParametrosForm(BootstrapMixin, forms.ModelForm):
 
 
 class CarreraForm(BootstrapMixin, forms.ModelForm):
+    """Ficha del funcionario(a) editable desde la gestión de personal (también por el sostenedor)."""
+
     class Meta:
         model = Funcionario
-        fields = ["cargo", "titulo", "horas_contrato", "tramo", "anios_experiencia", "brp_mencion",
-                  "evaluacion_docente", "evaluacion_anio"]
+        fields = ["rut", "nombres", "apellido_paterno", "apellido_materno", "cargo", "titulo", "mencion",
+                  "tipo_contrato", "horas_contrato", "primer_ciclo", "fecha_ingreso", "tramo", "anios_experiencia",
+                  "brp_mencion", "evaluacion_docente", "evaluacion_anio", "telefono", "email", "activo"]
+        widgets = {"fecha_ingreso": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
+
+    def clean_rut(self):
+        from .rut import normalizar_rut
+        rut = normalizar_rut(self.cleaned_data["rut"])
+        if Funcionario.objects.filter(rut=rut).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Ya existe un funcionario con este RUT en el establecimiento.")
+        return rut
+
+
+class NuevoFuncionarioForm(CarreraForm):
+    establecimiento_destino = forms.ModelChoiceField(label="Establecimiento", queryset=Establecimiento.objects.none())
+
+    def __init__(self, *args, establecimientos=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["establecimiento_destino"].queryset = Establecimiento.objects.filter(
+            pk__in=[e.pk for e in establecimientos])
+        self.order_fields(["establecimiento_destino"] + list(self.Meta.fields))
+
+    def clean_rut(self):  # se valida dentro del establecimiento elegido, al guardar
+        from .rut import normalizar_rut
+        return normalizar_rut(self.cleaned_data["rut"])
 
 
 @login_required
@@ -189,8 +215,115 @@ def carrera(request, pk):
             messages.success(request, f"Datos de {f} guardados.")
             return redirect("personal")
     return render(request, "academico/form.html", {
-        "form": form, "titulo": f"Carrera docente · {f}",
+        "form": form, "titulo": f"Ficha · {f}",
         "ayuda": f"{f.establecimiento}. El tramo y los años de experiencia determinan la asignación de tramo; el título "
-                 "y la mención, la BRP. Los montos se calculan con los parámetros del sostenedor.",
+                 "y la mención, la BRP. Las horas de contrato se usan en el análisis de dotación.",
         "volver": ("personal", None),
+    })
+
+
+@login_required
+def nuevo(request):
+    ests, sost, editable = alcance(request)
+    exigir(editable)
+    form = NuevoFuncionarioForm(request.POST or None, establecimientos=ests,
+                                initial={"establecimiento_destino": request.GET.get("est") or ests[0].pk})
+    if request.method == "POST" and form.is_valid():
+        est = form.cleaned_data["establecimiento_destino"]
+        with en_establecimiento(est):
+            if Funcionario.objects.filter(rut=form.cleaned_data["rut"]).exists():
+                form.add_error("rut", f"Ya existe un funcionario con este RUT en {est}.")
+            else:
+                f = form.save(commit=False)
+                f.establecimiento = est
+                f.save()
+                messages.success(request, f"{f} agregado(a) a {est}.")
+                return redirect("personal")
+    return render(request, "academico/form.html", {
+        "form": form, "titulo": "Nuevo funcionario(a)" + (f" · {sost}" if sost else ""),
+        "ayuda": "El funcionario(a) queda en la dotación del establecimiento elegido y en la gestión de personal "
+                 "del sostenedor.",
+        "volver": ("personal", None),
+    })
+
+
+# --------------------------------------------------------------------------- dotación vs plan de estudios
+
+HORAS_PEDAGOGICAS_POR_CRONOLOGICA = Decimal(60) / Decimal(45)  # hora pedagógica de 45 minutos
+TOLERANCIA = Decimal("1")
+
+
+def dotacion(est, anio):
+    """Compara las horas del plan de estudios (carga académica de los cursos del año) con las horas lectivas de
+    los docentes de aula del establecimiento (Ley 20.903: 65 % o 60 % del contrato, en horas pedagógicas)."""
+    from collections import defaultdict
+
+    from .models import AsignaturaCurso
+
+    with en_establecimiento(est):
+        acs = list(AsignaturaCurso.objects.filter(curso__anio=anio).select_related("profesor", "asignatura",
+                                                                                   "curso__nivel"))
+        horas_plan = sum(Decimal(ac.horas_semanales or 0) for ac in acs)
+        por_profe = defaultdict(Decimal)
+        sin_profesor = []
+        for ac in acs:
+            if ac.profesor_id:
+                por_profe[ac.profesor_id] += Decimal(ac.horas_semanales or 0)
+            elif ac.horas_semanales:
+                sin_profesor.append(ac)
+        filas, con_ficha = [], set()
+        for f in Funcionario.objects.filter(activo=True).select_related("usuario"):
+            asignadas = por_profe.get(f.usuario_id, Decimal(0)) if f.usuario_id else Decimal(0)
+            if f.usuario_id:
+                con_ficha.add(f.usuario_id)
+            pct = f.porcentaje_lectivo(est)
+            capacidad = (Decimal(f.horas_contrato) * pct / 100 * HORAS_PEDAGOGICAS_POR_CRONOLOGICA).quantize(
+                Decimal("0.1")) if pct else None
+            if capacidad is None and not asignadas:
+                continue  # directivos, técnicos y asistentes sin horas de aula
+            if capacidad is None:
+                estado = "directivo"
+            elif asignadas == 0:
+                estado = "sin_carga"
+            elif asignadas > capacidad + TOLERANCIA:
+                estado = "sobrecarga"
+            elif asignadas < capacidad - 2:
+                estado = "holgura"
+            else:
+                estado = "ok"
+            filas.append({"f": f, "capacidad": capacidad, "asignadas": asignadas, "estado": estado,
+                          "diferencia": (capacidad - asignadas) if capacidad is not None else None})
+        from django.contrib.auth import get_user_model
+        sin_ficha = [(u, por_profe[u.pk]) for u in get_user_model().objects.filter(pk__in=set(por_profe) - con_ficha)]
+    capacidad_total = sum(x["capacidad"] for x in filas if x["capacidad"] is not None)
+    horas_directivos = sum(x["asignadas"] for x in filas if x["capacidad"] is None)
+    horas_sin_profesor = sum(Decimal(ac.horas_semanales or 0) for ac in sin_profesor)
+    balance = capacidad_total + horas_directivos - horas_plan
+    horas_docente_44 = (Decimal(44) * Decimal("0.65") * HORAS_PEDAGOGICAS_POR_CRONOLOGICA).quantize(Decimal("0.1"))
+    filas.sort(key=lambda x: ({"sobrecarga": 0, "sin_carga": 1, "holgura": 2, "ok": 3, "directivo": 4}[x["estado"]],
+                              x["f"].apellido_paterno))
+    return {
+        "est": est, "filas": filas, "horas_plan": horas_plan, "capacidad": capacidad_total,
+        "horas_directivos": horas_directivos, "horas_sin_profesor": horas_sin_profesor, "sin_profesor": sin_profesor,
+        "sin_ficha": sin_ficha, "balance": balance, "docentes_equivalentes": (balance / horas_docente_44).quantize(
+            Decimal("0.1")) if horas_docente_44 else None,
+        "cobertura": ((capacidad_total + horas_directivos) * 100 / horas_plan) if horas_plan else None,
+        "sobrecargados": sum(1 for x in filas if x["estado"] == "sobrecarga"),
+        "sin_carga": sum(1 for x in filas if x["estado"] == "sin_carga"),
+        "horas_docente_44": horas_docente_44, "disponibles": capacidad_total + horas_directivos,
+    }
+
+
+@login_required
+def dotacion_vista(request):
+    ests, sost, editable = alcance(request)
+    anio = int(request.GET.get("anio") or anio_actual())
+    resumen = [dotacion(e, anio) for e in ests]
+    elegido = next((r for r in resumen if str(r["est"].pk) == request.GET.get("est")), resumen[0])
+    return render(request, "academico/dotacion.html", {
+        "resumen": resumen, "d": elegido, "anio": anio, "sostenedor": sost, "ests": ests,
+        "g_cobertura": graficos.barras([(r["est"].nombre, r["cobertura"]) for r in resumen if r["cobertura"] is not None],
+                                       maximo=50 * ceil(max([200] + [float(r["cobertura"]) for r in resumen if r["cobertura"]]) / 50),
+                                       umbral=100, umbral_txt="100 %", sufijo=" %", dec=0,
+                                       malo=lambda v: v < 100),
     })

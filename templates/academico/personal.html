@@ -11,6 +11,8 @@
       <input type="number" name="anio" value="{{ anio }}" class="form-control form-control-sm" style="width:6rem" onchange="this.form.submit()" aria-label="Año">
     </form>
     <a class="btn btn-sm btn-outline-secondary" href="?anio={{ anio }}&est={{ filtro_est }}&exportar=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'dotacion' %}?anio={{ anio }}{% if filtro_est %}&est={{ filtro_est }}{% endif %}"><i class="bi bi-people"></i> Dotación vs plan de estudios</a>
+    {% if editable %}<a class="btn btn-sm btn-primary" href="{% url 'personal_nuevo' %}{% if filtro_est %}?est={{ filtro_est }}{% endif %}"><i class="bi bi-person-plus"></i> Nuevo funcionario</a>{% endif %}
   </div>
 </div>
 
@@ -54,7 +56,7 @@
       <td>{% if x.f.evaluacion_docente %}<span class="badge {% if x.f.evaluacion_docente == 'INSATISFACTORIO' or x.f.evaluacion_docente == 'BASICO' %}bg-danger-subtle text-danger-emphasis{% else %}bg-light text-body border{% endif %}">{{ x.f.get_evaluacion_docente_display }}{% if x.f.evaluacion_anio %} {{ x.f.evaluacion_anio }}{% endif %}</span>{% else %}—{% endif %}</td>
       <td class="text-end">{% if x.brp %}{{ x.brp|pesos }}{% else %}—{% endif %}</td><td class="text-end">{% if x.tramo %}{{ x.tramo|pesos }}{% else %}—{% endif %}</td>
       <td class="text-end">{% if x.prioritarios %}{{ x.prioritarios|pesos }}{% else %}—{% endif %}</td><td class="text-end fw-semibold">{% if x.total %}{{ x.total|pesos }}{% else %}—{% endif %}</td>
-      {% if editable %}<td><a class="btn btn-sm btn-link p-0" href="{% url 'personal_carrera' x.f.pk %}" title="Editar tramo y evaluación"><i class="bi bi-pencil"></i></a></td>{% endif %}
+      {% if editable %}<td><a class="btn btn-sm btn-link p-0" href="{% url 'personal_carrera' x.f.pk %}" title="Editar ficha, tramo y evaluación"><i class="bi bi-pencil"></i></a></td>{% endif %}
     </tr>{% empty %}<tr><td colspan="12" class="text-muted">No hay funcionarios registrados. Se agregan en «Funcionarios» de cada establecimiento.</td></tr>{% endfor %}
     </tbody>
   </table></div>

@@ -6,9 +6,9 @@ from .permisos import puede_ver_funcionarios, es_gestion, es_solo_lectura, gesti
 
 USUARIOS_DEMO = [
     ("Plataforma", [("superadmin", "Superadministrador(a)")]),
-    ("Corporación Educacional Ñuble · sostenedor de los 3 liceos", [
+    ("Corporación Educacional Ñuble · sostenedor de la escuela y los 3 liceos", [
         ("admin.red", "Administrador(a) del sostenedor"), ("sostenedor.red", "Sostenedor(a)")]),
-    ("Escuela Gabriela Mistral · Básica (independiente)", [
+    ("Escuela Gabriela Mistral · Básica", [
         ("admin.escuela", "Administrador(a) de plataforma"), ("sostenedor", "Sostenedor(a)"), ("director", "Director(a)"), ("utp", "Jefe(a) de UTP"),
         ("inspector", "Inspector(a) general"), ("convivencia", "Encargado(a) de convivencia"),
         ("profe.historia", "Profesor(a) de asignatura"), ("profe.lenguaje", "Profesor(a) jefe")]),

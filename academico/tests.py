@@ -1240,3 +1240,28 @@ class ModulosAdministrativosTests(BaseDatos):
         self.assertEqual(self.client.get(reverse("pme_gastos") + "?anio=2026&exportar=excel").status_code, 200)
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("pme")).status_code, 403)
+
+
+class DotacionTests(BaseDatos):
+    def test_dotacion_vs_plan(self):
+        from .models import Funcionario, anio_actual
+        from .personal import dotacion
+        Curso.objects.filter(pk=self.curso.pk).update(anio=anio_actual())
+        AsignaturaCurso.objects.filter(pk=self.mat.pk).update(horas_semanales=Decimal("40"))
+        AsignaturaCurso.objects.filter(pk=self.len.pk).update(horas_semanales=Decimal("6"))
+        Funcionario.objects.create(rut="11.111.111-1", nombres="Mate", apellido_paterno="A", horas_contrato=44,
+                                   usuario=self.profe_mat)
+        Funcionario.objects.create(rut="22.222.222-2", nombres="Sin", apellido_paterno="Carga", horas_contrato=30)
+        from .models import Establecimiento
+        d = dotacion(Establecimiento.actual(), anio_actual())
+        self.assertEqual(d["horas_plan"], Decimal("46"))
+        estados = {x["f"].nombres: x["estado"] for x in d["filas"]}
+        self.assertEqual(estados, {"Mate": "sobrecarga", "Sin": "sin_carga"})  # 40 h > 38,1 lectivas
+        self.assertEqual([u for u, _ in d["sin_ficha"]], [self.profe_len])
+        self.client.force_login(self.utp)
+        r = self.client.get(reverse("dotacion"))
+        self.assertContains(r, "Sobrecargado")
+        self.client.post(reverse("personal_nuevo"), {"establecimiento_destino": Establecimiento.actual().pk,
+                         "rut": "33.333.333-3", "nombres": "Nueva", "apellido_paterno": "Docente", "cargo": "DOCENTE",
+                         "tipo_contrato": "TITULAR", "horas_contrato": 30, "activo": "on"})
+        self.assertTrue(Funcionario.objects.filter(nombres="Nueva").exists())

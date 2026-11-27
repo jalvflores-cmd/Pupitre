@@ -453,8 +453,8 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------ Plataforma con varios establecimientos
 
     def demo_red(self, escuela):
-        """Niveles: un sostenedor ficticio con los tres liceos y la escuela como establecimiento independiente.
-        Solo crea lo que falta y solo asigna liceos que aún no tienen sostenedor."""
+        """Niveles: un sostenedor ficticio con la escuela y los tres liceos (su personal queda como personal del
+        sostenedor). Solo crea lo que falta y solo asigna establecimientos que aún no tienen sostenedor."""
         from academico.models import Sostenedor
 
         def usuario(username, nombre, apellido, **perfil):
@@ -467,8 +467,8 @@ class Command(BaseCommand):
 
         sost, _ = Sostenedor.objects.get_or_create(nombre="Corporación Educacional Ñuble (demo)",
                                                    defaults={"rut": "65.123.456-7"})
-        Establecimiento.objects.filter(nombre__in=[d["nombre"] for d in LICEOS], sostenedor__isnull=True).update(
-            sostenedor=sost)
+        nombres = [d["nombre"] for d in LICEOS] + ["Escuela Gabriela Mistral"]
+        Establecimiento.objects.filter(nombre__in=nombres, sostenedor__isnull=True).update(sostenedor=sost)
         usuario("admin.red", "Carolina", "Fuentes Lagos", rol=Perfil.Rol.ADMIN_SOSTENEDOR, sostenedor=sost)
         usuario("sostenedor.red", "Hernán", "Muñoz Parra", rol=Perfil.Rol.SOSTENEDOR, sostenedor=sost)
         usuario("admin.escuela", "Marcela", "Riquelme Soto", rol=Perfil.Rol.ADMIN, establecimiento=escuela)
@@ -477,6 +477,7 @@ class Command(BaseCommand):
         """Tramos, evaluación docente, % de prioritarios y montos ilustrativos. Solo completa lo que está vacío."""
         from academico.models import ParametrosPersonal, Sostenedor
 
+        escuela.refresh_from_db()
         rnd = random.Random(7)
         ests = [escuela] + list(Establecimiento.objects.filter(nombre__in=[d["nombre"] for d in LICEOS]))
         for est, pct, rural in zip(ests, (82, 64, 71, 58), (False, False, False, True)):
@@ -494,6 +495,17 @@ class Command(BaseCommand):
                             apellido_paterno=(u.last_name.split() or ["—"])[0],
                             apellido_materno=" ".join(u.last_name.split()[1:]), cargo=cargo,
                             titulo="Profesor(a) de Educación Media", horas_contrato=rnd.choice([30, 38, 44, 44]))
+                # profesores con clases y sin ficha: se agrega su ficha (para el análisis de dotación)
+                con_ficha = set(Funcionario.objects.exclude(usuario=None).values_list("usuario_id", flat=True))
+                for u in User.objects.filter(asignaturas_curso__curso__establecimiento=est).exclude(
+                        pk__in=con_ficha).distinct():
+                    cuerpo = 21_000_000 + est.pk * 1000 + u.pk
+                    if not Funcionario.objects.filter(rut=f"{cuerpo}-{calcular_dv(cuerpo)}").exists():
+                        Funcionario.objects.create(
+                            usuario=u, rut=f"{cuerpo}-{calcular_dv(cuerpo)}", nombres=u.first_name or u.username,
+                            apellido_paterno=(u.last_name.split() or ["—"])[0],
+                            apellido_materno=" ".join(u.last_name.split()[1:]), cargo="DOCENTE",
+                            titulo="Profesor(a)", horas_contrato=rnd.choice([30, 38, 44]))
                 if not Funcionario.objects.exclude(tramo="").exists():
                     for f in Funcionario.objects.exclude(cargo=Funcionario.Cargo.ASISTENTE):
                         f.anios_experiencia = rnd.randint(1, 32)
