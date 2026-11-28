@@ -11,7 +11,7 @@
     {% for grupo, lista in grupos.items %}
       <h6 class="mt-1">{{ grupo }}</h6>
       {% for a in lista %}
-      <div class="card p-3 mb-2 border-start border-4 border-{{ a.nivel }}">
+      <div class="card p-3 mb-2" style="border-left:4px solid var(--bs-{{ a.nivel }})">
         <div class="d-flex gap-3 align-items-start">
           <i class="bi {{ a.icono }} text-{{ a.nivel }} fs-4"></i>
           <div class="flex-grow-1"><div class="fw-semibold">{{ a.titulo }}</div>{% if a.detalle %}<div class="small text-muted">{{ a.detalle }}</div>{% endif %}</div>

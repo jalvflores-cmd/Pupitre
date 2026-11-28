@@ -56,6 +56,8 @@ def _calendario(user, hoy):
         delta = (dia - hoy).days
         nombre = "Hoy" if delta == 0 else "Mañana" if delta == 1 else f"El {DIAS[dia.isoweekday()]} {dia.day}"
         for x in items.get(dia, []):
+            if x["tipo"] in ("Evaluación", "Plazo PME"):  # ya están en el seguimiento
+                continue
             hora = f" a las {x['hora']:%H:%M}" if x.get("hora") else ""
             avisos.append(_aviso("info" if dia > hoy else "warning", "bi-calendar-event",
                                  f"{nombre}{hora}: {x['titulo']}", x["tipo"], f"/calendario/?mes={dia:%Y-%m}",
@@ -83,7 +85,7 @@ def _docente(user, hoy, ahora):
                       and curso_usa_libro(ac.curso)]
             if faltan:
                 vencidas = [p for p in faltan if p[1].inicio <= ahora]
-                detalle = " · ".join(f"{ac.curso} {ac.asignatura.nombre} ({b.inicio:%H:%M})" for ac, b in faltan)
+                detalle = " · ".join(f"{ac.curso.nombre_corto} {ac.asignatura.nombre} ({b.inicio:%H:%M})" for ac, b in faltan)
                 ac0 = faltan[0][0]
                 avisos.append(_aviso("warning" if vencidas else "info", "bi-journal-text",
                                      f"Hoy: {_plural(len(faltan), 'clase')} del horario sin registrar en el libro",
@@ -105,14 +107,14 @@ def _docente(user, hoy, ahora):
         if proximas:
             avisos.append(_aviso("info", "bi-clipboard-check",
                                  f"{_plural(len(proximas), 'evaluación', 'evaluaciones')} en los próximos 7 días",
-                                 " · ".join(f"{e.fecha:%d/%m} {e.asignatura_curso.curso} {e.nombre}" for e in proximas),
+                                 " · ".join(f"{e.fecha:%d/%m} {e.asignatura_curso.curso.nombre_corto} {e.nombre}" for e in proximas),
                                  reverse("libro_notas", args=[proximas[0].asignatura_curso_id])))
         cursos = list({ac.curso for ac in acs})
         mias = [x for prof, lista in notas_pendientes(cursos, hoy) if prof == user for x in lista]
         if mias:
             avisos.append(_aviso("warning", "bi-exclamation-diamond",
                                  f"{_plural(len(mias), 'asignatura')} con notas pendientes",
-                                 " · ".join(f"{x['ac'].curso} {x['ac'].asignatura.nombre}: {x['motivos'][0]}" for x in mias[:4]),
+                                 " · ".join(f"{x['ac'].curso.nombre_corto} {x['ac'].asignatura.nombre}: {x['motivos'][0]}" for x in mias[:4]),
                                  reverse("libro_notas", args=[mias[0]["ac"].pk])))
             if hoy.month in (6, 7, 11, 12):
                 avisos.append(_aviso("info", "bi-lightbulb", "Se acerca el cierre del semestre",
@@ -130,7 +132,7 @@ def _docente(user, hoy, ahora):
             if seguidas:
                 partes.append(f"{_plural(seguidas, 'estudiante')} con 3 o más inasistencias seguidas")
             avisos.append(_aviso("danger" if riesgo else "warning", "bi-people",
-                                 f"Su jefatura ({', '.join(str(c) for c in jefaturas)}) tiene estudiantes en alerta",
+                                 f"Su jefatura ({', '.join(c.nombre_corto for c in jefaturas)}) tiene estudiantes en alerta",
                                  " · ".join(partes) + ". Considere contactar a los apoderados.",
                                  reverse("alertas") + "?ver=asistencia"))
     return avisos

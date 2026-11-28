@@ -1,0 +1,96 @@
+1° básico | OA1 | Demostrar habilidades motrices básicas de locomoción, manipulación y estabilidad en diferentes direcciones, alturas y niveles (correr, saltar, lanzar, atrapar, girar).
+1° básico | OA2 | Ejecutar acciones motrices que presenten una solución a un problema, reconociendo diversos criterios (tiempo, espacio, número de personas).
+1° básico | OA3 | Ejecutar actividades físicas y juegos colectivos con y sin implementos, cooperando con los compañeros y respetando reglas simples.
+1° básico | OA4 | Ejecutar movimientos o elementos de danzas tradicionales de forma coordinada, al ritmo de la música.
+1° básico | OA5 | Practicar actividades lúdicas y juegos en el entorno natural y en diferentes espacios, en forma segura.
+1° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que incrementen la condición física por medio de juegos y circuitos.
+1° básico | OA7 | Reconocer las sensaciones y respuestas corporales provocadas por la práctica de actividad física (cambios en el color de la piel, sudor, agitación, ritmo cardíaco).
+1° básico | OA8 | Practicar actividad física en forma segura, demostrando la adquisición de hábitos de higiene, posturales y de vida saludable (lavarse las manos, hidratarse, comer colación saludable).
+1° básico | OA9 | Practicar actividades físicas demostrando comportamientos seguros (realizar un calentamiento, utilizar implementos bajo supervisión, mantener su posición en el espacio).
+1° básico | OA10 | Practicar actividades físicas y juegos respetando reglas, turnos y a sus compañeros, y manifestando disposición para participar.
+1° básico | OA11 | Participar en actividades físicas de manera responsable y colaborativa, aceptando sus logros y desafíos.
+2° básico | OA1 | Demostrar habilidades motrices básicas de locomoción, manipulación y estabilidad en diferentes direcciones, alturas y niveles (correr, saltar, lanzar, atrapar, girar).
+2° básico | OA2 | Ejecutar acciones motrices que presenten una solución a un problema, reconociendo diversos criterios (tiempo, espacio, número de personas).
+2° básico | OA3 | Ejecutar actividades físicas y juegos colectivos con y sin implementos, cooperando con los compañeros y respetando reglas simples.
+2° básico | OA4 | Ejecutar movimientos o elementos de danzas tradicionales de forma coordinada, al ritmo de la música.
+2° básico | OA5 | Practicar actividades lúdicas y juegos en el entorno natural y en diferentes espacios, en forma segura.
+2° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que incrementen la condición física por medio de juegos y circuitos.
+2° básico | OA7 | Reconocer las sensaciones y respuestas corporales provocadas por la práctica de actividad física (cambios en el color de la piel, sudor, agitación, ritmo cardíaco).
+2° básico | OA8 | Practicar actividad física en forma segura, demostrando la adquisición de hábitos de higiene, posturales y de vida saludable (lavarse las manos, hidratarse, comer colación saludable).
+2° básico | OA9 | Practicar actividades físicas demostrando comportamientos seguros (realizar un calentamiento, utilizar implementos bajo supervisión, mantener su posición en el espacio).
+2° básico | OA10 | Practicar actividades físicas y juegos respetando reglas, turnos y a sus compañeros, y manifestando disposición para participar.
+2° básico | OA11 | Participar en actividades físicas de manera responsable y colaborativa, aceptando sus logros y desafíos.
+3° básico | OA1 | Demostrar control en la ejecución de habilidades motrices básicas de locomoción, manipulación y estabilidad en diferentes direcciones, alturas, niveles y combinaciones.
+3° básico | OA2 | Ejecutar juegos colectivos y deportes con reglas y espacios adaptados, aplicando estrategias simples de ataque y defensa.
+3° básico | OA3 | Practicar actividades físicas y juegos con reglas, en forma individual y colectiva, aplicando habilidades motrices básicas.
+3° básico | OA4 | Ejecutar movimientos corporales, danzas tradicionales y expresiones rítmicas, combinando habilidades al ritmo de la música.
+3° básico | OA5 | Participar en actividades recreativas en el entorno natural y urbano, aplicando conductas de cuidado del medioambiente y de seguridad.
+3° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que desarrollen la resistencia, la fuerza, la flexibilidad y la velocidad.
+3° básico | OA7 | Describir y explicar las respuestas corporales provocadas por la actividad física (frecuencia cardíaca y respiratoria, cansancio) y su relación con la intensidad.
+3° básico | OA8 | Ejecutar acciones que favorezcan una vida activa y saludable (alimentación, hidratación, descanso, higiene y postura corporal).
+3° básico | OA9 | Practicar actividades físicas en forma segura, demostrando conductas de autocuidado (calentamiento, uso correcto de implementos, vuelta a la calma).
+3° básico | OA10 | Practicar juegos y deportes respetando reglas, roles, turnos y a sus pares, y manifestando juego limpio.
+3° básico | OA11 | Participar en actividades físicas en forma colaborativa, valorando el esfuerzo propio y de los demás.
+4° básico | OA1 | Demostrar control en la ejecución de habilidades motrices básicas de locomoción, manipulación y estabilidad en diferentes direcciones, alturas, niveles y combinaciones.
+4° básico | OA2 | Ejecutar juegos colectivos y deportes con reglas y espacios adaptados, aplicando estrategias simples de ataque y defensa.
+4° básico | OA3 | Practicar actividades físicas y juegos con reglas, en forma individual y colectiva, aplicando habilidades motrices básicas.
+4° básico | OA4 | Ejecutar movimientos corporales, danzas tradicionales y expresiones rítmicas, combinando habilidades al ritmo de la música.
+4° básico | OA5 | Participar en actividades recreativas en el entorno natural y urbano, aplicando conductas de cuidado del medioambiente y de seguridad.
+4° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que desarrollen la resistencia, la fuerza, la flexibilidad y la velocidad.
+4° básico | OA7 | Describir y explicar las respuestas corporales provocadas por la actividad física (frecuencia cardíaca y respiratoria, cansancio) y su relación con la intensidad.
+4° básico | OA8 | Ejecutar acciones que favorezcan una vida activa y saludable (alimentación, hidratación, descanso, higiene y postura corporal).
+4° básico | OA9 | Practicar actividades físicas en forma segura, demostrando conductas de autocuidado (calentamiento, uso correcto de implementos, vuelta a la calma).
+4° básico | OA10 | Practicar juegos y deportes respetando reglas, roles, turnos y a sus pares, y manifestando juego limpio.
+4° básico | OA11 | Participar en actividades físicas en forma colaborativa, valorando el esfuerzo propio y de los demás.
+5° básico | OA1 | Demostrar la aplicación de habilidades motrices básicas adquiridas en una variedad de actividades deportivas (fútbol, básquetbol, vóleibol, atletismo, gimnasia, entre otras).
+5° básico | OA2 | Ejecutar juegos colectivos y deportes con reglas y espacios adaptados, utilizando estrategias de ataque y defensa y trabajo en equipo.
+5° básico | OA3 | Practicar deportes individuales y colectivos que impliquen tomar decisiones, aplicar reglas y adaptar estrategias.
+5° básico | OA4 | Ejecutar danzas tradicionales y expresiones rítmicas de Chile y otros países, con coordinación y expresividad.
+5° básico | OA5 | Practicar actividades físicas y recreativas en el entorno natural, aplicando medidas de seguridad y de cuidado del entorno.
+5° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que desarrollen la condición física (resistencia, fuerza, flexibilidad, velocidad), monitoreando su intensidad.
+5° básico | OA7 | Medir y registrar las respuestas corporales provocadas por la actividad física (frecuencia cardíaca y respiratoria) e interpretar sus cambios.
+5° básico | OA8 | Practicar regularmente actividad física y promover hábitos de vida activa y saludable (alimentación, hidratación, descanso, higiene).
+5° básico | OA9 | Practicar actividades físicas en forma segura, aplicando conductas de autocuidado y prevención de lesiones.
+5° básico | OA10 | Practicar juegos y deportes demostrando juego limpio, respeto por las reglas y por los demás, y liderazgo.
+5° básico | OA11 | Practicar actividades físicas en forma colaborativa, asumiendo distintos roles y valorando la diversidad de capacidades.
+6° básico | OA1 | Demostrar la aplicación de habilidades motrices básicas adquiridas en una variedad de actividades deportivas (fútbol, básquetbol, vóleibol, atletismo, gimnasia, entre otras).
+6° básico | OA2 | Ejecutar juegos colectivos y deportes con reglas y espacios adaptados, utilizando estrategias de ataque y defensa y trabajo en equipo.
+6° básico | OA3 | Practicar deportes individuales y colectivos que impliquen tomar decisiones, aplicar reglas y adaptar estrategias.
+6° básico | OA4 | Ejecutar danzas tradicionales y expresiones rítmicas de Chile y otros países, con coordinación y expresividad.
+6° básico | OA5 | Practicar actividades físicas y recreativas en el entorno natural, aplicando medidas de seguridad y de cuidado del entorno.
+6° básico | OA6 | Ejecutar actividades físicas de intensidad moderada a vigorosa que desarrollen la condición física (resistencia, fuerza, flexibilidad, velocidad), monitoreando su intensidad.
+6° básico | OA7 | Medir y registrar las respuestas corporales provocadas por la actividad física (frecuencia cardíaca y respiratoria) e interpretar sus cambios.
+6° básico | OA8 | Practicar regularmente actividad física y promover hábitos de vida activa y saludable (alimentación, hidratación, descanso, higiene).
+6° básico | OA9 | Practicar actividades físicas en forma segura, aplicando conductas de autocuidado y prevención de lesiones.
+6° básico | OA10 | Practicar juegos y deportes demostrando juego limpio, respeto por las reglas y por los demás, y liderazgo.
+6° básico | OA11 | Practicar actividades físicas en forma colaborativa, asumiendo distintos roles y valorando la diversidad de capacidades.
+7° básico | OA1 | Aplicar, combinar y ajustar las habilidades motrices específicas de locomoción, manipulación y estabilidad en al menos un deporte individual, uno de oposición, uno de colaboración y una danza.
+7° básico | OA2 | Resolver problemas en la práctica de juegos y deportes, aplicando estrategias y tácticas individuales y colectivas y evaluando su eficacia.
+7° básico | OA3 | Desarrollar la resistencia cardiovascular, la fuerza muscular, la velocidad y la flexibilidad para alcanzar una condición física saludable, considerando frecuencia, intensidad, tiempo y tipo de ejercicio.
+7° básico | OA4 | Practicar regularmente una variedad de actividades físicas alternativas y/o deportivas en diferentes entornos, aplicando conductas de autocuidado y seguridad y promoviendo una vida activa.
+7° básico | OA5 | Practicar actividades físicas y deportivas demostrando conductas de responsabilidad personal y social (juego limpio, respeto, liderazgo, trabajo en equipo e inclusión).
+8° básico | OA1 | Aplicar, combinar y ajustar las habilidades motrices específicas de locomoción, manipulación y estabilidad en al menos un deporte individual, uno de oposición, uno de colaboración y una danza.
+8° básico | OA2 | Resolver problemas en la práctica de juegos y deportes, aplicando estrategias y tácticas individuales y colectivas y evaluando su eficacia.
+8° básico | OA3 | Desarrollar la resistencia cardiovascular, la fuerza muscular, la velocidad y la flexibilidad para alcanzar una condición física saludable, considerando frecuencia, intensidad, tiempo y tipo de ejercicio.
+8° básico | OA4 | Practicar regularmente una variedad de actividades físicas alternativas y/o deportivas en diferentes entornos, aplicando conductas de autocuidado y seguridad y promoviendo una vida activa.
+8° básico | OA5 | Practicar actividades físicas y deportivas demostrando conductas de responsabilidad personal y social (juego limpio, respeto, liderazgo, trabajo en equipo e inclusión).
+I medio | OA1 | Aplicar, combinar y ajustar las habilidades motrices específicas de locomoción, manipulación y estabilidad en al menos un deporte individual, uno de oposición, uno de colaboración y una danza.
+I medio | OA2 | Resolver problemas en la práctica de juegos y deportes, aplicando estrategias y tácticas individuales y colectivas y evaluando su eficacia.
+I medio | OA3 | Desarrollar la resistencia cardiovascular, la fuerza muscular, la velocidad y la flexibilidad para alcanzar una condición física saludable, considerando frecuencia, intensidad, tiempo y tipo de ejercicio.
+I medio | OA4 | Practicar regularmente una variedad de actividades físicas alternativas y/o deportivas en diferentes entornos, aplicando conductas de autocuidado y seguridad y promoviendo una vida activa.
+I medio | OA5 | Practicar actividades físicas y deportivas demostrando conductas de responsabilidad personal y social (juego limpio, respeto, liderazgo, trabajo en equipo e inclusión).
+II medio | OA1 | Aplicar, combinar y ajustar las habilidades motrices específicas de locomoción, manipulación y estabilidad en al menos un deporte individual, uno de oposición, uno de colaboración y una danza.
+II medio | OA2 | Resolver problemas en la práctica de juegos y deportes, aplicando estrategias y tácticas individuales y colectivas y evaluando su eficacia.
+II medio | OA3 | Desarrollar la resistencia cardiovascular, la fuerza muscular, la velocidad y la flexibilidad para alcanzar una condición física saludable, considerando frecuencia, intensidad, tiempo y tipo de ejercicio.
+II medio | OA4 | Practicar regularmente una variedad de actividades físicas alternativas y/o deportivas en diferentes entornos, aplicando conductas de autocuidado y seguridad y promoviendo una vida activa.
+II medio | OA5 | Practicar actividades físicas y deportivas demostrando conductas de responsabilidad personal y social (juego limpio, respeto, liderazgo, trabajo en equipo e inclusión).
+III medio | OA1 | Aplicar individual y colectivamente habilidades motrices especializadas de manera creativa y segura en una variedad de actividades físicas y deportivas que sean de su interés.
+III medio | OA2 | Diseñar y aplicar un plan de entrenamiento personal para alcanzar una condición física saludable, desarrollando resistencia cardiovascular, fuerza muscular, velocidad y flexibilidad.
+III medio | OA3 | Practicar regularmente actividades físicas y deportivas de manera autónoma en diferentes entornos, para promover estilos de vida activos y saludables.
+III medio | OA4 | Promover la participación equitativa de todas las personas en actividades físicas y deportivas, asumiendo roles de liderazgo, colaboración y responsabilidad social.
+III medio | OA5 | Evaluar los factores personales, sociales y ambientales que influyen en la práctica de actividad física, proponiendo acciones para fomentarla en su comunidad.
+IV medio | OA1 | Aplicar individual y colectivamente habilidades motrices especializadas de manera creativa y segura en una variedad de actividades físicas y deportivas que sean de su interés.
+IV medio | OA2 | Diseñar y aplicar un plan de entrenamiento personal para alcanzar una condición física saludable, desarrollando resistencia cardiovascular, fuerza muscular, velocidad y flexibilidad.
+IV medio | OA3 | Practicar regularmente actividades físicas y deportivas de manera autónoma en diferentes entornos, para promover estilos de vida activos y saludables.
+IV medio | OA4 | Promover la participación equitativa de todas las personas en actividades físicas y deportivas, asumiendo roles de liderazgo, colaboración y responsabilidad social.
+IV medio | OA5 | Evaluar los factores personales, sociales y ambientales que influyen en la práctica de actividad física, proponiendo acciones para fomentarla en su comunidad.

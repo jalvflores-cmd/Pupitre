@@ -1,0 +1,70 @@
+1° básico | OA1 | Escuchar cualidades del sonido (altura, timbre, intensidad, duración) y elementos del lenguaje musical (pulsos, acentos, patrones, reiteraciones, contrastes) y representarlos de distintas formas.
+1° básico | OA2 | Expresar sensaciones, emociones e ideas que les sugiere el sonido y la música escuchada, usando diversos medios expresivos (verbal, corporal, musical, visual).
+1° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en repertorio infantil, de tradición oral chilena y música de compositores.
+1° básico | OA4 | Cantar al unísono y tocar instrumentos de percusión convencionales y no convencionales.
+1° básico | OA5 | Explorar e improvisar ideas musicales con diversos medios sonoros (la voz, el cuerpo, instrumentos y objetos).
+1° básico | OA6 | Presentar su trabajo musical a su curso y la comunidad, en forma individual y grupal, con responsabilidad y respeto.
+1° básico | OA7 | Identificar y describir experiencias musicales y sonoras en su propia vida.
+2° básico | OA1 | Escuchar cualidades del sonido y elementos del lenguaje musical (pulsos, acentos, patrones, secciones) y representarlos de distintas formas.
+2° básico | OA2 | Expresar sensaciones, emociones e ideas que les sugiere el sonido y la música escuchada, usando diversos medios expresivos.
+2° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en repertorio infantil, de tradición oral, de compositores chilenos y del mundo.
+2° básico | OA4 | Cantar al unísono y tocar instrumentos de percusión convencionales y no convencionales.
+2° básico | OA5 | Explorar e improvisar ideas musicales con diversos medios sonoros (voz, cuerpo, instrumentos y objetos), con un propósito expresivo.
+2° básico | OA6 | Presentar su trabajo musical al curso y la comunidad, en forma individual y grupal, con responsabilidad y respeto.
+2° básico | OA7 | Identificar y describir experiencias musicales y sonoras en su propia vida y en la sociedad (celebraciones, reuniones, festividades, situaciones cotidianas).
+3° básico | OA1 | Escuchar cualidades del sonido y elementos del lenguaje musical (pulsos, acentos, patrones, secciones, ostinatos) y representarlos de distintas formas.
+3° básico | OA2 | Expresar, mostrando grados crecientes de elaboración, sensaciones, emociones e ideas que les sugiere el sonido y la música escuchada.
+3° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en música de tradición oral, de pueblos originarios y de compositores chilenos y del mundo.
+3° básico | OA4 | Cantar al unísono y a más voces y tocar instrumentos de percusión, melódicos (metalófono, flauta dulce u otros) y armónicos.
+3° básico | OA5 | Improvisar y crear ideas musicales con diversos medios sonoros, con un propósito dado, utilizando las cualidades del sonido y elementos del lenguaje musical.
+3° básico | OA6 | Presentar su trabajo musical en forma individual y grupal, comunicando el propósito expresivo y demostrando responsabilidad y respeto.
+3° básico | OA7 | Describir el rol de la música en diversos contextos, reconociendo su presencia en la vida cotidiana y en la cultura.
+4° básico | OA1 | Escuchar cualidades del sonido y elementos del lenguaje musical (reiteraciones, contrastes, variaciones, dinámicas, tempo, preguntas-respuestas, secciones A-AB-ABA) y representarlos de distintas formas.
+4° básico | OA2 | Expresar, mostrando grados crecientes de elaboración, sensaciones, emociones e ideas que les sugiere la música escuchada e interpretada.
+4° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en música de pueblos originarios, de tradición oral y de compositores americanos.
+4° básico | OA4 | Cantar al unísono y a más voces y tocar instrumentos de percusión, melódicos y armónicos, con precisión y expresividad.
+4° básico | OA5 | Improvisar y crear ideas musicales con un propósito dado y con un adecuado dominio del lenguaje musical.
+4° básico | OA6 | Presentar su trabajo musical en forma individual y grupal, compartiendo con el curso y la comunidad.
+4° básico | OA7 | Explicar la relación entre las obras interpretadas y escuchadas y el propósito con que fueron creadas.
+5° básico | OA1 | Describir la música escuchada e interpretada basándose en los elementos del lenguaje musical (reiteraciones, contrastes, pulso, ritmo, cambios de tempo, texturas, timbres) y su propósito expresivo.
+5° básico | OA2 | Expresar, mostrando grados crecientes de elaboración, sensaciones, emociones e ideas que les sugiere el sonido y la música escuchada, usando diversos medios expresivos.
+5° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en música chilena de raíz folclórica, popular y de concierto.
+5° básico | OA4 | Cantar al unísono y a más voces y tocar instrumentos de percusión, melódicos y armónicos, con progresiva precisión y expresividad.
+5° básico | OA5 | Improvisar y crear ideas musicales con distintos propósitos, utilizando elementos del lenguaje musical y diversos medios de registro.
+5° básico | OA6 | Presentar su trabajo musical al curso y la comunidad, en forma individual y grupal, con fluidez, precisión y expresividad.
+5° básico | OA7 | Apreciar el rol de la música en la sociedad a partir del repertorio trabajado, respetando la diversidad y riqueza de los contextos socioculturales.
+6° básico | OA1 | Describir la música escuchada e interpretada basándose en los elementos del lenguaje musical (formas musicales, timbres, texturas, dinámicas) y su propósito expresivo.
+6° básico | OA2 | Expresar, mostrando grados crecientes de elaboración, sensaciones, emociones e ideas que les sugiere la música escuchada e interpretada, usando diversos medios expresivos.
+6° básico | OA3 | Escuchar música en forma abundante de diversos contextos y culturas, poniendo énfasis en música latinoamericana y del mundo, popular y de concierto.
+6° básico | OA4 | Cantar al unísono y a más voces y tocar instrumentos de percusión, melódicos y armónicos, con precisión, expresividad y conciencia de la textura.
+6° básico | OA5 | Improvisar y crear música dentro de un contexto dado, utilizando elementos del lenguaje musical y medios de registro y transmisión.
+6° básico | OA6 | Presentar su trabajo musical al curso y la comunidad, en forma individual y grupal, con fluidez, precisión, expresividad y adecuación al contexto.
+6° básico | OA7 | Explicar la relación entre las obras interpretadas y escuchadas, el contexto en que surgen y su propósito.
+7° básico | OA1 | Comunicar sensaciones, emociones e ideas al escuchar manifestaciones y obras musicales de Chile y el mundo, presentes en la tradición oral, escrita y popular, integrando sus conocimientos en expresiones verbales, visuales, sonoras y corporales.
+7° básico | OA2 | Describir analíticamente los elementos del lenguaje musical y los procedimientos compositivos evidentes en la música escuchada, interpretada o creada, y su relación con el propósito expresivo.
+7° básico | OA3 | Cantar y tocar repertorio diverso, desarrollando habilidades tales como precisión rítmica y melódica, expresividad, conciencia de textura y estilo, fortaleciendo el interés por el hacer musical individual y grupal.
+7° básico | OA4 | Explorar sonidos diversos (con la voz, el cuerpo, instrumentos y medios tecnológicos), siguiendo un propósito expresivo y utilizando la improvisación y la composición.
+7° básico | OA5 | Presentar su trabajo musical al curso y la comunidad, en forma individual y grupal, con compromiso y responsabilidad.
+7° básico | OA6 | Reflexionar sobre sí mismo en relación con sus habilidades, logros y desafíos en el quehacer musical.
+7° básico | OA7 | Apreciar el rol de la música en la sociedad a partir del repertorio trabajado, respetando la diversidad y riqueza de los contextos socioculturales.
+8° básico | OA1 | Comunicar sensaciones, emociones e ideas al escuchar manifestaciones y obras musicales de Chile y el mundo, integrando sus conocimientos en expresiones verbales, visuales, sonoras y corporales.
+8° básico | OA2 | Analizar y describir los elementos del lenguaje musical y los procedimientos compositivos de la música escuchada, interpretada o creada, y su relación con el propósito expresivo y el contexto.
+8° básico | OA3 | Cantar y tocar repertorio diverso, desarrollando habilidades de precisión rítmica y melódica, expresividad, conciencia de textura y estilo, y trabajo colaborativo.
+8° básico | OA4 | Improvisar y crear música con diversos propósitos expresivos, utilizando elementos del lenguaje musical, procedimientos compositivos y recursos tecnológicos.
+8° básico | OA5 | Presentar su trabajo musical al curso y la comunidad, en forma individual y grupal, con compromiso y responsabilidad.
+8° básico | OA6 | Reflexionar sobre sí mismo en relación con sus habilidades, logros y desafíos en el quehacer musical.
+8° básico | OA7 | Relacionar la música con su contexto de origen y con otras manifestaciones artísticas, valorando su aporte a la identidad y la cultura.
+I medio | OA1 | Comunicar sensaciones, emociones e ideas al escuchar manifestaciones y obras musicales de diversos estilos, géneros y contextos, integrando sus conocimientos en expresiones verbales, visuales, sonoras y corporales.
+I medio | OA2 | Analizar elementos del lenguaje musical y procedimientos compositivos en la música escuchada, interpretada o creada, considerando su propósito expresivo y contexto.
+I medio | OA3 | Cantar y tocar repertorio diverso, desarrollando habilidades técnicas y expresivas, de manera individual y grupal.
+I medio | OA4 | Improvisar y crear música con diversos propósitos expresivos, utilizando recursos de la voz, instrumentos y tecnologías.
+I medio | OA5 | Presentar su trabajo musical en forma individual y grupal, mostrando compromiso, responsabilidad y adecuación al contexto.
+I medio | OA6 | Reflexionar sobre sí mismo y sobre la música en relación con su vida personal, la cultura y la sociedad.
+I medio | OA7 | Valorar el rol de la música en la sociedad y la identidad, a partir de la investigación del contexto de origen de obras escuchadas e interpretadas.
+II medio | OA1 | Comunicar sensaciones, emociones e ideas al escuchar manifestaciones y obras musicales de diversos estilos, géneros y contextos, fundamentando sus apreciaciones.
+II medio | OA2 | Analizar elementos del lenguaje musical y procedimientos compositivos en la música escuchada, interpretada o creada, relacionándolos con el propósito expresivo y el contexto.
+II medio | OA3 | Cantar y tocar repertorio diverso, demostrando dominio técnico y expresivo, de manera individual y grupal.
+II medio | OA4 | Crear proyectos musicales (composiciones, arreglos, montajes) con propósitos definidos, utilizando recursos de la voz, instrumentos y tecnologías.
+II medio | OA5 | Diseñar y gestionar presentaciones musicales en la comunidad, con compromiso, responsabilidad y trabajo colaborativo.
+II medio | OA6 | Reflexionar sobre sí mismo y sobre la música en relación con su vida personal, la cultura y la sociedad.
+II medio | OA7 | Valorar críticamente el rol de la música en la sociedad actual, considerando medios de comunicación, tecnología e industria cultural.

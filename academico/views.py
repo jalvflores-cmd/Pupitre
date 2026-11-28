@@ -46,7 +46,8 @@ def _nombre_archivo(*partes, ext):
 def inicio(request):
     user = request.user
     contexto = {"mis_asignaturas": AsignaturaCurso.objects.filter(profesor=user, curso__anio=anio_actual())
-                .select_related("curso__nivel", "asignatura").annotate(n_eval=Count("evaluaciones")),
+                .select_related("curso__nivel", "asignatura").annotate(n_eval=Count("evaluaciones"))
+                .order_by("curso__nivel__orden", "curso__letra", "asignatura__orden", "asignatura__nombre"),
                 "mis_jefaturas": Curso.objects.filter(profesor_jefe=user, anio=anio_actual()).select_related("nivel")}
     if ve_todo(user):
         contexto.update({
@@ -67,7 +68,8 @@ def cursos(request):
     except ValueError:
         anio = anio_actual()
     lista = (visibles.filter(anio=anio).select_related("nivel", "profesor_jefe")
-             .annotate(n_est=Count("estudiantes", filter=Q(estudiantes__activo=True), distinct=True)))
+             .annotate(n_est=Count("estudiantes", filter=Q(estudiantes__activo=True), distinct=True))
+             .order_by("nivel__orden", "nivel__nombre", "letra"))  # con annotate, Meta.ordering no se aplica
     por_nivel = defaultdict(list)
     for c in lista:
         por_nivel[c.nivel].append(c)

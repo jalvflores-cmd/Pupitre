@@ -1371,3 +1371,39 @@ class AsistenteCalendarioTests(BaseDatos):
             self.assertIn("Consejo escolar", enviado)
             self.assertNotIn("Pérez", enviado)
             self.assertContains(self.client.get(reverse("asistente")), "Prepare el consejo.")
+
+
+class CurriculumCompletoTests(BaseDatos):
+    def test_claves_de_formacion_general_y_electivos(self):
+        from . import curriculo
+        self.assertEqual(curriculo.clave_asignatura("Física", "DIFERENCIADA"), "e_fisica")
+        self.assertEqual(curriculo.clave_asignatura("Física", "ASIGNATURA"), "ciencias")
+        self.assertEqual(curriculo.clave_asignatura("Ciencias para la Ciudadanía"), "ciencias_ciudadania")
+        self.assertEqual(curriculo.clave_asignatura("Educación Ciudadana"), "ciudadania")
+        self.assertEqual(curriculo.clave_asignatura("Límites, Derivadas e Integrales", "DIFERENCIADA"),
+                         "e_limites_derivadas_e_integrales")
+        self.assertEqual(len(curriculo.electivos()), 27)
+
+    def test_oa_de_otras_asignaturas_y_electivos(self):
+        from . import curriculo
+        from .models import ObjetivoAprendizaje
+        curriculo.cargar_oficiales(ObjetivoAprendizaje)
+        musica = AsignaturaCurso.objects.create(curso=self.curso, asignatura=Asignatura.objects.create(nombre="Música"))
+        self.assertEqual(curriculo.oas_para(musica).count(), 7)  # 5° básico: OA 1 a 7
+        nivel = Nivel.objects.create(nombre="III Medio", orden=13)
+        tercero = Curso.objects.create(nivel=nivel, letra="A", anio=2026)
+        electivo = AsignaturaCurso.objects.create(curso=tercero, asignatura=Asignatura.objects.create(
+            nombre="Biología de los Ecosistemas", tipo=Asignatura.Tipo.DIFERENCIADA))
+        self.assertEqual(curriculo.oas_para(electivo).count(), 5)
+        for nombre in ("Filosofía", "Inglés", "Educación Física y Salud", "Orientación", "Lengua y Literatura"):
+            ac = AsignaturaCurso.objects.create(curso=tercero, asignatura=Asignatura.objects.get_or_create(nombre=nombre)[0])
+            self.assertGreater(curriculo.oas_para(ac).count(), 0, nombre)
+
+    def test_cursos_ordenados_por_nivel_y_letra(self):
+        cuarto = Nivel.objects.create(nombre="4° Básico", orden=4)
+        Curso.objects.create(nivel=cuarto, letra="B", anio=2026)
+        Curso.objects.create(nivel=cuarto, letra="A", anio=2026)
+        self.client.force_login(self.director)
+        html = self.client.get(reverse("cursos") + "?anio=2026").content.decode()
+        posiciones = [html.index(t) for t in ("4° Básico A", "4° Básico B", "5° Básico A", "5° Básico B")]
+        self.assertEqual(posiciones, sorted(posiciones))

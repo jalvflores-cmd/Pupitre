@@ -1,0 +1,54 @@
+1° básico | OA1 | Expresar y crear trabajos de arte a partir de la observación del entorno natural (paisaje, animales y plantas), el entorno cultural (vida cotidiana y familiar) y la imaginación.
+1° básico | OA2 | Experimentar y aplicar elementos del lenguaje visual (línea, color, forma) en sus trabajos de arte.
+1° básico | OA3 | Expresar emociones e ideas en sus trabajos de arte a partir de la experimentación con materiales de modelado, de reciclaje, naturales y papeles, y herramientas.
+1° básico | OA4 | Observar y comunicar oralmente sus primeras impresiones de lo que sienten y piensan de obras de arte y de su entorno.
+1° básico | OA5 | Explicar sus preferencias frente al trabajo de arte personal y de sus pares, usando elementos del lenguaje visual.
+2° básico | OA1 | Expresar y crear trabajos de arte a partir de la observación del entorno natural (figura humana, paisajes), cultural (fiestas, tradiciones) y artístico (obras de arte local, chileno y universal).
+2° básico | OA2 | Experimentar y aplicar elementos del lenguaje visual (línea, color, textura, forma) en sus trabajos de arte, con diversos propósitos expresivos.
+2° básico | OA3 | Expresar emociones e ideas en sus trabajos de arte a partir de la experimentación con materiales, herramientas y procedimientos de dibujo, pintura, collage y escultura.
+2° básico | OA4 | Comunicar y explicar sus impresiones de lo que sienten y piensan de obras de arte por medio de la expresión verbal y visual.
+2° básico | OA5 | Explicar sus preferencias frente al trabajo de arte personal y de sus pares, usando elementos del lenguaje visual.
+3° básico | OA1 | Crear trabajos de arte con un propósito expresivo personal y basados en la observación del entorno natural (animales, plantas, fenómenos), cultural (vida cotidiana) y artístico (obras de arte local, chileno, latinoamericano y del resto del mundo).
+3° básico | OA2 | Aplicar elementos del lenguaje visual (color: complementarios, cálidos y fríos; formas: abiertas y cerradas; luz y sombra) en sus trabajos de arte.
+3° básico | OA3 | Crear trabajos de arte a partir de experiencias, intereses y temas del entorno, con diversos materiales, herramientas y procedimientos de las artes visuales (pintura, escultura, fotografía, grabado).
+3° básico | OA4 | Describir sus observaciones de obras de arte y objetos, usando elementos del lenguaje visual y expresando lo que sienten y piensan.
+3° básico | OA5 | Describir fortalezas y aspectos a mejorar en el trabajo de arte personal y de sus pares, usando criterios de uso de materiales, procedimientos técnicos y propósito expresivo.
+4° básico | OA1 | Crear trabajos de arte con un propósito expresivo personal y basados en la observación del entorno natural (naturaleza y paisaje americano), cultural (personas y patrimonio cultural americano) y artístico (arte precolombino, de movimientos artísticos y de artistas americanos).
+4° básico | OA2 | Aplicar y combinar elementos del lenguaje visual (color: complementarios, cálidos, fríos y matices; formas geométricas y orgánicas; luz y sombra) en trabajos de arte con distintos propósitos expresivos.
+4° básico | OA3 | Crear trabajos de arte y diseños a partir de sus propias ideas y de la observación del entorno, con diversos materiales, herramientas y procedimientos (dibujo, pintura, collage, grabado, escultura, fotografía).
+4° básico | OA4 | Describir y comparar obras de arte usando elementos del lenguaje visual, explicando lo que sienten y piensan de ellas.
+4° básico | OA5 | Evaluar fortalezas y aspectos a mejorar en el trabajo de arte personal y de sus pares, usando criterios de uso de materiales, procedimientos técnicos y propósito expresivo.
+5° básico | OA1 | Crear trabajos de arte con un propósito expresivo personal y basados en la observación del entorno natural (paisaje chileno), cultural (personas y patrimonio cultural de Chile) y artístico (arte chileno del siglo XIX y de los pueblos originarios).
+5° básico | OA2 | Aplicar y combinar elementos del lenguaje visual (color, formas, luz y sombra, planos, perspectiva) en trabajos de arte y diseños con diferentes propósitos expresivos y creativos.
+5° básico | OA3 | Crear trabajos de arte a partir de diferentes desafíos y temas del entorno cultural y artístico, demostrando dominio en el uso de materiales, herramientas y procedimientos de dibujo, pintura, grabado, escultura, instalación y técnicas mixtas.
+5° básico | OA4 | Analizar e interpretar obras de arte y objetos en relación con la aplicación del lenguaje visual, contextos, materiales, estilos u otros.
+5° básico | OA5 | Evaluar críticamente trabajos de arte y diseños personales y de sus pares, considerando expresión de emociones, problemas visuales y propósitos expresivos.
+6° básico | OA1 | Crear trabajos de arte con un propósito expresivo personal y basados en la observación del entorno natural (paisaje chileno y americano), cultural (personas y patrimonio de Chile y de América) y artístico (arte chileno, latinoamericano y contemporáneo).
+6° básico | OA2 | Aplicar y combinar elementos del lenguaje visual (color, formas, volumen, luz y sombra, perspectiva, textura) en trabajos de arte y diseños con diferentes propósitos expresivos y creativos.
+6° básico | OA3 | Crear trabajos de arte y diseños a partir de diferentes desafíos y temas, demostrando dominio en el uso de materiales, herramientas y procedimientos de dibujo, pintura, grabado, escultura, fotografía, video, instalación y técnicas mixtas.
+6° básico | OA4 | Analizar e interpretar obras de arte y diseño en relación con la aplicación del lenguaje visual, contextos, materiales, estilos u otros.
+6° básico | OA5 | Evaluar críticamente trabajos de arte y diseños personales y de sus pares, considerando expresión de emociones y problemas estéticos, propósitos expresivos, materiales y procedimientos.
+7° básico | OA1 | Crear trabajos visuales basados en las percepciones, sentimientos e ideas generadas a partir de la observación de manifestaciones estéticas referidas a diversidad cultural, género e íconos sociales, patrimoniales y contemporáneos.
+7° básico | OA2 | Crear trabajos visuales basados en la apreciación y el análisis de manifestaciones estéticas referidas a la relación entre personas, naturaleza y medioambiente, en diferentes contextos.
+7° básico | OA3 | Crear trabajos visuales a partir de diferentes desafíos creativos, usando medios de expresión contemporáneos como la fotografía y el video.
+7° básico | OA4 | Interpretar relaciones entre propósito expresivo del trabajo artístico personal y de sus pares, y la utilización del lenguaje visual.
+7° básico | OA5 | Interpretar manifestaciones visuales patrimoniales y contemporáneas, atendiendo a criterios como características del medio de expresión, materialidad y lenguaje visual.
+7° básico | OA6 | Evaluar trabajos visuales personales y de sus pares, considerando criterios como materialidad, lenguaje visual y propósito expresivo.
+8° básico | OA1 | Crear trabajos visuales basados en las percepciones, sentimientos e ideas generadas a partir de la observación de manifestaciones estéticas referidas a problemáticas sociales y juveniles, en el espacio público y en diferentes contextos.
+8° básico | OA2 | Crear trabajos visuales a partir de la imaginación, experimentando con medios digitales de expresión contemporáneos como la fotografía, el video, la animación y el arte digital.
+8° básico | OA3 | Crear trabajos visuales a partir de diferentes desafíos creativos, usando procedimientos de grabado, pintura mural, escultura o instalación.
+8° básico | OA4 | Analizar e interpretar propósitos expresivos de trabajos visuales personales y de sus pares, utilizando criterios estéticos (lenguaje visual, materiales, procedimientos, emociones, sensaciones e ideas).
+8° básico | OA5 | Interpretar relaciones entre el propósito expresivo y el uso de elementos del lenguaje visual en manifestaciones visuales de diferentes épocas y contextos.
+8° básico | OA6 | Evaluar críticamente procesos y resultados de trabajos visuales personales y de sus pares, considerando criterios como propósito expresivo, materialidad, lenguaje visual y presentación.
+I medio | OA1 | Crear proyectos visuales con diversos propósitos, basados en la apreciación y reflexión acerca de la arquitectura, los espacios y el diseño urbano, en diferentes medios y contextos.
+I medio | OA2 | Crear trabajos y proyectos visuales basados en diferentes desafíos creativos, investigando el manejo de materiales sustentables en procedimientos de escultura y diseño.
+I medio | OA3 | Crear trabajos y proyectos visuales basados en sus imaginarios personales, investigando en medios contemporáneos como instalación, fotografía, video o arte digital.
+I medio | OA4 | Argumentar juicios críticos referidos a la valoración de diversos trabajos y proyectos visuales personales y de sus pares, considerando criterios estéticos y propósitos expresivos.
+I medio | OA5 | Argumentar evaluaciones y juicios críticos, valorando el patrimonio artístico nacional, en relación con su contexto, materiales, lenguaje visual y propósito expresivo.
+I medio | OA6 | Diseñar y gestionar colaborativamente proyectos de difusión de sus propios trabajos y proyectos visuales, en el contexto escolar o local, de forma directa o virtual.
+II medio | OA1 | Crear proyectos visuales basados en la valoración crítica de manifestaciones estéticas referidas a problemáticas sociales y juveniles, en el espacio público y en diferentes contextos.
+II medio | OA2 | Crear trabajos y proyectos visuales basados en diferentes desafíos creativos, investigando el manejo de materiales sustentables en procedimientos de grabado y pintura mural.
+II medio | OA3 | Crear trabajos y proyectos visuales basados en sus imaginarios personales, investigando en medios contemporáneos como libro de artista y arte digital.
+II medio | OA4 | Argumentar juicios críticos referidos a la valoración de diversos trabajos y proyectos visuales personales y de sus pares, considerando criterios estéticos, contexto y propósito expresivo.
+II medio | OA5 | Evaluar críticamente manifestaciones visuales (pintura, escultura, instalación, arquitectura, diseño y medios contemporáneos) en relación con su contexto, materiales y propósito expresivo.
+II medio | OA6 | Diseñar y gestionar colaborativamente proyectos de difusión de sus propios trabajos y proyectos visuales en el contexto escolar o local, de forma directa o virtual, considerando el uso de las TIC.

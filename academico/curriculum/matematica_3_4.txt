@@ -1,0 +1,8 @@
+III medio | OA1 | Resolver problemas que impliquen la toma de decisiones en situaciones de incerteza, aplicando medidas de dispersión (desviación estándar, rango intercuartil) y comparando poblaciones.
+III medio | OA2 | Tomar decisiones en situaciones financieras que involucren interés simple y compuesto, créditos y ahorro, analizando costos y beneficios mediante modelos matemáticos.
+III medio | OA3 | Aplicar modelos matemáticos que describen fenómenos o situaciones de crecimiento y decrecimiento, que involucran las funciones exponencial y logarítmica, de forma manuscrita y con herramientas tecnológicas.
+III medio | OA4 | Resolver problemas acerca de rectas y circunferencias en el plano, mediante su representación analítica, de forma manuscrita y con herramientas tecnológicas.
+IV medio | OA1 | Fundamentar decisiones en situaciones de incerteza a partir del análisis crítico de datos estadísticos y probabilidades condicionales.
+IV medio | OA2 | Fundamentar decisiones en el ámbito financiero y económico personal o comunitario, a partir de modelos que consideren porcentajes, tasas de interés e índices económicos.
+IV medio | OA3 | Construir modelos de situaciones o fenómenos de crecimiento, decrecimiento y periódicos que involucren funciones potencias de exponente entero y trigonométricas sen(x) y cos(x), con y sin herramientas tecnológicas.
+IV medio | OA4 | Resolver problemas acerca de las secciones cónicas (parábola, elipse, hipérbola) y de cuerpos geométricos en el espacio, mediante su representación analítica y con herramientas tecnológicas.

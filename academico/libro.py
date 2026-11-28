@@ -377,7 +377,8 @@ def leccionario_pdf(request, ac_pk):
     ac = get_object_or_404(AsignaturaCurso.objects.select_related("curso__nivel", "asignatura", "profesor"), pk=ac_pk)
     exigir(puede_ver_asignatura_curso(request.user, ac))
     clases = list(ac.clases.select_related("firmada_por", "evaluacion")
-                  .annotate(ausentes=Count("asistencias", filter=Q(asistencias__estado=ESTADOS.AUSENTE))))
+                  .annotate(ausentes=Count("asistencias", filter=Q(asistencias__estado=ESTADOS.AUSENTE)))
+                  .order_by("fecha", "hora_inicio", "id"))
     nombre = f"leccionario_{slugify(ac.asignatura.nombre)}_{slugify(ac.curso.nombre_corto)}.pdf"
     return _pdf(pdf_leccionario(ac, clases), nombre)
 
@@ -414,7 +415,7 @@ def asistente_clase(request, ac_pk):
         bloques = max(1, min(6, int(request.GET.get("bloques") or 2)))
     except ValueError:
         bloques = 2
-    propuesta = curriculo.proponer_clase(texto, curriculo.clave_asignatura(ac.asignatura.nombre), bloques)
+    propuesta = curriculo.proponer_clase(texto, curriculo.clave_asignatura(ac.asignatura.nombre, ac.asignatura.tipo), bloques)
     propuesta["objetivo"] = texto
     return JsonResponse(propuesta)
 
@@ -492,7 +493,8 @@ def curriculum(request):
         propias.add((f"p{ac.asignatura_id}", g or 0))
         propias.add((f"p{ac.asignatura_id}", 0))
         if g:
-            propias.add((curriculo.clave_asignatura(ac.asignatura.nombre), g))
+            clave_c = curriculo.clave_asignatura(ac.asignatura.nombre, ac.asignatura.tipo)
+            propias.update({(clave_c, g), (clave_c, 0)})
     nombres_asig = dict(ObjetivoAprendizaje._meta.get_field("asignatura").choices)
     nombres_grado = dict(GRADOS_CURRICULUM)
     orden_asig = list(nombres_asig)

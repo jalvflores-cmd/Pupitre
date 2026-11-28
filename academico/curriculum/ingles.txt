@@ -1,0 +1,138 @@
+1° básico | OA1 | Escuchar y demostrar comprensión de textos orales breves y simples (rimas, chants, canciones, cuentos, diálogos) con apoyo visual y gestual.
+1° básico | OA2 | Identificar en textos orales palabras y expresiones de uso frecuente y vocabulario temático (saludos, colores, números, familia, animales, el cuerpo, la sala de clases).
+1° básico | OA3 | Reaccionar a lo escuchado por medio de acciones, dibujos o respuestas breves, siguiendo instrucciones simples.
+1° básico | OA4 | Reproducir chants, rimas y canciones breves, imitando la pronunciación, la entonación y el ritmo del idioma.
+1° básico | OA5 | Participar en diálogos e intercambios breves y simples (presentarse, saludar, preguntar y responder sobre información personal).
+1° básico | OA6 | Expresarse oralmente con apoyo del docente para compartir información personal y describir objetos, personas y lugares cercanos.
+1° básico | OA7 | Leer y demostrar comprensión de palabras y oraciones muy simples con apoyo de imágenes (cuentos, rimas, letreros, instrucciones).
+1° básico | OA8 | Identificar en textos escritos breves palabras de uso frecuente y vocabulario temático conocido.
+1° básico | OA9 | Escribir (copiar o completar) palabras y oraciones simples de acuerdo a un modelo, sobre temas conocidos.
+1° básico | OA10 | Demostrar curiosidad e interés por conocer su propia realidad y otras culturas mediante el idioma inglés.
+2° básico | OA1 | Escuchar y demostrar comprensión de textos orales breves y simples (rimas, chants, canciones, cuentos, diálogos) con apoyo visual y gestual.
+2° básico | OA2 | Identificar en textos orales palabras y expresiones de uso frecuente y vocabulario temático (saludos, colores, números, familia, animales, el cuerpo, la sala de clases).
+2° básico | OA3 | Reaccionar a lo escuchado por medio de acciones, dibujos o respuestas breves, siguiendo instrucciones simples.
+2° básico | OA4 | Reproducir chants, rimas y canciones breves, imitando la pronunciación, la entonación y el ritmo del idioma.
+2° básico | OA5 | Participar en diálogos e intercambios breves y simples (presentarse, saludar, preguntar y responder sobre información personal).
+2° básico | OA6 | Expresarse oralmente con apoyo del docente para compartir información personal y describir objetos, personas y lugares cercanos.
+2° básico | OA7 | Leer y demostrar comprensión de palabras y oraciones muy simples con apoyo de imágenes (cuentos, rimas, letreros, instrucciones).
+2° básico | OA8 | Identificar en textos escritos breves palabras de uso frecuente y vocabulario temático conocido.
+2° básico | OA9 | Escribir (copiar o completar) palabras y oraciones simples de acuerdo a un modelo, sobre temas conocidos.
+2° básico | OA10 | Demostrar curiosidad e interés por conocer su propia realidad y otras culturas mediante el idioma inglés.
+3° básico | OA1 | Escuchar y demostrar comprensión de textos orales breves y simples (rimas, chants, canciones, cuentos, diálogos) con apoyo visual y gestual.
+3° básico | OA2 | Identificar en textos orales palabras y expresiones de uso frecuente y vocabulario temático (saludos, colores, números, familia, animales, el cuerpo, la sala de clases).
+3° básico | OA3 | Reaccionar a lo escuchado por medio de acciones, dibujos o respuestas breves, siguiendo instrucciones simples.
+3° básico | OA4 | Reproducir chants, rimas y canciones breves, imitando la pronunciación, la entonación y el ritmo del idioma.
+3° básico | OA5 | Participar en diálogos e intercambios breves y simples (presentarse, saludar, preguntar y responder sobre información personal).
+3° básico | OA6 | Expresarse oralmente con apoyo del docente para compartir información personal y describir objetos, personas y lugares cercanos.
+3° básico | OA7 | Leer y demostrar comprensión de palabras y oraciones muy simples con apoyo de imágenes (cuentos, rimas, letreros, instrucciones).
+3° básico | OA8 | Identificar en textos escritos breves palabras de uso frecuente y vocabulario temático conocido.
+3° básico | OA9 | Escribir (copiar o completar) palabras y oraciones simples de acuerdo a un modelo, sobre temas conocidos.
+3° básico | OA10 | Demostrar curiosidad e interés por conocer su propia realidad y otras culturas mediante el idioma inglés.
+4° básico | OA1 | Escuchar y demostrar comprensión de textos orales breves y simples (rimas, chants, canciones, cuentos, diálogos) con apoyo visual y gestual.
+4° básico | OA2 | Identificar en textos orales palabras y expresiones de uso frecuente y vocabulario temático (saludos, colores, números, familia, animales, el cuerpo, la sala de clases).
+4° básico | OA3 | Reaccionar a lo escuchado por medio de acciones, dibujos o respuestas breves, siguiendo instrucciones simples.
+4° básico | OA4 | Reproducir chants, rimas y canciones breves, imitando la pronunciación, la entonación y el ritmo del idioma.
+4° básico | OA5 | Participar en diálogos e intercambios breves y simples (presentarse, saludar, preguntar y responder sobre información personal).
+4° básico | OA6 | Expresarse oralmente con apoyo del docente para compartir información personal y describir objetos, personas y lugares cercanos.
+4° básico | OA7 | Leer y demostrar comprensión de palabras y oraciones muy simples con apoyo de imágenes (cuentos, rimas, letreros, instrucciones).
+4° básico | OA8 | Identificar en textos escritos breves palabras de uso frecuente y vocabulario temático conocido.
+4° básico | OA9 | Escribir (copiar o completar) palabras y oraciones simples de acuerdo a un modelo, sobre temas conocidos.
+4° básico | OA10 | Demostrar curiosidad e interés por conocer su propia realidad y otras culturas mediante el idioma inglés.
+5° básico | OA1 | Comprender textos leídos por un adulto o en formato audiovisual, breves y simples (rimas, chants, canciones, cuentos, diálogos).
+5° básico | OA2 | Identificar en los textos escuchados el tema general, información específica relacionada con personas, lugares y tiempo, y palabras y expresiones de uso frecuente.
+5° básico | OA3 | Escuchar textos orales y aplicar estrategias para apoyar la comprensión (hacer predicciones, usar conocimientos previos, focalizar la atención en palabras clave, usar apoyo visual).
+5° básico | OA4 | Reaccionar a los textos escuchados, expresando preferencias, sentimientos u opiniones por medio de ilustraciones, dramatizaciones y respuestas breves.
+5° básico | OA5 | Reproducir y producir chants, rimas y canciones breves para familiarizarse con los sonidos propios del inglés.
+5° básico | OA6 | Participar en diálogos con pares y profesores al realizar actividades, intercambiando información personal y sobre temas conocidos con apoyo.
+5° básico | OA7 | Expresarse oralmente con el apoyo del docente para compartir información, describir y narrar, usando vocabulario temático y expresiones de uso frecuente.
+5° básico | OA8 | Leer y demostrar comprensión de textos adaptados y auténticos simples, no literarios (instrucciones, invitaciones, emails, artículos) y literarios (rimas, cuentos, poemas).
+5° básico | OA9 | Leer y demostrar comprensión de textos identificando propósito, ideas generales, información explícita y vocabulario temático.
+5° básico | OA10 | Aplicar estrategias de lectura (prelectura, uso de imágenes y títulos, releer, identificar palabras clave) para apoyar la comprensión.
+5° básico | OA11 | Reaccionar a los textos leídos, expresando opiniones y sentimientos y relacionándolos con experiencias personales.
+5° básico | OA12 | Completar y escribir, de acuerdo a un modelo y con apoyo, textos breves (oraciones, invitaciones, emails, descripciones) sobre temas conocidos.
+5° básico | OA13 | Escribir para realizar diversas funciones (describir acciones cotidianas, expresar gustos, dar información) usando vocabulario y estructuras aprendidas.
+5° básico | OA14 | Demostrar conocimiento y uso del lenguaje en textos orales y escritos: pronombres, verbos to be y have got, presente simple, preposiciones de lugar, adjetivos y conectores simples.
+5° básico | OA15 | Demostrar interés por conocer otras culturas y valorar el aprendizaje del inglés como medio para acceder a información y comunicarse.
+6° básico | OA1 | Comprender textos leídos por un adulto o en formato audiovisual, breves y simples (rimas, chants, canciones, cuentos, diálogos).
+6° básico | OA2 | Identificar en los textos escuchados el tema general, información específica relacionada con personas, lugares y tiempo, y palabras y expresiones de uso frecuente.
+6° básico | OA3 | Escuchar textos orales y aplicar estrategias para apoyar la comprensión (hacer predicciones, usar conocimientos previos, focalizar la atención en palabras clave, usar apoyo visual).
+6° básico | OA4 | Reaccionar a los textos escuchados, expresando preferencias, sentimientos u opiniones por medio de ilustraciones, dramatizaciones y respuestas breves.
+6° básico | OA5 | Reproducir y producir chants, rimas y canciones breves para familiarizarse con los sonidos propios del inglés.
+6° básico | OA6 | Participar en diálogos con pares y profesores al realizar actividades, intercambiando información personal y sobre temas conocidos con apoyo.
+6° básico | OA7 | Expresarse oralmente con el apoyo del docente para compartir información, describir y narrar, usando vocabulario temático y expresiones de uso frecuente.
+6° básico | OA8 | Leer y demostrar comprensión de textos adaptados y auténticos simples, no literarios (instrucciones, invitaciones, emails, artículos) y literarios (rimas, cuentos, poemas).
+6° básico | OA9 | Leer y demostrar comprensión de textos identificando propósito, ideas generales, información explícita y vocabulario temático.
+6° básico | OA10 | Aplicar estrategias de lectura (prelectura, uso de imágenes y títulos, releer, identificar palabras clave) para apoyar la comprensión.
+6° básico | OA11 | Reaccionar a los textos leídos, expresando opiniones y sentimientos y relacionándolos con experiencias personales.
+6° básico | OA12 | Completar y escribir, de acuerdo a un modelo y con apoyo, textos breves (oraciones, invitaciones, emails, descripciones) sobre temas conocidos.
+6° básico | OA13 | Escribir para realizar diversas funciones (describir acciones cotidianas, expresar gustos, dar información) usando vocabulario y estructuras aprendidas.
+6° básico | OA14 | Demostrar conocimiento y uso del lenguaje en textos orales y escritos: pronombres, verbos to be y have got, presente simple, preposiciones de lugar, adjetivos y conectores simples.
+6° básico | OA15 | Demostrar interés por conocer otras culturas y valorar el aprendizaje del inglés como medio para acceder a información y comunicarse.
+7° básico | OA1 | Demostrar comprensión de ideas generales e información explícita en textos orales adaptados y auténticos simples, literarios y no literarios, en diversos formatos audiovisuales.
+7° básico | OA2 | Identificar en los textos escuchados el propósito, el tema y la información relevante, expresiones de uso frecuente, vocabulario temático y conectores.
+7° básico | OA3 | Identificar y usar estrategias para apoyar la comprensión de textos orales (hacer predicciones, escuchar con propósito, usar claves contextuales, visualizar).
+7° básico | OA4 | Reaccionar a los textos escuchados, expresando opiniones y sentimientos, y estableciendo relaciones con otras asignaturas y experiencias.
+7° básico | OA5 | Presentar información en forma oral, usando recursos multimodales que refuercen el mensaje en forma creativa, de acuerdo a un modelo.
+7° básico | OA6 | Participar en interacciones de la clase y en diálogos para intercambiar información, dar opiniones y expresar acuerdo o desacuerdo, usando estrategias de comunicación.
+7° básico | OA7 | Demostrar conocimiento y uso del lenguaje en conversaciones, discusiones y exposiciones: presente simple y continuo, pasado simple, futuro, comparativos, modales y conectores.
+7° básico | OA8 | Demostrar comprensión de ideas generales e información explícita en textos adaptados y auténticos simples, en formato impreso o digital, acerca de temas variados.
+7° básico | OA9 | Demostrar comprensión de textos no literarios (artículos, instrucciones, biografías, emails) identificando propósito, ideas principales, información relevante y palabras clave.
+7° básico | OA10 | Demostrar comprensión de textos literarios (cuentos, poemas, novelas adaptadas) identificando tema, personajes, ambiente y secuencia de eventos.
+7° básico | OA11 | Usar estrategias de lectura para apoyar la comprensión (prelectura, lectura focalizada, uso de organizadores gráficos, relectura).
+7° básico | OA12 | Reaccionar a los textos leídos, expresando opiniones y sentimientos y relacionándolos con su realidad y con otras culturas.
+7° básico | OA13 | Escribir historias e información relevante, usando recursos multimodales que refuercen el mensaje, de acuerdo a un modelo y con apoyo de lenguaje visual.
+7° básico | OA14 | Escribir para realizar diversas funciones (describir, narrar, comparar, expresar opiniones) en textos breves, usando los pasos del proceso de escritura.
+7° básico | OA15 | Escribir usando correctamente la gramática, el vocabulario y la ortografía de palabras de uso frecuente, de acuerdo al nivel.
+7° básico | OA16 | Demostrar disposición para comunicarse en inglés y valorar la diversidad cultural expresada en los textos.
+8° básico | OA1 | Demostrar comprensión de ideas generales e información explícita en textos orales adaptados y auténticos simples, literarios y no literarios, en diversos formatos audiovisuales.
+8° básico | OA2 | Identificar en los textos escuchados el propósito, el tema y la información relevante, expresiones de uso frecuente, vocabulario temático y conectores.
+8° básico | OA3 | Identificar y usar estrategias para apoyar la comprensión de textos orales (hacer predicciones, escuchar con propósito, usar claves contextuales, visualizar).
+8° básico | OA4 | Reaccionar a los textos escuchados, expresando opiniones y sentimientos, y estableciendo relaciones con otras asignaturas y experiencias.
+8° básico | OA5 | Presentar información en forma oral, usando recursos multimodales que refuercen el mensaje en forma creativa, de acuerdo a un modelo.
+8° básico | OA6 | Participar en interacciones de la clase y en diálogos para intercambiar información, dar opiniones y expresar acuerdo o desacuerdo, usando estrategias de comunicación.
+8° básico | OA7 | Demostrar conocimiento y uso del lenguaje en conversaciones, discusiones y exposiciones: presente simple y continuo, pasado simple, futuro, comparativos, modales y conectores.
+8° básico | OA8 | Demostrar comprensión de ideas generales e información explícita en textos adaptados y auténticos simples, en formato impreso o digital, acerca de temas variados.
+8° básico | OA9 | Demostrar comprensión de textos no literarios (artículos, instrucciones, biografías, emails) identificando propósito, ideas principales, información relevante y palabras clave.
+8° básico | OA10 | Demostrar comprensión de textos literarios (cuentos, poemas, novelas adaptadas) identificando tema, personajes, ambiente y secuencia de eventos.
+8° básico | OA11 | Usar estrategias de lectura para apoyar la comprensión (prelectura, lectura focalizada, uso de organizadores gráficos, relectura).
+8° básico | OA12 | Reaccionar a los textos leídos, expresando opiniones y sentimientos y relacionándolos con su realidad y con otras culturas.
+8° básico | OA13 | Escribir historias e información relevante, usando recursos multimodales que refuercen el mensaje, de acuerdo a un modelo y con apoyo de lenguaje visual.
+8° básico | OA14 | Escribir para realizar diversas funciones (describir, narrar, comparar, expresar opiniones) en textos breves, usando los pasos del proceso de escritura.
+8° básico | OA15 | Escribir usando correctamente la gramática, el vocabulario y la ortografía de palabras de uso frecuente, de acuerdo al nivel.
+8° básico | OA16 | Demostrar disposición para comunicarse en inglés y valorar la diversidad cultural expresada en los textos.
+I medio | OA1 | Demostrar comprensión de ideas generales e información explícita en textos orales adaptados y auténticos simples, literarios y no literarios, en diversos formatos audiovisuales.
+I medio | OA2 | Identificar en los textos escuchados el propósito, ideas principales, información específica, vocabulario temático y expresiones idiomáticas de uso frecuente.
+I medio | OA3 | Usar estrategias para apoyar la comprensión oral (predecir, inferir significados por contexto, tomar notas, confirmar predicciones).
+I medio | OA4 | Reaccionar a los textos escuchados, expresando opiniones fundamentadas y relacionándolos con temas de interés global y con su realidad.
+I medio | OA5 | Producir textos orales (exposiciones, dramatizaciones, entrevistas) en forma creativa y con apoyo de recursos multimodales.
+I medio | OA6 | Participar en conversaciones y discusiones para intercambiar información, opiniones y argumentos sobre temas de interés, usando estrategias de comunicación.
+I medio | OA7 | Demostrar conocimiento y uso del lenguaje: tiempos verbales (presente perfecto, pasado continuo, futuro), voz pasiva, condicionales, modales y conectores.
+I medio | OA8 | Demostrar comprensión de textos escritos adaptados y auténticos de mediana extensión, literarios y no literarios, identificando propósito, ideas principales e información relevante.
+I medio | OA9 | Usar estrategias de lectura (skimming, scanning, uso de claves contextuales, organizadores gráficos) para apoyar la comprensión.
+I medio | OA10 | Reaccionar a los textos leídos, expresando opiniones fundamentadas y estableciendo relaciones con otras culturas y con su realidad.
+I medio | OA11 | Escribir textos (narraciones, emails, artículos, ensayos breves) para comunicar información e ideas, siguiendo el proceso de escritura.
+I medio | OA12 | Escribir usando correctamente las estructuras gramaticales, el vocabulario temático y la ortografía del nivel.
+I medio | OA13 | Usar las TIC para buscar información, comunicarse y producir textos orales y escritos en inglés de forma responsable.
+I medio | OA14 | Valorar el inglés como herramienta para acceder a la información, a otras culturas y a oportunidades académicas y laborales.
+II medio | OA1 | Demostrar comprensión de ideas generales e información explícita en textos orales adaptados y auténticos simples, literarios y no literarios, en diversos formatos audiovisuales.
+II medio | OA2 | Identificar en los textos escuchados el propósito, ideas principales, información específica, vocabulario temático y expresiones idiomáticas de uso frecuente.
+II medio | OA3 | Usar estrategias para apoyar la comprensión oral (predecir, inferir significados por contexto, tomar notas, confirmar predicciones).
+II medio | OA4 | Reaccionar a los textos escuchados, expresando opiniones fundamentadas y relacionándolos con temas de interés global y con su realidad.
+II medio | OA5 | Producir textos orales (exposiciones, dramatizaciones, entrevistas) en forma creativa y con apoyo de recursos multimodales.
+II medio | OA6 | Participar en conversaciones y discusiones para intercambiar información, opiniones y argumentos sobre temas de interés, usando estrategias de comunicación.
+II medio | OA7 | Demostrar conocimiento y uso del lenguaje: tiempos verbales (presente perfecto, pasado continuo, futuro), voz pasiva, condicionales, modales y conectores.
+II medio | OA8 | Demostrar comprensión de textos escritos adaptados y auténticos de mediana extensión, literarios y no literarios, identificando propósito, ideas principales e información relevante.
+II medio | OA9 | Usar estrategias de lectura (skimming, scanning, uso de claves contextuales, organizadores gráficos) para apoyar la comprensión.
+II medio | OA10 | Reaccionar a los textos leídos, expresando opiniones fundamentadas y estableciendo relaciones con otras culturas y con su realidad.
+II medio | OA11 | Escribir textos (narraciones, emails, artículos, ensayos breves) para comunicar información e ideas, siguiendo el proceso de escritura.
+II medio | OA12 | Escribir usando correctamente las estructuras gramaticales, el vocabulario temático y la ortografía del nivel.
+II medio | OA13 | Usar las TIC para buscar información, comunicarse y producir textos orales y escritos en inglés de forma responsable.
+II medio | OA14 | Valorar el inglés como herramienta para acceder a la información, a otras culturas y a oportunidades académicas y laborales.
+III medio | OA1 | Comprender información central de textos orales y escritos en contextos relacionados con sus intereses e inquietudes, con el fin de conocer y valorar otras realidades y culturas.
+III medio | OA2 | Producir y comunicar en forma oral y escrita diversos tipos de textos para fines específicos, a través de medios digitales y no digitales, utilizando funciones del lenguaje y vocabulario del nivel.
+III medio | OA3 | Utilizar su conocimiento del inglés en la comprensión y producción de textos orales y escritos para analizar críticamente temas de interés global y para desenvolverse en situaciones académicas y laborales.
+III medio | OA4 | Producir textos orales y escritos breves y claros en situaciones comunicativas que involucren el análisis crítico de temas de actualidad, la interculturalidad y la diversidad.
+IV medio | OA1 | Comprender información central de textos orales y escritos en contextos relacionados con sus intereses e inquietudes, con el fin de conocer y valorar otras realidades y culturas.
+IV medio | OA2 | Producir y comunicar en forma oral y escrita diversos tipos de textos para fines específicos, a través de medios digitales y no digitales, utilizando funciones del lenguaje y vocabulario del nivel.
+IV medio | OA3 | Utilizar su conocimiento del inglés en la comprensión y producción de textos orales y escritos para analizar críticamente temas de interés global y para desenvolverse en situaciones académicas y laborales.
+IV medio | OA4 | Producir textos orales y escritos breves y claros en situaciones comunicativas que involucren el análisis crítico de temas de actualidad, la interculturalidad y la diversidad.

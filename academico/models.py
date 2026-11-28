@@ -927,8 +927,20 @@ ASIGNATURAS_CURRICULUM = [
     ("tecnologia", "Tecnología"),
     ("orientacion", "Orientación"),
     ("religion", "Religión"),
+    ("ciudadania", "Educación Ciudadana"),
+    ("filosofia", "Filosofía"),
+    ("ciencias_ciudadania", "Ciencias para la Ciudadanía"),
     ("otra", "Otra (taller, módulo TP, electivo, modalidad flexible)"),
 ]
+
+
+def _con_electivos(opciones):
+    from .curriculo import electivos
+
+    return opciones[:-1] + [(c, f"Electivo: {n}") for c, n in electivos().items()] + opciones[-1:]
+
+
+ASIGNATURAS_CURRICULUM = _con_electivos(ASIGNATURAS_CURRICULUM)
 GRADOS_CURRICULUM = [(0, "Todos los niveles")] + [(g, f"{g}° básico") for g in range(1, 9)] + [
     (9, "I medio"), (10, "II medio"), (11, "III medio"), (12, "IV medio")]
 
@@ -938,7 +950,7 @@ class ObjetivoAprendizaje(models.Model):
     cada establecimiento puede agregar los suyos (programas propios, talleres, módulos TP)."""
     establecimiento = models.ForeignKey(Establecimiento, on_delete=models.CASCADE, null=True, blank=True,
                                         editable=False, related_name="objetivos")
-    asignatura = models.CharField(max_length=20, choices=ASIGNATURAS_CURRICULUM)
+    asignatura = models.CharField(max_length=60, choices=ASIGNATURAS_CURRICULUM)
     asignatura_propia = models.ForeignKey(
         "Asignatura", on_delete=models.CASCADE, null=True, blank=True, related_name="objetivos",
         verbose_name="taller, módulo o asignatura del establecimiento",

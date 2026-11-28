@@ -7,7 +7,7 @@ from django.db import migrations, models
 def cargar(apps, schema_editor):
     from academico.curriculo import cargar_oficiales
 
-    cargar_oficiales(apps.get_model("academico", "ObjetivoAprendizaje"))
+    cargar_oficiales(apps.get_model("academico", "ObjetivoAprendizaje"), solo_basales=True)
 
 
 class Migration(migrations.Migration):

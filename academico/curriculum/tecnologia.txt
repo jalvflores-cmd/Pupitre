@@ -1,0 +1,62 @@
+1° básico | OA1 | Crear diseños de objetos tecnológicos a partir de sus intereses y necesidades del entorno, representando sus ideas por medio de dibujos a mano alzada o modelos concretos.
+1° básico | OA2 | Planificar la elaboración de un objeto tecnológico, indicando acciones a realizar, materiales y herramientas necesarias.
+1° básico | OA3 | Elaborar un objeto tecnológico según las indicaciones del profesor, seleccionando y experimentando con técnicas y herramientas (medir, cortar, plegar, unir, pegar, pintar) y materiales.
+1° básico | OA4 | Probar y explicar los resultados de los trabajos propios y de otros, de forma individual o en equipo, identificando aciertos y aspectos a mejorar.
+1° básico | OA5 | Usar procesador de textos para crear, editar y guardar información (escribir, dar formato, insertar imágenes).
+1° básico | OA6 | Usar software de dibujo y explorar recursos digitales (internet, aplicaciones educativas) con orientación del profesor y de forma segura.
+2° básico | OA1 | Crear diseños de objetos tecnológicos a partir de sus intereses y necesidades del entorno, representando sus ideas por medio de dibujos a mano alzada o modelos concretos.
+2° básico | OA2 | Planificar la elaboración de un objeto tecnológico, indicando acciones a realizar, materiales y herramientas necesarias.
+2° básico | OA3 | Elaborar un objeto tecnológico según las indicaciones del profesor, seleccionando y experimentando con técnicas y herramientas (medir, cortar, plegar, unir, pegar, pintar) y materiales.
+2° básico | OA4 | Probar y explicar los resultados de los trabajos propios y de otros, de forma individual o en equipo, identificando aciertos y aspectos a mejorar.
+2° básico | OA5 | Usar procesador de textos para crear, editar y guardar información (escribir, dar formato, insertar imágenes).
+2° básico | OA6 | Usar software de dibujo y explorar recursos digitales (internet, aplicaciones educativas) con orientación del profesor y de forma segura.
+3° básico | OA1 | Crear diseños de objetos o sistemas tecnológicos simples para resolver problemas del entorno, representando sus ideas por medio de bocetos y dibujos técnicos simples.
+3° básico | OA2 | Planificar la elaboración de objetos tecnológicos, incorporando la secuencia de acciones, materiales, herramientas, técnicas y medidas de seguridad.
+3° básico | OA3 | Elaborar un objeto tecnológico según la planificación, seleccionando y demostrando dominio de técnicas y herramientas (medir, cortar, unir, armar, pintar) con diversos materiales.
+3° básico | OA4 | Probar y evaluar la calidad de los trabajos propios y de otros, proponiendo correcciones y mejoras al objeto y al proceso.
+3° básico | OA5 | Usar software de presentación y procesador de textos para organizar y comunicar información e ideas.
+3° básico | OA6 | Usar internet y herramientas digitales para buscar, seleccionar y comunicar información, aplicando normas de uso seguro y responsable.
+4° básico | OA1 | Crear diseños de objetos o sistemas tecnológicos simples para resolver problemas del entorno, representando sus ideas por medio de bocetos y dibujos técnicos simples.
+4° básico | OA2 | Planificar la elaboración de objetos tecnológicos, incorporando la secuencia de acciones, materiales, herramientas, técnicas y medidas de seguridad.
+4° básico | OA3 | Elaborar un objeto tecnológico según la planificación, seleccionando y demostrando dominio de técnicas y herramientas (medir, cortar, unir, armar, pintar) con diversos materiales.
+4° básico | OA4 | Probar y evaluar la calidad de los trabajos propios y de otros, proponiendo correcciones y mejoras al objeto y al proceso.
+4° básico | OA5 | Usar software de presentación y procesador de textos para organizar y comunicar información e ideas.
+4° básico | OA6 | Usar internet y herramientas digitales para buscar, seleccionar y comunicar información, aplicando normas de uso seguro y responsable.
+5° básico | OA1 | Crear diseños de objetos y sistemas tecnológicos para resolver problemas o aprovechar oportunidades, considerando aspectos funcionales, estéticos y de sustentabilidad.
+5° básico | OA2 | Planificar la elaboración de un objeto o servicio tecnológico, considerando etapas, recursos, tiempos, costos y responsabilidades del equipo.
+5° básico | OA3 | Elaborar un producto tecnológico según la planificación, seleccionando y demostrando dominio en el uso de técnicas, herramientas y materiales, con medidas de seguridad.
+5° básico | OA4 | Probar y evaluar la calidad de productos tecnológicos propios y de otros, proponiendo mejoras según criterios de funcionamiento, estética, seguridad e impacto ambiental.
+5° básico | OA5 | Comunicar el diseño, la planificación u otros procesos de la creación de objetos tecnológicos, utilizando herramientas TIC (presentaciones, planillas, procesadores de texto).
+5° básico | OA6 | Usar software para organizar y analizar información (planillas de cálculo, bases de datos simples) y herramientas digitales colaborativas de forma segura y responsable.
+5° básico | OA7 | Explicar y valorar el impacto de los objetos y servicios tecnológicos en la vida de las personas, la sociedad y el medioambiente.
+6° básico | OA1 | Crear diseños de objetos y sistemas tecnológicos para resolver problemas o aprovechar oportunidades, considerando aspectos funcionales, estéticos y de sustentabilidad.
+6° básico | OA2 | Planificar la elaboración de un objeto o servicio tecnológico, considerando etapas, recursos, tiempos, costos y responsabilidades del equipo.
+6° básico | OA3 | Elaborar un producto tecnológico según la planificación, seleccionando y demostrando dominio en el uso de técnicas, herramientas y materiales, con medidas de seguridad.
+6° básico | OA4 | Probar y evaluar la calidad de productos tecnológicos propios y de otros, proponiendo mejoras según criterios de funcionamiento, estética, seguridad e impacto ambiental.
+6° básico | OA5 | Comunicar el diseño, la planificación u otros procesos de la creación de objetos tecnológicos, utilizando herramientas TIC (presentaciones, planillas, procesadores de texto).
+6° básico | OA6 | Usar software para organizar y analizar información (planillas de cálculo, bases de datos simples) y herramientas digitales colaborativas de forma segura y responsable.
+6° básico | OA7 | Explicar y valorar el impacto de los objetos y servicios tecnológicos en la vida de las personas, la sociedad y el medioambiente.
+7° básico | OA1 | Identificar necesidades personales o grupales del entorno cercano que impliquen soluciones de reparación, adaptación o mejora, reflexionando acerca de sus posibles aportes.
+7° básico | OA2 | Diseñar e implementar soluciones que respondan a las necesidades de reparación, adaptación o mejora de objetos o entornos, haciendo uso eficiente de recursos materiales, energéticos y digitales.
+7° básico | OA3 | Evaluar las soluciones implementadas como respuesta a las necesidades de reparación, adaptación o mejora, considerando criterios de eficiencia, funcionalidad e impacto.
+7° básico | OA4 | Comunicar el diseño, planificación u otros procesos de la resolución de necesidades de reparación, adaptación o mejora, utilizando herramientas TIC y diversos recursos.
+7° básico | OA5 | Caracterizar algunos de los efectos que han tenido las soluciones tecnológicas existentes de reparación, adaptación o mejora en las personas, la sociedad y el ambiente.
+7° básico | OA6 | Identificar oportunidades de emprendimiento y desarrollo de proyectos tecnológicos sustentables en su comunidad.
+8° básico | OA1 | Identificar necesidades que impliquen la reducción de efectos perjudiciales relacionados con el uso de recursos energéticos y materiales en una perspectiva de sustentabilidad.
+8° básico | OA2 | Diseñar e implementar soluciones que respondan a esas necesidades, utilizando herramientas TIC, considerando diversos tipos de recursos y aspectos éticos.
+8° básico | OA3 | Evaluar las soluciones implementadas, considerando su eficiencia energética, su impacto ambiental y la satisfacción de las necesidades planteadas.
+8° básico | OA4 | Comunicar el diseño, la planificación u otros procesos de la resolución de necesidades, utilizando herramientas TIC y considerando distintos tipos de soportes.
+8° básico | OA5 | Contrastar soluciones tecnológicas existentes de reducción de efectos perjudiciales en el ambiente, considerando los objetivos y aspectos éticos y sociales involucrados.
+8° básico | OA6 | Caracterizar algunos de los efectos que han tenido las soluciones tecnológicas en la calidad de vida de las personas y la sustentabilidad.
+I medio | OA1 | Identificar necesidades o problemas de las personas y su entorno que impliquen el desarrollo de un servicio, reflexionando sobre sus impactos.
+I medio | OA2 | Diseñar e implementar soluciones a esas necesidades mediante el desarrollo de un servicio, utilizando recursos digitales u otros medios y considerando aspectos éticos.
+I medio | OA3 | Evaluar el servicio desarrollado, considerando criterios de calidad, de impacto en las personas y de sustentabilidad, y proponiendo mejoras.
+I medio | OA4 | Comunicar el diseño, la planificación u otros procesos del desarrollo del servicio, utilizando herramientas TIC y formatos adecuados al público.
+I medio | OA5 | Analizar las formas en que los productos tecnológicos y los entornos evolucionan, caracterizando los diversos factores que influyen en ese cambio.
+I medio | OA6 | Proyectar escenarios de posibles impactos positivos o negativos de las innovaciones tecnológicas en las personas, la sociedad y el ambiente.
+II medio | OA1 | Identificar necesidades o problemas de innovación en un servicio u objeto tecnológico existente, considerando aspectos éticos, ambientales y sociales.
+II medio | OA2 | Diseñar e implementar un proyecto de innovación tecnológica (prototipo, sistema o servicio), aplicando metodologías de diseño y trabajo colaborativo.
+II medio | OA3 | Evaluar el proyecto de innovación, considerando criterios de funcionalidad, sustentabilidad, factibilidad y valor para los usuarios.
+II medio | OA4 | Comunicar el proyecto de innovación a diversos públicos, utilizando herramientas TIC y recursos de difusión.
+II medio | OA5 | Analizar críticamente los efectos de las tecnologías emergentes (automatización, inteligencia artificial, biotecnología) en la vida de las personas y el trabajo.
+II medio | OA6 | Evaluar críticamente cómo las innovaciones tecnológicas actuales afectan a la sociedad y al ambiente, proponiendo criterios de uso responsable.

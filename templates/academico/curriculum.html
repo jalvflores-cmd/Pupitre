@@ -3,7 +3,7 @@
 {% block contenido %}
 <div class="p-encabezado">
   <div><h3>Currículum nacional</h3>
-    <div class="sub">Objetivos de aprendizaje (OA) que usa el asistente de planificación. Vienen precargados los OA basales de la Priorización Curricular (Mineduc) de Lenguaje, Matemática, Ciencias Naturales e Historia, de 1° básico a II medio, como síntesis fiel; el texto oficial completo está en curriculumnacional.cl. Las demás asignaturas, talleres, especialidades y modalidades flexibles se agregan aquí como OA propios.</div></div>
+    <div class="sub">Objetivos de aprendizaje (OA) que usa el asistente de planificación. Vienen precargados, como síntesis, los OA de todas las asignaturas de formación general de 1° básico a IV medio (los basales de la Priorización Curricular en Lenguaje, Matemática, Ciencias e Historia) y de los 27 electivos del plan diferenciado Científico-Humanista; el texto oficial completo está en curriculumnacional.cl. Religión, talleres, módulos TP y modalidades flexibles se agregan aquí como OA propios.</div></div>
 </div>
 <form class="card p-3 mb-3"><div class="row g-2 align-items-end">
   <div class="col-md-4"><label class="form-label small">Asignatura</label><select name="asignatura" class="form-select form-select-sm"><option value="">Todas</option><optgroup label="Currículum nacional">{% for k, n in asignaturas %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</optgroup>{% if otras %}<optgroup label="Talleres, módulos, electivos y modalidades flexibles">{% for k, n in otras %}<option value="{{ k }}"{% if k == asig %} selected{% endif %}>{{ n }}</option>{% endfor %}</optgroup>{% endif %}</select></div>
@@ -31,7 +31,7 @@
                 {% for o in niv.oas %}
                   <tr><td class="text-nowrap fw-semibold ps-3" style="width:4.5rem">{{ o.codigo }}</td>
                     <td class="small">{{ o.texto }}{% if o.unidad %}<div class="text-muted">{{ o.unidad }}</div>{% endif %}</td>
-                    <td class="text-end" style="width:8rem">{% if o.establecimiento_id %}<span class="badge bg-info-subtle text-info-emphasis">Propio</span>{% if puede %}<form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este OA?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0 ms-1" name="eliminar" value="{{ o.pk }}"><i class="bi bi-trash"></i></button></form>{% endif %}{% else %}<span class="badge bg-success-subtle text-success-emphasis">Basal Mineduc</span>{% endif %}</td></tr>
+                    <td class="text-end" style="width:8rem">{% if o.establecimiento_id %}<span class="badge bg-info-subtle text-info-emphasis">Propio</span>{% if puede %}<form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este OA?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0 ms-1" name="eliminar" value="{{ o.pk }}"><i class="bi bi-trash"></i></button></form>{% endif %}{% elif o.basal %}<span class="badge bg-success-subtle text-success-emphasis">Basal Mineduc</span>{% else %}<span class="badge bg-light text-secondary border">Bases Mineduc</span>{% endif %}</td></tr>
                 {% endfor %}
                 </table>
               </div>

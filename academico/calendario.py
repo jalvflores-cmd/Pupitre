@@ -84,7 +84,7 @@ def items_del_periodo(user, desde, hasta):
     for ev in (Evaluacion.objects.filter(asignatura_curso__profesor=user, fecha__range=(desde, hasta))
                .select_related("asignatura_curso__asignatura", "asignatura_curso__curso__nivel")):
         ac = ev.asignatura_curso
-        dias[ev.fecha].append({"titulo": f"{ev.nombre} · {ac.curso} {ac.asignatura.nombre}", "tipo": "Evaluación",
+        dias[ev.fecha].append({"titulo": f"{ev.nombre} · {ac.curso.nombre_corto} {ac.asignatura.nombre}", "tipo": "Evaluación",
                                "color": "warning", "hora": None})
     if puede_ver(user):
         for a in AccionPME.objects.filter(termino__range=(desde, hasta)).exclude(estado=AccionPME.Estado.EJECUTADA):

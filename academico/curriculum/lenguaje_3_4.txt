@@ -1,0 +1,16 @@
+III medio | OA1 | Formular interpretaciones surgidas de sus análisis literarios, considerando el contexto de producción y recepción, las relaciones intertextuales y los recursos y efectos estéticos de las obras.
+III medio | OA2 | Reflexionar sobre el efecto estético de las obras leídas, evaluando cómo los recursos del lenguaje y las convenciones de género construyen sentido en ellas.
+III medio | OA3 | Analizar críticamente textos de diversos géneros discursivos no literarios orales, escritos y audiovisuales, considerando la influencia del contexto, los propósitos, la intertextualidad y los recursos lingüísticos y multimodales.
+III medio | OA4 | Evaluar críticamente la información presente en los medios de comunicación y redes sociales, considerando la confiabilidad de las fuentes, los sesgos y los intereses involucrados.
+III medio | OA5 | Investigar sobre diversos temas para enriquecer sus lecturas y análisis, sintetizando información de distintas fuentes y comunicando sus hallazgos.
+III medio | OA6 | Producir textos (orales, escritos o audiovisuales) coherentes y cohesionados para comunicar sus análisis e interpretaciones de textos, desarrollar posturas sobre temas y explorar creativamente con el lenguaje.
+III medio | OA7 | Dialogar argumentativamente, considerando las posturas de sus interlocutores, fundamentando sus propias posturas y construyendo acuerdos.
+III medio | OA8 | Investigar sobre diversos temas para enriquecer sus lecturas y análisis, recurriendo a fuentes variadas y citándolas adecuadamente.
+IV medio | OA1 | Formular interpretaciones de obras literarias que aborden un mismo tema o problema, comparando cómo cada obra lo representa y considerando su contexto.
+IV medio | OA2 | Reflexionar sobre el efecto estético de las obras leídas, evaluando cómo dialogan con su contexto y con otras obras y manifestaciones artísticas.
+IV medio | OA3 | Analizar críticamente textos de diversos géneros discursivos no literarios (orales, escritos y audiovisuales) de ámbitos públicos, académicos y mediáticos, evaluando sus argumentos y recursos.
+IV medio | OA4 | Evaluar críticamente cómo los discursos de los medios y de las redes sociales construyen representaciones de la realidad, considerando estereotipos, sesgos e intereses.
+IV medio | OA5 | Investigar sobre temas de interés, aplicando procedimientos de búsqueda, selección, evaluación y síntesis de información de diversas fuentes.
+IV medio | OA6 | Producir textos (orales, escritos o audiovisuales) coherentes y cohesionados para comunicar análisis, interpretaciones y posturas fundamentadas, adecuándose al propósito, destinatario y situación.
+IV medio | OA7 | Dialogar argumentativamente en situaciones públicas y académicas, evaluando las posturas de sus interlocutores y fundamentando las propias.
+IV medio | OA8 | Investigar y comunicar los resultados de sus investigaciones, citando fuentes y respetando la propiedad intelectual.

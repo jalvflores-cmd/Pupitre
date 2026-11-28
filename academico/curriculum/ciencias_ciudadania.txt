@@ -1,0 +1,13 @@
+Todos | OA1 | Analizar, a partir de evidencias, factores biológicos, ambientales y sociales que influyen en la salud humana (alimentación, actividad física, sueño, salud mental, infecciones). | Bienestar y salud
+Todos | OA2 | Investigar el funcionamiento de mecanismos biológicos del cuerpo humano (sistema inmune, nervioso, endocrino) y sus implicancias para la salud y el bienestar. | Bienestar y salud
+Todos | OA3 | Analizar críticamente controversias públicas sobre salud (vacunas, medicamentos, alimentos, uso de sustancias), evaluando información científica y sus implicancias éticas. | Bienestar y salud
+Todos | OA4 | Diseñar propuestas de acción para promover estilos de vida saludables en su comunidad, basadas en evidencia científica. | Bienestar y salud
+Todos | OA5 | Investigar riesgos y amenazas naturales y antrópicas (sismos, tsunamis, incendios, inundaciones, contaminación) y sus efectos en las personas y el entorno. | Seguridad, prevención y autocuidado
+Todos | OA6 | Analizar, con base en evidencias, medidas de prevención, mitigación y autocuidado frente a riesgos en el hogar, la escuela, el trabajo y la vía pública. | Seguridad, prevención y autocuidado
+Todos | OA7 | Diseñar planes de prevención y respuesta ante emergencias para su comunidad, aplicando conocimientos científicos. | Seguridad, prevención y autocuidado
+Todos | OA8 | Investigar el impacto de las actividades humanas en los ecosistemas (cambio climático, pérdida de biodiversidad, contaminación, uso del agua) a escala local y global. | Ambiente y sostenibilidad
+Todos | OA9 | Evaluar alternativas de solución a problemas ambientales (energías renovables, economía circular, gestión de residuos), considerando aspectos científicos, sociales y económicos. | Ambiente y sostenibilidad
+Todos | OA10 | Diseñar y desarrollar proyectos de acción ambiental en su comunidad, basados en evidencia científica y en principios de sostenibilidad. | Ambiente y sostenibilidad
+Todos | OA11 | Analizar cómo el desarrollo científico y tecnológico (comunicaciones, biotecnología, inteligencia artificial, nanotecnología) transforma la sociedad y la vida cotidiana. | Tecnología y sociedad
+Todos | OA12 | Evaluar implicancias éticas, sociales y ambientales de aplicaciones tecnológicas actuales, considerando beneficios y riesgos. | Tecnología y sociedad
+Todos | OA13 | Diseñar soluciones tecnológicas sencillas a problemas cotidianos de su comunidad, aplicando conocimientos científicos y evaluando su impacto. | Tecnología y sociedad

@@ -1,0 +1,162 @@
+# Participación y Argumentación en Democracia
+Todos | OA1 | Investigar y analizar críticamente debates de interés público, considerando las posturas involucradas, sus fundamentos y los contextos en que surgen.
+Todos | OA2 | Evaluar los argumentos en discursos públicos, identificando su estructura, la validez de los razonamientos, las falacias y los recursos persuasivos.
+Todos | OA3 | Producir discursos argumentativos orales y escritos sobre temas de interés público, fundamentando sus posturas con evidencia y considerando las de otros.
+Todos | OA4 | Participar en instancias de deliberación democrática (debates, foros, asambleas), respetando la diversidad de opiniones y construyendo acuerdos.
+Todos | OA5 | Analizar el papel de los medios de comunicación y las redes sociales en la deliberación pública y la construcción de opinión.
+# Lectura y Escritura Especializadas
+Todos | OA1 | Leer y analizar textos especializados de diversas disciplinas, identificando sus propósitos, géneros, estructuras y recursos lingüísticos propios.
+Todos | OA2 | Evaluar críticamente la información de textos especializados, considerando la confiabilidad de las fuentes, la evidencia y los procedimientos de cada disciplina.
+Todos | OA3 | Producir textos especializados (informes, ensayos, artículos, reseñas) siguiendo las convenciones de la disciplina y el proceso de escritura.
+Todos | OA4 | Utilizar estrategias de búsqueda, selección, síntesis y citación de fuentes en la elaboración de textos académicos.
+Todos | OA5 | Comunicar oralmente los resultados de investigaciones disciplinarias, adecuándose a la audiencia y usando recursos de apoyo.
+# Taller de Literatura
+Todos | OA1 | Producir textos literarios de diversos géneros (narrativa, poesía, drama), experimentando con recursos estéticos y estilísticos.
+Todos | OA2 | Analizar obras literarias como modelo para la propia escritura, identificando técnicas, estructuras y recursos de los autores.
+Todos | OA3 | Revisar y reescribir sus textos a partir de la retroalimentación de pares y docentes, en una comunidad de escritores.
+Todos | OA4 | Leer, comentar y valorar textos literarios de autores diversos, incluidos los de sus compañeros.
+Todos | OA5 | Difundir sus producciones literarias en la comunidad por medios impresos o digitales (antologías, lecturas, revistas, blogs).
+# Comprensión Histórica del Presente
+Todos | OA1 | Investigar procesos históricos recientes que permitan comprender problemas del presente, considerando múltiples causas y actores.
+Todos | OA2 | Analizar la relación entre memoria e historia, considerando cómo distintos grupos interpretan y recuerdan el pasado reciente.
+Todos | OA3 | Evaluar diversas fuentes e interpretaciones historiográficas sobre procesos del pasado reciente, contrastando perspectivas.
+Todos | OA4 | Elaborar interpretaciones históricas fundamentadas sobre problemas del presente, comunicándolas en diversos formatos.
+Todos | OA5 | Reflexionar sobre su rol como sujetos históricos y sobre la responsabilidad ciudadana en la construcción del futuro.
+# Geografía, Territorio y Desafíos Socioambientales
+Todos | OA1 | Analizar las interacciones entre sociedad y naturaleza en la configuración del territorio, a diferentes escalas.
+Todos | OA2 | Investigar problemas socioambientales (uso de recursos, riesgos naturales, ordenamiento territorial, conflictos) en su región y el país.
+Todos | OA3 | Utilizar herramientas geográficas (cartografía, SIG, trabajo de campo, datos) para analizar fenómenos territoriales.
+Todos | OA4 | Evaluar políticas y propuestas de desarrollo territorial considerando la sustentabilidad, la equidad y la participación ciudadana.
+Todos | OA5 | Proponer soluciones a desafíos socioambientales de su localidad, fundamentadas en el análisis geográfico.
+# Economía y Sociedad
+Todos | OA1 | Explicar conceptos económicos fundamentales (escasez, mercado, oferta y demanda, precios, dinero) y su presencia en la vida cotidiana.
+Todos | OA2 | Analizar el funcionamiento de la economía nacional e internacional (crecimiento, inflación, empleo, comercio) y el rol del Estado.
+Todos | OA3 | Evaluar problemas económicos actuales (desigualdad, pobreza, sustentabilidad, endeudamiento) desde distintas perspectivas.
+Todos | OA4 | Aplicar herramientas de educación financiera para la toma de decisiones personales y familiares responsables.
+Todos | OA5 | Investigar y comunicar problemas económicos de su entorno, usando datos e indicadores.
+# Estética
+Todos | OA1 | Analizar problemas estéticos fundamentales (belleza, arte, gusto, experiencia estética) a partir de diversas perspectivas filosóficas.
+Todos | OA2 | Evaluar manifestaciones artísticas y estéticas de diversas épocas y culturas, aplicando conceptos filosóficos.
+Todos | OA3 | Reflexionar sobre el papel del arte y la estética en la vida cotidiana, la sociedad y la cultura contemporánea.
+Todos | OA4 | Participar en diálogos filosóficos sobre problemas estéticos, fundamentando sus posiciones.
+Todos | OA5 | Investigar y comunicar problemas estéticos en diversos formatos.
+# Filosofía Política
+Todos | OA1 | Analizar conceptos fundamentales de la filosofía política (poder, Estado, legitimidad, justicia, libertad, igualdad) en textos clásicos y contemporáneos.
+Todos | OA2 | Evaluar diversas teorías políticas y sus implicancias para la organización de la sociedad.
+Todos | OA3 | Analizar problemas políticos actuales desde perspectivas filosóficas, fundamentando sus posiciones.
+Todos | OA4 | Participar en diálogos filosóficos sobre problemas políticos, considerando perspectivas diversas.
+Todos | OA5 | Investigar y comunicar problemas de filosofía política en diversos formatos.
+# Seminario de Filosofía
+Todos | OA1 | Investigar un problema filosófico de su interés, formulando preguntas y delimitando su alcance.
+Todos | OA2 | Analizar textos filosóficos relevantes para el problema investigado, identificando conceptos, tesis y argumentos.
+Todos | OA3 | Elaborar ensayos filosóficos que desarrollen una tesis fundamentada con argumentos y contraargumentos.
+Todos | OA4 | Participar en seminarios de discusión filosófica, exponiendo y defendiendo sus ideas con rigor.
+Todos | OA5 | Evaluar la relevancia de los problemas filosóficos para la vida personal y social.
+# Límites, Derivadas e Integrales
+Todos | OA1 | Aplicar el concepto de límite de una función y sus propiedades en la resolución de problemas, incluyendo continuidad.
+Todos | OA2 | Modelar situaciones de cambio con la derivada como razón de cambio instantánea, aplicando reglas de derivación.
+Todos | OA3 | Resolver problemas de optimización y análisis de funciones (crecimiento, máximos, mínimos, concavidad) mediante la derivada.
+Todos | OA4 | Aplicar la integral definida e indefinida para calcular áreas, acumulación y volúmenes de revolución.
+Todos | OA5 | Utilizar herramientas tecnológicas para explorar, representar y verificar conceptos del cálculo.
+# Probabilidades y Estadística Descriptiva e Inferencial
+Todos | OA1 | Argumentar y comunicar decisiones a partir del análisis crítico de información estadística en diversos contextos.
+Todos | OA2 | Resolver problemas que involucren variables aleatorias discretas y continuas y sus distribuciones (binomial, normal).
+Todos | OA3 | Aplicar herramientas de estadística inferencial (intervalos de confianza, pruebas de hipótesis simples) a partir de muestras.
+Todos | OA4 | Diseñar y realizar estudios estadísticos, recolectando, procesando y analizando datos con herramientas tecnológicas.
+Todos | OA5 | Evaluar críticamente estudios y encuestas, considerando el muestreo, los sesgos y la interpretación de resultados.
+# Pensamiento Computacional y Programación
+Todos | OA1 | Aplicar conceptos de pensamiento computacional (descomposición, patrones, abstracción, algoritmos) a la resolución de problemas.
+Todos | OA2 | Desarrollar programas en un lenguaje de programación, utilizando variables, estructuras de control, funciones y estructuras de datos.
+Todos | OA3 | Diseñar, implementar y depurar soluciones computacionales a problemas de diversas áreas.
+Todos | OA4 | Analizar datos utilizando herramientas computacionales y de visualización.
+Todos | OA5 | Evaluar las implicancias éticas y sociales de la computación (privacidad, seguridad, inteligencia artificial).
+# Geometría 3D
+Todos | OA1 | Representar puntos, rectas y planos en el espacio mediante coordenadas y vectores.
+Todos | OA2 | Resolver problemas de cuerpos geométricos (áreas, volúmenes, secciones), con y sin herramientas tecnológicas.
+Todos | OA3 | Aplicar transformaciones isométricas y homotecias en el espacio.
+Todos | OA4 | Modelar situaciones del entorno (arquitectura, diseño, ingeniería) mediante geometría 3D.
+Todos | OA5 | Argumentar y demostrar propiedades geométricas en el espacio.
+# Biología Celular y Molecular
+Todos | OA1 | Explicar la estructura y funcionamiento de la célula, considerando organelos, membranas y procesos de transporte.
+Todos | OA2 | Analizar el flujo de información genética (ADN, ARN, proteínas) y su regulación.
+Todos | OA3 | Investigar procesos celulares como la división, el metabolismo energético y la comunicación celular.
+Todos | OA4 | Evaluar aplicaciones de la biotecnología y la ingeniería genética y sus implicancias éticas y sociales.
+Todos | OA5 | Diseñar y realizar investigaciones experimentales en biología celular y molecular, comunicando sus resultados.
+# Biología de los Ecosistemas
+Todos | OA1 | Analizar la estructura y dinámica de los ecosistemas, considerando flujos de materia y energía y relaciones entre organismos.
+Todos | OA2 | Investigar la biodiversidad de Chile y los factores que la amenazan.
+Todos | OA3 | Evaluar el impacto de las actividades humanas en los ecosistemas y proponer medidas de conservación.
+Todos | OA4 | Analizar la evolución y adaptación de los organismos a su ambiente.
+Todos | OA5 | Diseñar y realizar investigaciones ecológicas en terreno, comunicando sus resultados.
+# Ciencias de la Salud
+Todos | OA1 | Analizar los determinantes biológicos, sociales y ambientales de la salud y la enfermedad.
+Todos | OA2 | Investigar enfermedades prevalentes en Chile (crónicas, infecciosas, de salud mental) y sus factores de riesgo.
+Todos | OA3 | Evaluar estrategias de promoción de la salud y prevención de enfermedades a nivel individual y comunitario.
+Todos | OA4 | Analizar el aporte de la investigación científica y la tecnología al cuidado de la salud.
+Todos | OA5 | Diseñar proyectos de promoción de la salud en su comunidad.
+# Física
+Todos | OA1 | Analizar el movimiento de los cuerpos y sus causas mediante las leyes de Newton y los principios de conservación.
+Todos | OA2 | Investigar fenómenos electromagnéticos y sus aplicaciones tecnológicas.
+Todos | OA3 | Analizar fenómenos ondulatorios, de la luz y de la física moderna (relatividad, cuántica) y sus aplicaciones.
+Todos | OA4 | Aplicar modelos físicos a problemas de energía, sustentabilidad y tecnología.
+Todos | OA5 | Diseñar y realizar investigaciones experimentales en física, analizando datos y comunicando resultados.
+# Química
+Todos | OA1 | Analizar la estructura de la materia y las propiedades de las sustancias a partir de modelos atómicos y de enlace.
+Todos | OA2 | Investigar reacciones químicas (ácido-base, óxido-reducción, equilibrio, cinética) y sus aplicaciones.
+Todos | OA3 | Analizar la química orgánica y de los polímeros y su presencia en la vida cotidiana.
+Todos | OA4 | Evaluar el impacto de la química en el ambiente, la salud y la industria, considerando la sustentabilidad.
+Todos | OA5 | Diseñar y realizar investigaciones experimentales en química, aplicando normas de seguridad y comunicando resultados.
+# Artes Visuales, Audiovisuales y Multimediales
+Todos | OA1 | Innovar en la creación de proyectos visuales, audiovisuales y multimediales, experimentando con materiales, soportes y tecnologías.
+Todos | OA2 | Crear obras y proyectos que respondan a necesidades de expresión y comunicación personales o grupales.
+Todos | OA3 | Analizar obras visuales, audiovisuales y multimediales de diversos contextos, considerando lenguajes, medios y propósitos.
+Todos | OA4 | Evaluar críticamente procesos y obras propias y de sus pares.
+Todos | OA5 | Diseñar y gestionar proyectos de difusión de sus obras en la comunidad.
+# Creación y Composición Musical
+Todos | OA1 | Crear obras musicales con diversos propósitos, utilizando elementos del lenguaje musical, procedimientos compositivos y tecnologías.
+Todos | OA2 | Experimentar con recursos sonoros, instrumentos y medios digitales en procesos de composición.
+Todos | OA3 | Analizar obras musicales de diversos estilos como referentes para la propia creación.
+Todos | OA4 | Evaluar críticamente procesos y obras musicales propias y de sus pares.
+Todos | OA5 | Diseñar y gestionar la difusión de sus creaciones musicales en la comunidad.
+# Diseño y Arquitectura
+Todos | OA1 | Innovar en la resolución de problemas de diseño y arquitectura, considerando aspectos funcionales, estéticos y sustentables.
+Todos | OA2 | Crear proyectos de diseño y arquitectura que respondan a necesidades de las personas y su entorno.
+Todos | OA3 | Analizar obras de diseño y arquitectura de diversos contextos, considerando su propósito, materialidad y lenguaje.
+Todos | OA4 | Evaluar críticamente procesos y proyectos propios y de sus pares.
+Todos | OA5 | Comunicar y difundir sus proyectos utilizando medios de representación (bocetos, maquetas, modelos digitales).
+# Interpretación y Creación en Danza
+Todos | OA1 | Experimentar con el movimiento y los elementos de la danza (cuerpo, espacio, tiempo, energía) en procesos de creación.
+Todos | OA2 | Interpretar y crear obras de danza de diversos estilos con propósito expresivo.
+Todos | OA3 | Analizar obras de danza de diversos contextos y épocas.
+Todos | OA4 | Evaluar críticamente procesos y obras de danza propias y de sus pares.
+Todos | OA5 | Diseñar y gestionar montajes de danza para la comunidad.
+# Interpretación y Creación en Teatro
+Todos | OA1 | Experimentar con los elementos del lenguaje teatral (cuerpo, voz, espacio, personaje, conflicto) en procesos de creación.
+Todos | OA2 | Interpretar y crear obras teatrales de diversos estilos y géneros con propósito expresivo.
+Todos | OA3 | Analizar obras teatrales de diversos contextos y épocas.
+Todos | OA4 | Evaluar críticamente procesos y obras teatrales propias y de sus pares.
+Todos | OA5 | Diseñar y gestionar montajes teatrales para la comunidad.
+# Interpretación Musical
+Todos | OA1 | Interpretar repertorio musical diverso, individual y grupalmente, con dominio técnico y expresivo.
+Todos | OA2 | Experimentar con recursos interpretativos, arreglos y tecnologías en el montaje de obras musicales.
+Todos | OA3 | Analizar obras y estilos interpretativos de diversos contextos.
+Todos | OA4 | Evaluar críticamente procesos e interpretaciones musicales propias y de sus pares.
+Todos | OA5 | Diseñar y gestionar presentaciones musicales en la comunidad.
+# Promoción de Estilos de Vida Activos y Saludables
+Todos | OA1 | Evaluar sus niveles de actividad física, condición física y hábitos de vida, y diseñar planes personales de vida activa.
+Todos | OA2 | Analizar los beneficios de la actividad física y de los hábitos saludables para la salud física y mental.
+Todos | OA3 | Diseñar y ejecutar proyectos de promoción de la actividad física y la vida saludable en su comunidad.
+Todos | OA4 | Evaluar los factores sociales, culturales y ambientales que facilitan o dificultan una vida activa.
+Todos | OA5 | Practicar diversas actividades físicas y deportivas de forma regular, segura y responsable.
+# Ciencias del Ejercicio Físico y Deportivo
+Todos | OA1 | Analizar los fundamentos biológicos, fisiológicos y biomecánicos del ejercicio físico y el deporte.
+Todos | OA2 | Aplicar principios del entrenamiento para mejorar la condición física y el rendimiento deportivo.
+Todos | OA3 | Evaluar la condición física y el desempeño deportivo con pruebas y tecnologías.
+Todos | OA4 | Analizar la nutrición, la recuperación y la prevención de lesiones en la actividad física.
+Todos | OA5 | Diseñar planes de entrenamiento personales o grupales con fundamento científico.
+# Expresión Corporal
+Todos | OA1 | Experimentar con el cuerpo y el movimiento como medios de expresión y comunicación.
+Todos | OA2 | Crear secuencias de movimiento y composiciones corporales con propósito expresivo.
+Todos | OA3 | Analizar manifestaciones de expresión corporal de diversos contextos.
+Todos | OA4 | Evaluar críticamente procesos y creaciones de expresión corporal propias y de sus pares.
+Todos | OA5 | Presentar creaciones de expresión corporal en la comunidad.

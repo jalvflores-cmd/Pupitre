@@ -1,0 +1,92 @@
+1° básico | OA1 | Observar, describir y valorar sus características personales, sus habilidades e intereses.
+1° básico | OA2 | Identificar emociones experimentadas por ellos y por los demás (rabia, alegría, pena, miedo) y distinguir diversas formas de expresarlas.
+1° básico | OA3 | Observar, describir y valorar las expresiones de afecto y cariño que dan y reciben en la familia, la escuela y los amigos.
+1° básico | OA4 | Identificar y practicar en forma guiada conductas protectoras y de autocuidado (alimentación, higiene, sueño, seguridad y resguardo del cuerpo y la intimidad).
+1° básico | OA5 | Manifestar actitudes de solidaridad y respeto que favorezcan la convivencia (actuar en forma empática, utilizar un buen trato, respetar a los demás).
+1° básico | OA6 | Identificar conflictos que surgen entre pares y practicar formas de solucionarlos (escuchar, describir, buscar acuerdos).
+1° básico | OA7 | Reconocer, describir y valorar sus grupos de pertenencia (familia, curso, pares) y las personas que los componen.
+1° básico | OA8 | Practicar hábitos y actitudes que favorezcan el proceso de aprendizaje (traer y cuidar los materiales, mantener el orden, organizar su tiempo).
+2° básico | OA1 | Observar, describir y valorar sus características personales, sus habilidades e intereses.
+2° básico | OA2 | Identificar emociones experimentadas por ellos y por los demás (rabia, alegría, pena, miedo) y distinguir diversas formas de expresarlas.
+2° básico | OA3 | Observar, describir y valorar las expresiones de afecto y cariño que dan y reciben en la familia, la escuela y los amigos.
+2° básico | OA4 | Identificar y practicar en forma guiada conductas protectoras y de autocuidado (alimentación, higiene, sueño, seguridad y resguardo del cuerpo y la intimidad).
+2° básico | OA5 | Manifestar actitudes de solidaridad y respeto que favorezcan la convivencia (actuar en forma empática, utilizar un buen trato, respetar a los demás).
+2° básico | OA6 | Identificar conflictos que surgen entre pares y practicar formas de solucionarlos (escuchar, describir, buscar acuerdos).
+2° básico | OA7 | Reconocer, describir y valorar sus grupos de pertenencia (familia, curso, pares) y las personas que los componen.
+2° básico | OA8 | Practicar hábitos y actitudes que favorezcan el proceso de aprendizaje (traer y cuidar los materiales, mantener el orden, organizar su tiempo).
+3° básico | OA1 | Observar, describir y valorar sus características, habilidades y fortalezas (en lo familiar, afectivo, académico y social) y proponerse acciones para mejorar.
+3° básico | OA2 | Identificar y aceptar sus propias emociones y las de los demás, y practicar estrategias personales de manejo emocional (esperar un tiempo, respirar, conversar).
+3° básico | OA3 | Reconocer y valorar el proceso de desarrollo afectivo y sexual, que se manifiesta en cambios corporales, en el afecto y en la relación con los demás.
+3° básico | OA4 | Identificar y practicar en forma autónoma conductas protectoras y de autocuidado (higiene, alimentación, prevención del consumo de sustancias, uso seguro de internet).
+3° básico | OA5 | Manifestar actitudes de solidaridad y respeto que favorezcan la convivencia, como respetar la diversidad, actuar con empatía y evitar la discriminación.
+3° básico | OA6 | Resolver conflictos entre pares en forma guiada, aplicando estrategias como el diálogo, la mediación y la búsqueda de acuerdos.
+3° básico | OA7 | Participar en forma guiada en la comunidad escolar y en la organización del curso (proponer, organizar y realizar actividades, asumir responsabilidades).
+3° básico | OA8 | Practicar en forma autónoma hábitos y actitudes que favorezcan el proceso de aprendizaje (organizar sus tiempos, estudiar, pedir ayuda).
+4° básico | OA1 | Observar, describir y valorar sus características, habilidades y fortalezas (en lo familiar, afectivo, académico y social) y proponerse acciones para mejorar.
+4° básico | OA2 | Identificar y aceptar sus propias emociones y las de los demás, y practicar estrategias personales de manejo emocional (esperar un tiempo, respirar, conversar).
+4° básico | OA3 | Reconocer y valorar el proceso de desarrollo afectivo y sexual, que se manifiesta en cambios corporales, en el afecto y en la relación con los demás.
+4° básico | OA4 | Identificar y practicar en forma autónoma conductas protectoras y de autocuidado (higiene, alimentación, prevención del consumo de sustancias, uso seguro de internet).
+4° básico | OA5 | Manifestar actitudes de solidaridad y respeto que favorezcan la convivencia, como respetar la diversidad, actuar con empatía y evitar la discriminación.
+4° básico | OA6 | Resolver conflictos entre pares en forma guiada, aplicando estrategias como el diálogo, la mediación y la búsqueda de acuerdos.
+4° básico | OA7 | Participar en forma guiada en la comunidad escolar y en la organización del curso (proponer, organizar y realizar actividades, asumir responsabilidades).
+4° básico | OA8 | Practicar en forma autónoma hábitos y actitudes que favorezcan el proceso de aprendizaje (organizar sus tiempos, estudiar, pedir ayuda).
+5° básico | OA1 | Demostrar una valoración positiva de sí mismo, reconociendo habilidades, fortalezas y aspectos que requiera superar.
+5° básico | OA2 | Distinguir y describir emociones y reconocer y practicar formas apropiadas de expresarlas, considerando el posible impacto en sí mismo y en otros.
+5° básico | OA3 | Reconocer y valorar el proceso de desarrollo afectivo y sexual que aprecia en sí mismo y en los demás, describiendo los cambios físicos, afectivos y sociales de la pubertad.
+5° básico | OA4 | Identificar factores de riesgo y factores protectores frente al consumo de alcohol, tabaco y drogas, y practicar conductas de autocuidado.
+5° básico | OA5 | Reconocer y practicar estrategias de convivencia respetuosa: respeto de la diversidad, trato justo y prevención del acoso y la violencia, también en espacios digitales.
+5° básico | OA6 | Resolver conflictos de convivencia en forma autónoma, seleccionando y aplicando diversas estrategias (diálogo, negociación, mediación).
+5° básico | OA7 | Participar activa y colaborativamente en la comunidad escolar y en la organización del curso, proponiendo y llevando a cabo iniciativas.
+5° básico | OA8 | Practicar en forma autónoma y perseverante hábitos y actitudes orientadas a favorecer el aprendizaje y a desarrollar sus intereses.
+6° básico | OA1 | Demostrar una valoración positiva de sí mismo, reconociendo habilidades, fortalezas y aspectos que requiera superar.
+6° básico | OA2 | Distinguir y describir emociones y reconocer y practicar formas apropiadas de expresarlas, considerando el posible impacto en sí mismo y en otros.
+6° básico | OA3 | Reconocer y valorar el proceso de desarrollo afectivo y sexual que aprecia en sí mismo y en los demás, describiendo los cambios físicos, afectivos y sociales de la pubertad.
+6° básico | OA4 | Identificar factores de riesgo y factores protectores frente al consumo de alcohol, tabaco y drogas, y practicar conductas de autocuidado.
+6° básico | OA5 | Reconocer y practicar estrategias de convivencia respetuosa: respeto de la diversidad, trato justo y prevención del acoso y la violencia, también en espacios digitales.
+6° básico | OA6 | Resolver conflictos de convivencia en forma autónoma, seleccionando y aplicando diversas estrategias (diálogo, negociación, mediación).
+6° básico | OA7 | Participar activa y colaborativamente en la comunidad escolar y en la organización del curso, proponiendo y llevando a cabo iniciativas.
+6° básico | OA8 | Practicar en forma autónoma y perseverante hábitos y actitudes orientadas a favorecer el aprendizaje y a desarrollar sus intereses.
+7° básico | OA1 | Construir, en forma individual y colectiva, representaciones positivas de sí mismos, incorporando sus características, motivaciones, intereses y capacidades, y considerando las experiencias de cambio asociadas a la pubertad y adolescencia.
+7° básico | OA2 | Analizar sus intereses y aptitudes, y su proyección en el ámbito académico y laboral, para tomar decisiones informadas respecto de su futuro.
+7° básico | OA3 | Analizar de manera fundamentada temáticas y situaciones relacionadas con la sexualidad y los vínculos afectivos, en función de valores como el respeto hacia todo ser humano, la responsabilidad y el cuidado de sí mismo y de los demás.
+7° básico | OA4 | Evaluar, en sí mismos y en su entorno, situaciones problemáticas o de riesgo relacionadas con el consumo de sustancias, conductas sexuales riesgosas, la violencia y la discriminación, identificando conductas de autocuidado y factores protectores.
+7° básico | OA5 | Promover y llevar a cabo de manera autónoma acciones que favorezcan la vida saludable a nivel personal y social (alimentación, actividad física, sueño, salud mental).
+7° básico | OA6 | Reconocer y valorar la diversidad de las personas y promover relaciones de convivencia basadas en el respeto, la equidad, la empatía y la resolución pacífica de conflictos.
+7° básico | OA7 | Participar activa y colaborativamente en las actividades de la comunidad escolar y en la organización y gestión de proyectos del curso.
+7° básico | OA8 | Gestionar de manera autónoma su proceso de aprendizaje escolar, utilizando estrategias de estudio y organización acordes a sus metas.
+8° básico | OA1 | Construir, en forma individual y colectiva, representaciones positivas de sí mismos, incorporando sus características, motivaciones, intereses y capacidades, y considerando las experiencias de cambio asociadas a la pubertad y adolescencia.
+8° básico | OA2 | Analizar sus intereses y aptitudes, y su proyección en el ámbito académico y laboral, para tomar decisiones informadas respecto de su futuro.
+8° básico | OA3 | Analizar de manera fundamentada temáticas y situaciones relacionadas con la sexualidad y los vínculos afectivos, en función de valores como el respeto hacia todo ser humano, la responsabilidad y el cuidado de sí mismo y de los demás.
+8° básico | OA4 | Evaluar, en sí mismos y en su entorno, situaciones problemáticas o de riesgo relacionadas con el consumo de sustancias, conductas sexuales riesgosas, la violencia y la discriminación, identificando conductas de autocuidado y factores protectores.
+8° básico | OA5 | Promover y llevar a cabo de manera autónoma acciones que favorezcan la vida saludable a nivel personal y social (alimentación, actividad física, sueño, salud mental).
+8° básico | OA6 | Reconocer y valorar la diversidad de las personas y promover relaciones de convivencia basadas en el respeto, la equidad, la empatía y la resolución pacífica de conflictos.
+8° básico | OA7 | Participar activa y colaborativamente en las actividades de la comunidad escolar y en la organización y gestión de proyectos del curso.
+8° básico | OA8 | Gestionar de manera autónoma su proceso de aprendizaje escolar, utilizando estrategias de estudio y organización acordes a sus metas.
+I medio | OA1 | Construir, en forma individual y colectiva, representaciones positivas de sí mismos, incorporando sus características, motivaciones, intereses y capacidades, y considerando las experiencias de cambio asociadas a la pubertad y adolescencia.
+I medio | OA2 | Analizar sus intereses y aptitudes, y su proyección en el ámbito académico y laboral, para tomar decisiones informadas respecto de su futuro.
+I medio | OA3 | Analizar de manera fundamentada temáticas y situaciones relacionadas con la sexualidad y los vínculos afectivos, en función de valores como el respeto hacia todo ser humano, la responsabilidad y el cuidado de sí mismo y de los demás.
+I medio | OA4 | Evaluar, en sí mismos y en su entorno, situaciones problemáticas o de riesgo relacionadas con el consumo de sustancias, conductas sexuales riesgosas, la violencia y la discriminación, identificando conductas de autocuidado y factores protectores.
+I medio | OA5 | Promover y llevar a cabo de manera autónoma acciones que favorezcan la vida saludable a nivel personal y social (alimentación, actividad física, sueño, salud mental).
+I medio | OA6 | Reconocer y valorar la diversidad de las personas y promover relaciones de convivencia basadas en el respeto, la equidad, la empatía y la resolución pacífica de conflictos.
+I medio | OA7 | Participar activa y colaborativamente en las actividades de la comunidad escolar y en la organización y gestión de proyectos del curso.
+I medio | OA8 | Gestionar de manera autónoma su proceso de aprendizaje escolar, utilizando estrategias de estudio y organización acordes a sus metas.
+II medio | OA1 | Construir, en forma individual y colectiva, representaciones positivas de sí mismos, incorporando sus características, motivaciones, intereses y capacidades, y considerando las experiencias de cambio asociadas a la pubertad y adolescencia.
+II medio | OA2 | Analizar sus intereses y aptitudes, y su proyección en el ámbito académico y laboral, para tomar decisiones informadas respecto de su futuro.
+II medio | OA3 | Analizar de manera fundamentada temáticas y situaciones relacionadas con la sexualidad y los vínculos afectivos, en función de valores como el respeto hacia todo ser humano, la responsabilidad y el cuidado de sí mismo y de los demás.
+II medio | OA4 | Evaluar, en sí mismos y en su entorno, situaciones problemáticas o de riesgo relacionadas con el consumo de sustancias, conductas sexuales riesgosas, la violencia y la discriminación, identificando conductas de autocuidado y factores protectores.
+II medio | OA5 | Promover y llevar a cabo de manera autónoma acciones que favorezcan la vida saludable a nivel personal y social (alimentación, actividad física, sueño, salud mental).
+II medio | OA6 | Reconocer y valorar la diversidad de las personas y promover relaciones de convivencia basadas en el respeto, la equidad, la empatía y la resolución pacífica de conflictos.
+II medio | OA7 | Participar activa y colaborativamente en las actividades de la comunidad escolar y en la organización y gestión de proyectos del curso.
+II medio | OA8 | Gestionar de manera autónoma su proceso de aprendizaje escolar, utilizando estrategias de estudio y organización acordes a sus metas.
+III medio | OA1 | Evaluar sus intereses, habilidades y valores para elaborar un proyecto de vida personal que oriente sus decisiones académicas y laborales.
+III medio | OA2 | Investigar alternativas de continuidad de estudios (educación superior, formación técnica) y del mundo del trabajo, considerando requisitos, financiamiento y beneficios.
+III medio | OA3 | Analizar críticamente situaciones relacionadas con la afectividad, la sexualidad y las relaciones de pareja, promoviendo vínculos basados en el respeto, el consentimiento y el cuidado mutuo.
+III medio | OA4 | Evaluar situaciones de riesgo para su bienestar (consumo de sustancias, violencia, salud mental) y fortalecer factores protectores y redes de apoyo.
+III medio | OA5 | Promover relaciones de convivencia basadas en el respeto a la diversidad, la inclusión y la resolución pacífica de conflictos en la comunidad escolar.
+III medio | OA6 | Participar activa y responsablemente en la comunidad escolar y en su entorno, liderando iniciativas que contribuyan al bien común.
+IV medio | OA1 | Evaluar sus intereses, habilidades y valores para elaborar un proyecto de vida personal que oriente sus decisiones académicas y laborales.
+IV medio | OA2 | Investigar alternativas de continuidad de estudios (educación superior, formación técnica) y del mundo del trabajo, considerando requisitos, financiamiento y beneficios.
+IV medio | OA3 | Analizar críticamente situaciones relacionadas con la afectividad, la sexualidad y las relaciones de pareja, promoviendo vínculos basados en el respeto, el consentimiento y el cuidado mutuo.
+IV medio | OA4 | Evaluar situaciones de riesgo para su bienestar (consumo de sustancias, violencia, salud mental) y fortalecer factores protectores y redes de apoyo.
+IV medio | OA5 | Promover relaciones de convivencia basadas en el respeto a la diversidad, la inclusión y la resolución pacífica de conflictos en la comunidad escolar.
+IV medio | OA6 | Participar activa y responsablemente en la comunidad escolar y en su entorno, liderando iniciativas que contribuyan al bien común.

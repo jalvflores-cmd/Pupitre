@@ -1,0 +1,16 @@
+III medio | OA1 | Identificar los fundamentos, atributos y dimensiones de la democracia, reconociendo sus desafíos y la importancia de la participación ciudadana para su fortalecimiento.
+III medio | OA2 | Evaluar las características y funcionamiento de la institucionalidad democrática chilena, la separación de los poderes del Estado y los mecanismos de control y rendición de cuentas.
+III medio | OA3 | Investigar sobre las principales amenazas y riesgos para la democracia (corrupción, violencia, desinformación, desigualdad), reflexionando sobre su impacto y formas de enfrentarlas.
+III medio | OA4 | Explicar el concepto de Estado de derecho y la importancia de la Constitución, las leyes y los tribunales para la convivencia democrática y la protección de los derechos.
+III medio | OA5 | Promover el reconocimiento, la defensa y la exigibilidad de los derechos humanos en la vida cotidiana, considerando los principios de igualdad, dignidad, inclusión y no discriminación.
+III medio | OA6 | Evaluar diversas formas de participación ciudadana (elecciones, organizaciones sociales, movimientos, medios digitales) y su aporte al bien común.
+III medio | OA7 | Analizar críticamente el rol de los medios de comunicación y las redes sociales en la formación de la opinión pública y en el funcionamiento de la democracia.
+III medio | OA8 | Diseñar y desarrollar un proyecto de participación ciudadana en su comunidad, aplicando principios democráticos y de trabajo colaborativo.
+IV medio | OA1 | Evaluar las relaciones entre el Estado y el mercado, considerando temas como sistema económico, desarrollo, desigualdad, consumo y sustentabilidad.
+IV medio | OA2 | Analizar el ejercicio de la ciudadanía en un mundo globalizado, considerando los desafíos de la interculturalidad, la migración y los derechos de los pueblos indígenas.
+IV medio | OA3 | Evaluar los desafíos ambientales y territoriales (sustentabilidad, ordenamiento del territorio, conflictos socioambientales) desde la perspectiva de la responsabilidad ciudadana.
+IV medio | OA4 | Analizar la relación entre derechos y deberes en el mundo del trabajo, la seguridad social y la protección del consumidor, reconociendo los mecanismos de defensa existentes.
+IV medio | OA5 | Proponer formas de organización del territorio y de participación local que contribuyan al desarrollo sostenible y a la calidad de vida de su comunidad.
+IV medio | OA6 | Reflexionar sobre los principios éticos de la vida en democracia (justicia, solidaridad, respeto, responsabilidad) y su aplicación en dilemas actuales.
+IV medio | OA7 | Evaluar el rol de los organismos internacionales y los tratados en la protección de los derechos humanos y la resolución de conflictos.
+IV medio | OA8 | Diseñar y desarrollar un proyecto ciudadano que responda a un problema de la comunidad, comunicando sus resultados.

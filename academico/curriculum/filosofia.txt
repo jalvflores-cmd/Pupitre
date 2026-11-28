@@ -1,0 +1,12 @@
+III medio | OA1 | Describir las características del quehacer filosófico, considerando el problema de su origen y sentido, e identificando algunas de sus grandes preguntas y temas.
+III medio | OA2 | Formular preguntas significativas para su vida a partir del análisis de conceptos y teorías filosóficas, poniendo en duda aquello que aparece como cierto o dado y proyectando diversas respuestas posibles.
+III medio | OA3 | Analizar y fundamentar problemas presentes en textos filosóficos, considerando sus supuestos, conceptos, métodos de razonamiento e implicancias en la vida cotidiana.
+III medio | OA4 | Evaluar el impacto de ideas filosóficas relevantes (sobre conocimiento, realidad y ser humano) en la sociedad y en su vida personal.
+III medio | OA5 | Participar en diálogos sobre grandes problemas de la filosofía pertinentes para sus vidas, confrontando diversas perspectivas filosóficas y fundamentando sus ideas con argumentos.
+III medio | OA6 | Investigar sobre problemas filosóficos, aplicando procedimientos de búsqueda, análisis de fuentes y argumentación, y comunicando sus resultados.
+IV medio | OA1 | Analizar problemas éticos de la vida cotidiana y de la sociedad, aplicando conceptos y teorías éticas (virtud, deber, utilidad, justicia, cuidado).
+IV medio | OA2 | Evaluar críticamente diversas teorías sobre la justicia, la libertad, el poder y la autoridad, y su relación con la vida en sociedad.
+IV medio | OA3 | Analizar problemas de la política y de la convivencia democrática desde perspectivas filosóficas, fundamentando sus posiciones.
+IV medio | OA4 | Reflexionar sobre dilemas éticos contemporáneos (bioética, tecnología, ambiente, medios digitales), confrontando argumentos y proponiendo soluciones fundamentadas.
+IV medio | OA5 | Participar en diálogos filosóficos sobre problemas éticos y políticos pertinentes para sus vidas, considerando perspectivas diversas y argumentando con rigor.
+IV medio | OA6 | Investigar sobre problemas éticos y políticos, aplicando procedimientos de la filosofía y comunicando sus resultados con argumentos fundamentados.

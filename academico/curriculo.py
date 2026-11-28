@@ -1,9 +1,12 @@
 """Currículum nacional precargado y asistente de planificación (funciona sin internet, sin IA).
 
-Los OA precargados son los Aprendizajes Basales de la Actualización de la Priorización Curricular (Mineduc)
-para Lenguaje, Matemática, Ciencias Naturales e Historia, de 1° básico a II medio. El texto de cada OA es una
-síntesis fiel; el texto oficial completo está en curriculumnacional.cl. Cada establecimiento puede agregar o
-importar desde Excel los OA que falten (complementarios, otras asignaturas, módulos TP).
+Vienen precargados los Aprendizajes Basales de la Priorización Curricular (Mineduc) de Lenguaje, Matemática,
+Ciencias Naturales e Historia (1° básico a II medio) y una síntesis de los OA de las Bases Curriculares del resto
+de las asignaturas de formación general (Inglés, Artes Visuales, Música, Educación Física y Salud, Tecnología,
+Orientación; Lengua y Literatura, Matemática, Educación Ciudadana, Filosofía, Ciencias para la Ciudadanía e Inglés
+de III y IV medio) y de los electivos del plan diferenciado Científico-Humanista. El texto de cada OA es una
+síntesis; el texto oficial completo está en curriculumnacional.cl. Religión (programas de cada credo) y los
+módulos TP se agregan o importan desde Excel como OA propios.
 
 El asistente propone una clase (inicio, desarrollo, cierre) y evaluaciones formativas y sumativas a partir del
 verbo del OA (taxonomía de Bloom) y de la asignatura, y una evaluación de unidad según lo planificado en el
@@ -15,8 +18,16 @@ from collections import Counter, OrderedDict
 from pathlib import Path
 
 CARPETA = Path(__file__).resolve().parent / "curriculum"
-ARCHIVOS = {"lenguaje": "lenguaje.txt", "matematica": "matematica.txt", "ciencias": "ciencias.txt",
-            "historia": "historia.txt"}
+# Aprendizajes basales (Priorización Curricular) de 1° básico a II medio
+BASALES = {"lenguaje": ["lenguaje.txt"], "matematica": ["matematica.txt"], "ciencias": ["ciencias.txt"],
+           "historia": ["historia.txt"]}
+# Resto del currículum: síntesis de las Bases Curriculares (1° básico a IV medio, formación general)
+COMPLEMENTARIOS = {"lenguaje": ["lenguaje_3_4.txt"], "matematica": ["matematica_3_4.txt"], "ingles": ["ingles.txt"],
+                   "artes": ["artes.txt"], "musica": ["musica.txt"], "educacion_fisica": ["educacion_fisica.txt"],
+                   "tecnologia": ["tecnologia.txt"], "orientacion": ["orientacion.txt"], "ciudadania": ["ciudadania.txt"],
+                   "filosofia": ["filosofia.txt"], "ciencias_ciudadania": ["ciencias_ciudadania.txt"]}
+ARCHIVO_ELECTIVOS = "electivos.txt"  # plan diferenciado Científico-Humanista (III y IV medio)
+ARCHIVOS = BASALES  # compatibilidad
 ROMANOS = {"I": 9, "II": 10, "III": 11, "IV": 12}
 
 
@@ -43,11 +54,32 @@ def grado_de_curso(curso):
     return grado_desde_texto(curso.nivel.nombre) if curso and curso.nivel_id else None
 
 
-def clave_asignatura(nombre):
+def _slug(texto):
+    return re.sub(r"[^a-z0-9]+", "_", _sin_tildes(texto)).strip("_")
+
+
+def electivos():
+    """{clave: nombre oficial} de los electivos del plan diferenciado HC precargados."""
+    return {f"e_{_slug(n)}"[:60]: n for n in re.findall(r"^#\s*(.+)$",
+            (CARPETA / ARCHIVO_ELECTIVOS).read_text(encoding="utf-8"), re.M)}
+
+
+def clave_asignatura(nombre, tipo=None):
     """Asignatura del establecimiento → clave del currículum."""
     n = _sin_tildes(nombre)
+    if tipo == "DIFERENCIADA" or tipo is None:
+        clave = f"e_{_slug(nombre)}"[:60]
+        if clave in electivos():
+            if tipo == "DIFERENCIADA" or n not in ("fisica", "quimica"):
+                return clave
+    if "ciencias para la ciudadania" in n:
+        return "ciencias_ciudadania"
+    if "educacion ciudadana" in n or n.startswith("formacion ciudadana"):
+        return "ciudadania"
+    if n.startswith("filosofia"):
+        return "filosofia"
     reglas = [("lengua", "lenguaje"), ("matemat", "matematica"), ("ciencias nat", "ciencias"), ("biolog", "ciencias"),
-              ("fisica", "ciencias"), ("quimic", "ciencias"), ("ciencias para", "ciencias"), ("historia", "historia"),
+              ("fisica", "ciencias"), ("quimic", "ciencias"), ("historia", "historia"),
               ("ingles", "ingles"), ("artes", "artes"), ("musica", "musica"), ("educacion fis", "educacion_fisica"),
               ("tecnolog", "tecnologia"), ("orientacion", "orientacion"), ("religion", "religion")]
     if "educacion fis" in n:
@@ -58,28 +90,55 @@ def clave_asignatura(nombre):
     return "otra"
 
 
-def leer_archivo(clave):
-    """Filas (grado, numero, texto) del archivo precargado de una asignatura."""
+def _fila(partes):
+    if len(partes) not in (3, 4):
+        return None
+    grado = 0 if _sin_tildes(partes[0]).startswith("todos") else grado_desde_texto(partes[0])
+    numero = re.sub(r"\D", "", partes[1])
+    if grado is None or not numero:
+        return None
+    return grado, int(numero), partes[2], partes[3] if len(partes) == 4 else ""
+
+
+def leer_archivo(clave, archivos=None):
+    """Filas (grado, numero, texto, unidad) de los archivos precargados de una asignatura."""
     filas = []
-    for linea in (CARPETA / ARCHIVOS[clave]).read_text(encoding="utf-8").splitlines():
-        partes = [p.strip() for p in linea.split("|")]
-        if len(partes) != 3:
-            continue
-        grado = grado_desde_texto(partes[0])
-        numero = re.sub(r"\D", "", partes[1])
-        if grado and numero:
-            filas.append((grado, int(numero), partes[2]))
+    for nombre in (archivos or BASALES.get(clave, []) + COMPLEMENTARIOS.get(clave, [])):
+        for linea in (CARPETA / nombre).read_text(encoding="utf-8").splitlines():
+            fila = _fila([p.strip() for p in linea.split("|")])
+            if fila:
+                filas.append(fila)
     return filas
 
 
-def cargar_oficiales(modelo):
+def leer_electivos():
+    """{clave: filas} del archivo de electivos."""
+    por_clave, actual = {}, None
+    for linea in (CARPETA / ARCHIVO_ELECTIVOS).read_text(encoding="utf-8").splitlines():
+        if linea.startswith("#"):
+            actual = f"e_{_slug(linea.lstrip('#').strip())}"[:60]
+            por_clave[actual] = []
+        elif actual:
+            fila = _fila([p.strip() for p in linea.split("|")])
+            if fila:
+                por_clave[actual].append(fila)
+    return por_clave
+
+
+def cargar_oficiales(modelo, solo_basales=False):
     """Crea o actualiza los OA oficiales precargados. Idempotente; nunca toca los OA propios de un establecimiento."""
+    lotes = [(clave, leer_archivo(clave, archivos), True) for clave, archivos in BASALES.items()]
+    if not solo_basales:
+        lotes += [(clave, leer_archivo(clave, archivos), False) for clave, archivos in COMPLEMENTARIOS.items()]
+        lotes += [(clave, filas, False) for clave, filas in leer_electivos().items()]
     creados = 0
-    for clave in ARCHIVOS:
-        for grado, numero, texto in leer_archivo(clave):
+    for clave, filas, basal in lotes:
+        for grado, numero, texto, unidad in filas:
+            defaults = {"texto": texto, "basal": basal}
+            if unidad:
+                defaults["unidad"] = unidad
             _, creado = modelo.objects.update_or_create(
-                establecimiento=None, asignatura=clave, grado=grado, numero=numero,
-                defaults={"texto": texto, "basal": True})
+                establecimiento=None, asignatura=clave, grado=grado, numero=numero, defaults=defaults)
             creados += creado
     return creados
 
@@ -96,7 +155,7 @@ def oas_para(ac, anteriores=False):
     from .models import ObjetivoAprendizaje
 
     grado = grado_de_curso(ac.curso)
-    clave = clave_asignatura(ac.asignatura.nombre)
+    clave = clave_asignatura(ac.asignatura.nombre, ac.asignatura.tipo)
     disponibles = ObjetivoAprendizaje.disponibles()
     filtro_grado = Q(grado=0)
     if grado is not None:
