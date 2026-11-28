@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}Asistente{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-stars text-primary"></i> Asistente</h3>
+    <div class="sub">Revisa sus funciones y le avisa lo que está pendiente, lo que vence pronto y lo que viene en el calendario. Se actualiza solo cada pocos minutos y después de cada cambio que guarde.</div></div>
+  <a class="btn btn-sm btn-outline-primary" href="{% if establecimiento.pk %}{% url 'calendario' %}{% else %}{% url 'red' %}{% endif %}"><i class="bi bi-calendar3"></i> {% if establecimiento.pk %}Calendario{% else %}Mis establecimientos{% endif %}</a>
+</div>
+<div class="row g-4">
+  <div class="col-xl-8">
+    {% for grupo, lista in grupos.items %}
+      <h6 class="mt-1">{{ grupo }}</h6>
+      {% for a in lista %}
+      <div class="card p-3 mb-2 border-start border-4 border-{{ a.nivel }}">
+        <div class="d-flex gap-3 align-items-start">
+          <i class="bi {{ a.icono }} text-{{ a.nivel }} fs-4"></i>
+          <div class="flex-grow-1"><div class="fw-semibold">{{ a.titulo }}</div>{% if a.detalle %}<div class="small text-muted">{{ a.detalle }}</div>{% endif %}</div>
+          {% if a.url %}<a class="btn btn-sm btn-outline-primary text-nowrap" href="{{ a.url }}">Ir <i class="bi bi-arrow-right"></i></a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% empty %}
+      <div class="card p-4 text-center"><i class="bi bi-check2-circle text-success fs-1"></i><div class="fw-semibold">Todo al día</div><div class="small text-muted">No hay pendientes ni eventos para hoy o mañana.</div></div>
+    {% endfor %}
+  </div>
+  <div class="col-xl-4">
+    <div class="card p-3">
+      <h6><i class="bi bi-magic"></i> Sugerencias con IA</h6>
+      {% if ia_disponible %}
+        {% if ia %}<div class="small border rounded-3 p-2 mb-2 bg-light">{{ ia.texto|linebreaksbr }}</div><div class="form-text mb-2">Generado hoy a las {{ ia.hora }} por Claude (Anthropic). Revise las sugerencias antes de actuar.</div>{% endif %}
+        <form method="post" action="{% url 'asistente_ia' %}">{% csrf_token %}
+          <button class="btn btn-primary btn-sm w-100"><i class="bi bi-stars"></i> {% if ia %}Volver a pedir{% else %}Pedir sugerencias a la IA{% endif %}</button></form>
+        <div class="form-text">Solo se envían su rol, la fecha y los avisos de esta página; nunca nombres ni RUT de estudiantes.</div>
+      {% else %}
+        <p class="small text-muted mb-1">Los avisos de esta página se generan con reglas fijas, sin IA. Además, el asistente puede redactar sugerencias con Claude (IA de Anthropic).</p>
+        {% if ia_configurable %}
+          {% if not ia_activada %}<p class="small mb-1">Para activarlo, marque «Sugerencias con inteligencia artificial» en <a href="{% url 'configuracion' %}">Configuración</a>.</p>{% endif %}
+          {% if not clave_ia %}<p class="small mb-0">El servidor también necesita la variable de entorno <code>ANTHROPIC_API_KEY</code> con una clave de la API de Anthropic.</p>{% endif %}
+        {% else %}<p class="small mb-0">Lo activa Dirección o UTP del establecimiento.</p>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

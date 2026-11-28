@@ -97,6 +97,11 @@ class Establecimiento(models.Model):
     hora_asistencia = models.TimeField(
         "hora de la asistencia diaria", default=datetime_time(10, 0),
         help_text="La asistencia del día se toma de la clase que está en curso a esta hora (o la más cercana).")
+    asistente_ia = models.BooleanField(
+        "sugerencias con inteligencia artificial", default=False,
+        help_text="El asistente puede pedir a Claude (IA de Anthropic) sugerencias a partir de los avisos del día. "
+                  "Solo se envían conteos y títulos de avisos, nunca nombres ni RUT de estudiantes. Requiere que la "
+                  "plataforma tenga configurada la clave ANTHROPIC_API_KEY.")
     logo = models.BinaryField("logo institucional", null=True, blank=True, editable=False)
     color_principal = models.CharField(
         "color institucional", max_length=7, blank=True,
@@ -1210,3 +1215,40 @@ class GastoSEP(models.Model):
         verbose_name = "gasto SEP"
         verbose_name_plural = "gastos SEP"
         ordering = ["-fecha", "-id"]
+
+
+class EventoCalendario(DeEstablecimiento):
+    """Evento del calendario del establecimiento (reuniones, consejos, plazos, actividades) o recordatorio propio."""
+
+    class Tipo(models.TextChoices):
+        REUNION = "REUNION", "Reunión"
+        CONSEJO = "CONSEJO", "Consejo de profesores"
+        APODERADOS = "APODERADOS", "Reunión de apoderados"
+        PLAZO = "PLAZO", "Plazo o entrega"
+        EVALUACION = "EVALUACION", "Evaluación institucional"
+        ACTIVIDAD = "ACTIVIDAD", "Actividad o acto"
+        FERIADO = "FERIADO", "Feriado o interferiado"
+        RECORDATORIO = "RECORDATORIO", "Recordatorio personal"
+
+    titulo = models.CharField("título", max_length=150)
+    tipo = models.CharField(max_length=14, choices=Tipo.choices, default=Tipo.REUNION)
+    fecha = models.DateField()
+    hora = models.TimeField(null=True, blank=True)
+    descripcion = models.TextField("descripción", blank=True)
+    roles = models.JSONField("dirigido a", default=list, blank=True, help_text="Vacío = toda la comunidad.")
+    privado = models.BooleanField("solo para mí", default=False)
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="+")
+
+    class Meta:
+        verbose_name = "evento del calendario"
+        verbose_name_plural = "calendario"
+        ordering = ["fecha", "hora"]
+
+    def __str__(self):
+        return self.titulo
+
+    def visible_para(self, user, rol):
+        if self.privado:
+            return self.creado_por_id == user.id
+        return not self.roles or rol in self.roles or self.creado_por_id == user.id

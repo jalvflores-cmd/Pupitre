@@ -71,6 +71,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "academico.middleware.EstablecimientoMiddleware",
+    "academico.asistente.AsistenteMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "academico.primera_vez.PrimeraConfiguracionMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

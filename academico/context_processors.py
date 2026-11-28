@@ -74,7 +74,25 @@ def rol(request):
         "establecimiento": est, **_marca(est),
         "ve_alertas": _ve_alertas(request.user),
         "respaldos_disponibles": gestion and settings.DATABASES["default"]["ENGINE"].endswith("sqlite3"),
+        **_asistente(request),
     }
+
+
+def _asistente(request):
+    """Avisos del asistente para la campana y el aviso emergente (una vez al día por sesión)."""
+    from django.utils import timezone
+
+    from .asistente import avisos_de
+
+    if not hasattr(request, "session"):
+        return {}
+    avisos = avisos_de(request)
+    hoy = timezone.localdate().isoformat()
+    popup = bool(avisos) and request.method == "GET" and request.path != "/asistente/" \
+        and request.session.get("asistente_popup") != hoy
+    if popup:
+        request.session["asistente_popup"] = hoy
+    return {"avisos_asistente": avisos, "n_avisos": len(avisos), "mostrar_popup": popup}
 
 
 def _ve_alertas(user):

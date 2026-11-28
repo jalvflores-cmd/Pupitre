@@ -73,6 +73,7 @@ class Command(BaseCommand):
         self.demo_personal(escuela)
         self.demo_horarios(anio)
         self.demo_administrativo(anio)
+        self.demo_calendario()
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -582,6 +583,36 @@ class Command(BaseCommand):
                                                     categoria=rnd.choice(["RECURSOS", "EQUIPAMIENTO", "CAPACITACION", "PERSONAL"]),
                                                     detalle=f"{nombre[:60]} – compra {i + 1}", proveedor="Proveedor demo SpA",
                                                     documento=f"Factura {1000 + rnd.randint(1, 8999)}", monto=900_000)
+
+    def demo_calendario(self):
+        """Eventos del calendario alrededor de hoy (solo en establecimientos que aún no tienen ninguno)."""
+        from academico.models import EventoCalendario
+
+        hoy = timezone.localdate()
+
+        def habil(dias):
+            d = hoy + timedelta(days=dias)
+            while d.weekday() >= 5:
+                d += timedelta(days=1 if dias >= 0 else -1)
+            return d
+
+        gestion = ["DIRECTOR", "UTP", "INSPECTOR", "CONVIVENCIA"]
+        eventos = [
+            (0, time(15, 30), "Consejo de profesores", "CONSEJO", [], "Tabla: cierre del semestre, casos de asistencia y actividades de fin de año."),
+            (1, None, "Entrega de planificaciones a UTP", "PLAZO", ["PROFESOR", "UTP"], "Planificaciones de la próxima unidad en el libro de clases."),
+            (3, time(19, 0), "Reunión de apoderados", "APODERADOS", [], "Entrega de informes de notas parciales."),
+            (6, time(11, 0), "Acto de fin de año", "ACTIVIDAD", [], ""),
+            (8, None, "Plazo de cierre de notas del semestre", "PLAZO", ["PROFESOR", "UTP", "DIRECTOR"], ""),
+            (-3, time(9, 0), "Reunión del equipo directivo", "REUNION", gestion, "Seguimiento del PME."),
+        ]
+        for est in Establecimiento.objects.all():
+            with en_establecimiento(est):
+                if EventoCalendario.objects.exists():
+                    continue
+                autor = User.objects.filter(perfil__establecimiento=est, perfil__rol="DIRECTOR").first()
+                for dias, hora, titulo, tipo, roles, detalle in eventos:
+                    EventoCalendario.objects.create(titulo=titulo, tipo=tipo, fecha=habil(dias), hora=hora, roles=roles,
+                                                    descripcion=detalle, creado_por=autor)
 
     def demo_superadmin(self):
         u, creado = User.objects.get_or_create(username="superadmin", defaults={

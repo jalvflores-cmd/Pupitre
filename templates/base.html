@@ -32,6 +32,7 @@
     <div class="titulo">{{ nombre_sostenedor }}</div>
     <a href="{% url 'red' %}" class="{% if '/red/' in p %}activo{% endif %}"><i class="bi bi-diagram-2"></i> Mis establecimientos</a>
     <a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>
+    {% if not establecimiento.pk %}<a href="{% url 'asistente' %}" class="{% if p == '/asistente/' %}activo{% endif %}"><i class="bi bi-stars"></i> Asistente{% if n_avisos %}<span class="badge bg-warning">{{ n_avisos }}</span>{% endif %}</a>{% endif %}
     {% if establecimiento.pk %}<form method="post" action="{% url 'red_salir' %}" class="px-2 small">{% csrf_token %}
       <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · cambiar</button></form>{% endif %}
     {% endif %}
@@ -47,6 +48,8 @@
     {% if ve_todo %}<a href="{% url 'resultados' %}" class="{% if '/resultados/' in p %}activo{% endif %}"><i class="bi bi-bar-chart-line"></i> Resultados</a>{% endif %}
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
+    <a href="{% url 'asistente' %}" class="{% if p == '/asistente/' %}activo{% endif %}"><i class="bi bi-stars"></i> Asistente{% if n_avisos %}<span class="badge bg-warning">{{ n_avisos }}</span>{% endif %}</a>
+    <a href="{% url 'calendario' %}" class="{% if '/calendario/' in p %}activo{% endif %}"><i class="bi bi-calendar3"></i> Calendario</a>
     {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if ve_administrativo and mod_asistencia_personal %}<a href="{% url 'asistencia_personal' %}" class="{% if '/asistencia-personal/' in p %}activo{% endif %}"><i class="bi bi-person-check"></i> Asistencia del personal</a>{% endif %}
@@ -75,6 +78,20 @@
   <div class="p-barra">
     <button class="btn btn-sm btn-outline-primary p-movil" onclick="document.getElementById('sidebar').classList.toggle('abierto')"><i class="bi bi-list"></i></button>
     <span class="fecha">{% now "l j \d\e F \d\e Y" %}</span>
+    <div class="dropdown ms-auto">
+      <button class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Avisos del asistente">
+        <i class="bi bi-bell"></i>{% if n_avisos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ n_avisos }}</span>{% endif %}
+      </button>
+      <div class="dropdown-menu dropdown-menu-end p-0 shadow" style="width:min(24rem,92vw)">
+        <div class="px-3 py-2 border-bottom fw-semibold small"><i class="bi bi-stars text-primary"></i> Asistente · {{ n_avisos|default:"sin" }} aviso{{ n_avisos|pluralize }}</div>
+        <div style="max-height:22rem;overflow:auto">
+        {% for a in avisos_asistente|slice:":8" %}
+          <a class="dropdown-item small py-2 border-bottom text-wrap" href="{{ a.url|default:'#' }}"><i class="bi {{ a.icono }} text-{{ a.nivel }}"></i> {{ a.titulo }}{% if a.detalle %}<div class="text-muted text-truncate">{{ a.detalle }}</div>{% endif %}</a>
+        {% empty %}<div class="px-3 py-3 small text-muted">Todo al día. No hay pendientes.</div>{% endfor %}
+        </div>
+        <a class="dropdown-item small text-center py-2 text-primary" href="{% url 'asistente' %}">Ver todo en el asistente</a>
+      </div>
+    </div>
     <button class="btn btn-sm btn-acento" data-bs-toggle="modal" data-bs-target="#modalComentario"><i class="bi bi-chat-dots"></i> Enviar comentarios</button>
   </div>
   <main class="p-main">
@@ -100,6 +117,21 @@
     <div class="modal-footer border-0 pt-0"><button class="btn btn-primary">Enviar</button></div>
   </form>
 </div></div></div>
+{% if mostrar_popup %}
+<div class="modal fade" id="modalAsistente" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px">
+  <div class="modal-header border-0 pb-0"><h5 class="modal-title"><i class="bi bi-stars text-primary"></i> Buen día, {{ user.first_name|default:user.username }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+  <div class="modal-body">
+    <p class="small text-muted mb-2">Esto es lo que el asistente encontró para hoy:</p>
+    {% for a in avisos_asistente|slice:":5" %}
+      <a href="{{ a.url|default:'#' }}" class="d-flex gap-2 text-decoration-none text-body border rounded-3 p-2 mb-2">
+        <i class="bi {{ a.icono }} text-{{ a.nivel }} fs-5"></i><span class="small"><b>{{ a.titulo }}</b>{% if a.detalle %}<br><span class="text-muted">{{ a.detalle|truncatechars:140 }}</span>{% endif %}</span></a>
+    {% endfor %}
+    {% if n_avisos > 5 %}<div class="small text-muted">y {{ n_avisos|add:"-5" }} más.</div>{% endif %}
+  </div>
+  <div class="modal-footer border-0 pt-0"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button><a class="btn btn-primary btn-sm" href="{% url 'asistente' %}">Ver todos los avisos</a></div>
+</div></div></div>
+<script>document.addEventListener("DOMContentLoaded", function () { new bootstrap.Modal(document.getElementById("modalAsistente")).show(); });</script>
+{% endif %}
 {% else %}
   {% block publico %}{% endblock %}
 {% endif %}

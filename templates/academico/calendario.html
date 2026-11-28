@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Calendario{% endblock %}
+{% block contenido %}
+<style>
+  .cal { table-layout: fixed; }
+  .cal td { height: 6.5rem; vertical-align: top; padding: .3rem; font-size: .78rem; }
+  .cal td.otro { background: #f6f7f9; color: #9aa3ad; }
+  .cal td.hoy { box-shadow: inset 0 0 0 2px #257de0; }
+  .cal .num { font-weight: 600; font-size: .8rem; }
+  .cal .ev { display: block; border-radius: 6px; padding: 1px 5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 768px) { .cal td { height: 4rem; font-size: .66rem; } }
+</style>
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-calendar3 text-primary"></i> Calendario</h3>
+    <div class="sub">Reuniones, consejos, plazos y actividades del establecimiento, sus evaluaciones y sus recordatorios. El asistente le avisa el día anterior y el mismo día.</div></div>
+  <div class="d-flex gap-2 align-items-center">
+    <a class="btn btn-sm btn-outline-primary" href="?mes={{ anterior }}" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></a>
+    <span class="fw-semibold text-capitalize px-1">{{ mes_txt }}</span>
+    <a class="btn btn-sm btn-outline-primary" href="?mes={{ siguiente }}" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></a>
+    <a class="btn btn-sm btn-outline-secondary" href="?mes={{ actual }}">Hoy</a>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-xl-9">
+    <div class="card p-2"><div class="table-responsive"><table class="table table-bordered cal mb-0">
+      <thead><tr>{% for d in dias_semana %}<th class="small text-center">{{ d }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for semana in grilla %}<tr>{% for c in semana %}
+        <td class="{% if c.otro_mes %}otro{% endif %}{% if c.hoy %} hoy{% endif %}">
+          <div class="num">{{ c.fecha.day }}</div>
+          {% for x in c.items %}<span class="ev bg-{{ x.color }}-subtle text-{{ x.color }}-emphasis" title="{{ x.tipo }}: {{ x.titulo }}{% if x.detalle %} — {{ x.detalle }}{% endif %}">{% if x.hora %}{{ x.hora|time:"H:i" }} {% endif %}{{ x.titulo }}</span>{% endfor %}
+        </td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div></div>
+  </div>
+  <div class="col-xl-3">
+    {% if puede_crear %}
+    <div class="card p-3 mb-3">
+      <h6>{% if publica %}Agregar evento{% else %}Agregar recordatorio personal{% endif %}</h6>
+      {% if not publica %}<p class="small text-muted mb-2">Los eventos para toda la comunidad los publican Dirección, UTP, Inspectoría y Convivencia.</p>{% endif %}
+      <form method="post">{% csrf_token %}
+        {% for f in form %}<div class="mb-2">{% if f.name == "roles" %}<div class="form-label small mb-0">{{ f.label }}</div><div class="d-flex flex-wrap gap-2 small">{% for c in f %}<label class="form-check-label"><input type="checkbox" class="form-check-input me-1" name="{{ c.data.name }}" value="{{ c.data.value }}"{% if c.data.selected %} checked{% endif %}>{{ c.choice_label }}</label>{% endfor %}</div>{% elif f.name == "privado" %}<label class="form-check-label small"><input type="checkbox" class="form-check-input me-1" name="privado"{% if f.value %} checked{% endif %}> {{ f.label|capfirst }}</label>{% else %}<label class="form-label small mb-0">{{ f.label }}</label>{{ f }}{% endif %}{% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
+        <button class="btn btn-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> Guardar</button>
+      </form>
+    </div>
+    {% endif %}
+    <div class="card p-3">
+      <h6>Próximos 30 días</h6>
+      {% for d, x in proximos %}
+        <div class="small border-bottom py-1 d-flex justify-content-between gap-2">
+          <div><span class="badge bg-{{ x.color }}-subtle text-{{ x.color }}-emphasis">{{ d|date:"D d/m" }}{% if x.hora %} {{ x.hora|time:"H:i" }}{% endif %}</span> {{ x.titulo }}<div class="text-muted">{{ x.tipo }}</div></div>
+          {% if x.evento and x.evento.creado_por_id == request.user.id or x.evento and es_gestion %}
+          <form method="post" action="{% url 'evento_eliminar' x.evento.pk %}" onsubmit="return confirm('¿Eliminar este evento?')">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" aria-label="Eliminar"><i class="bi bi-trash"></i></button></form>
+          {% endif %}
+        </div>
+      {% empty %}<div class="small text-muted">No hay nada agendado.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

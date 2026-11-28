@@ -1286,3 +1286,88 @@ class HorarioImprimibleTests(HorariosTests):
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("horarios_pdf") + f"?profesor={self.profe_mat.pk}").status_code, 200)
         self.assertEqual(self.client.get(reverse("horarios_pdf") + "?todos=cursos").status_code, 403)
+
+
+class AsistenteCalendarioTests(BaseDatos):
+    def setUp(self):
+        import datetime
+        self.hoy = datetime.date(2026, 5, 6)  # miércoles
+        self.manana = datetime.date(2026, 5, 7)
+
+    def test_eventos_por_rol_y_recordatorios_privados(self):
+        from .models import EventoCalendario
+        self.client.force_login(self.director)
+        self.client.post(reverse("calendario"), {"titulo": "Consejo técnico", "tipo": "CONSEJO",
+                                                 "fecha": "2026-05-07", "hora": "15:30", "roles": ["PROFESOR"]})
+        self.assertEqual(EventoCalendario.todos.get().roles, ["PROFESOR"])
+        self.client.force_login(self.profe_mat)
+        r = self.client.get(reverse("calendario") + "?mes=2026-05")
+        self.assertContains(r, "Consejo técnico")
+        self.assertContains(r, "Agregar recordatorio personal")
+        # un profesor solo crea recordatorios propios, aunque intente publicarlos
+        self.client.post(reverse("calendario"), {"titulo": "Llamar apoderado", "tipo": "CONSEJO", "fecha": "2026-05-07",
+                                                 "roles": [], "privado": ""}, follow=True)
+        rec = EventoCalendario.todos.get(titulo="Llamar apoderado")
+        self.assertTrue(rec.privado)
+        self.assertEqual(rec.tipo, "RECORDATORIO")
+        self.client.force_login(self.utp)
+        r = self.client.get(reverse("calendario") + "?mes=2026-05")
+        self.assertNotContains(r, "Consejo técnico")
+        self.assertNotContains(r, "Llamar apoderado")
+        self.assertContains(r, "Glorias Navales")  # feriado fijo del 21 de mayo
+
+    def test_avisos_del_docente(self):
+        from .asistente import calcular
+        from .models import EventoCalendario
+        Evaluacion.objects.create(asignatura_curso=self.mat, nombre="Prueba 2", semestre=1,
+                                  fecha=self.hoy.replace(day=8))
+        EventoCalendario.objects.create(titulo="Reunión de apoderados", tipo="APODERADOS", fecha=self.manana)
+        titulos = [a["titulo"] for a in calcular(self.profe_mat, hoy=self.hoy)]
+        self.assertTrue(any("evaluación en los próximos 7 días" in t for t in titulos), titulos)
+        self.assertIn("Mañana: Reunión de apoderados", titulos)
+        self.assertFalse(any("evaluación" in t for t in (a["titulo"] for a in calcular(self.profe_len, hoy=self.hoy))))
+
+    def test_viernes_avisa_lo_del_lunes(self):
+        import datetime
+        from .asistente import calcular
+        from .models import EventoCalendario
+        EventoCalendario.objects.create(titulo="Acto cívico", tipo="ACTIVIDAD", fecha=datetime.date(2026, 5, 11))
+        titulos = [a["titulo"] for a in calcular(self.profe_mat, hoy=datetime.date(2026, 5, 8))]
+        self.assertIn("El lunes 11: Acto cívico", titulos)
+
+    def test_campana_y_aviso_emergente_una_vez_al_dia(self):
+        from django.utils import timezone
+        from .models import EventoCalendario
+        EventoCalendario.objects.create(titulo="Consejo escolar", tipo="CONSEJO", fecha=timezone.localdate())
+        self.client.force_login(self.director)
+        r = self.client.get(reverse("inicio"))
+        self.assertContains(r, "modalAsistente")
+        self.assertContains(r, "Consejo escolar")
+        r = self.client.get(reverse("inicio"))
+        self.assertNotContains(r, "modalAsistente")
+        self.assertContains(r, "Avisos del asistente")
+        self.assertContains(self.client.get(reverse("asistente")), "Consejo escolar")
+
+    def test_ia_opcional_no_envia_nombres(self):
+        import os
+        from unittest import mock
+        from django.utils import timezone
+        from .models import Establecimiento, EventoCalendario
+        self.client.force_login(self.director)
+        self.assertNotContains(self.client.get(reverse("asistente")), "Pedir sugerencias a la IA")
+        self.assertEqual(self.client.post(reverse("asistente_ia")).status_code, 403)
+        est = Establecimiento.actual()
+        est.asistente_ia = True
+        est.save()
+        EventoCalendario.objects.create(titulo="Consejo escolar", tipo="CONSEJO", fecha=timezone.localdate())
+        respuesta = mock.Mock(stop_reason="end_turn", content=[mock.Mock(type="text", text="• Prepare el consejo.")])
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-prueba"}), mock.patch("anthropic.Anthropic") as cliente:
+            cliente.return_value.beta.messages.create.return_value = respuesta
+            self.assertContains(self.client.get(reverse("asistente")), "Pedir sugerencias a la IA")
+            self.client.post(reverse("asistente_ia"))
+            kwargs = cliente.return_value.beta.messages.create.call_args.kwargs
+            self.assertEqual(kwargs["model"], "claude-opus-5-5")
+            enviado = kwargs["messages"][0]["content"]
+            self.assertIn("Consejo escolar", enviado)
+            self.assertNotIn("Pérez", enviado)
+            self.assertContains(self.client.get(reverse("asistente")), "Prepare el consejo.")
