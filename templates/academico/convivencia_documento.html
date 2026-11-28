@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}{{ d.titulo|truncatechars:40 }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><a class="small" href="{% url 'convivencia_documentos' %}"><i class="bi bi-arrow-left"></i> Protocolos y normativa</a>
+    <h3 class="mt-1">{{ d.titulo }}</h3></div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if gestiona_convivencia and es_protocolo and not solo_lectura %}<a class="btn btn-primary" href="{% url 'convivencia_entrevista' %}{% if d.protocolo %}?protocolo={{ d.protocolo }}{% endif %}"><i class="bi bi-person-lines-fill"></i> Registrar entrevista</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'convivencia_documento_docx' d.clave %}"><i class="bi bi-file-earmark-word"></i> Descargar en Word</a>
+  </div>
+</div>
+<p>{{ d.resumen }}</p>
+{% if es_protocolo %}
+<div class="card p-2 p-lg-3 mb-4">
+  <h5 class="px-1"><i class="bi bi-list-check text-primary"></i> Pasos, plazos y responsables</h5>
+  <div class="table-responsive"><table class="table table-sm mb-0 align-top">
+    <thead><tr><th style="width:20%">Etapa</th><th style="width:17%">Plazo</th><th style="width:20%">Responsable</th><th>Acciones</th></tr></thead>
+    {% for etapa, plazo, resp, acciones in d.pasos %}
+    <tr><td class="fw-semibold">{{ forloop.counter }}. {{ etapa }}</td><td class="small">{{ plazo }}</td><td class="small">{{ resp }}</td>
+      <td class="small"><ul class="mb-0 ps-3">{% for a in acciones %}<li>{{ a }}</li>{% endfor %}</ul></td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-8">
+    {% for titulo, lineas in secciones %}
+    <div class="card p-3 mb-3"><h6>{{ titulo }}</h6>
+      {% for es_vineta, texto in lineas %}{% if es_vineta %}<div class="small ms-2">• {{ texto }}</div>{% else %}<p class="small mb-2">{{ texto }}</p>{% endif %}{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-3 mb-3"><h6>Marco normativo</h6>
+      <ul class="small ps-3 mb-0">{% for n in d.normativa %}<li>{{ n }}</li>{% endfor %}{% for n in normativa_base %}<li class="text-muted">{{ n }}</li>{% endfor %}</ul></div>
+    <div class="card p-3 mb-3"><h6>Formatos de apoyo</h6>
+      {% for f in formatos %}<div class="small py-1"><a href="{% url 'convivencia_documento_docx' f.clave %}"><i class="bi bi-file-earmark-word"></i> {{ f.titulo }}</a></div>{% endfor %}</div>
+  </div>
+</div>
+{% endif %}
+<div class="alert alert-warning small py-2 mt-3"><i class="bi bi-exclamation-triangle"></i> {{ nota }}</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import (alertas, asistencia_personal, asistente, calendario, horarios, libro, personal, sep, plataforma, red,
+from . import (alertas, convivencia_vistas, asistencia_personal, asistente, calendario, horarios, libro, personal, sep, plataforma, red,
                resultados, views)
 
 urlpatterns = [
@@ -81,6 +81,10 @@ urlpatterns = [
     path("cursos/<int:pk>/plan-oficial/", views.cargar_plan_oficial, name="cargar_plan_oficial_curso"),
     path("carga/<int:pk>/quitar/", views.curso_asignatura_quitar, name="curso_asignatura_quitar"),
     path("convivencia/", views.convivencia, name="convivencia"),
+    path("convivencia/documentos/", convivencia_vistas.documentos, name="convivencia_documentos"),
+    path("convivencia/documentos/<slug:clave>.docx", convivencia_vistas.documento_docx, name="convivencia_documento_docx"),
+    path("convivencia/documentos/<slug:clave>/", convivencia_vistas.documento, name="convivencia_documento"),
+    path("convivencia/entrevista/", convivencia_vistas.entrevista_rapida, name="convivencia_entrevista"),
     path("anotaciones/<int:pk>/derivacion/", views.anotacion_derivacion, name="anotacion_derivacion"),
     path("estudiantes/<int:est_pk>/redes/nueva/", views.red_apoyo_form, name="red_crear"),
     path("redes/<int:pk>/", views.red_apoyo_form, name="red_editar"),

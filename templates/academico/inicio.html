@@ -13,7 +13,23 @@
   <div class="col-sm-6 col-xl-3"><a href="{% url 'convivencia' %}" class="card p-kpi text-reset text-decoration-none"><div class="icono ic-rojo"><i class="bi bi-journal-text"></i></div><div><div class="valor">{{ ultimas_anotaciones|length }}</div><div class="etiqueta">Anotaciones recientes</div></div></a></div>
 </div>
 {% endif %}
+{% if acceso_convivencia %}
+<div class="card p-3 p-lg-4 mb-4">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div><h5 class="mb-1"><i class="bi bi-shield-check text-primary"></i> Convivencia: acceso rápido</h5>
+      <div class="small text-muted">{{ derivaciones_abiertas }} derivacion{{ derivaciones_abiertas|pluralize:"es" }} abierta{{ derivaciones_abiertas|pluralize }}{% if derivaciones_pendientes %}, <b class="text-warning-emphasis">{{ derivaciones_pendientes }} sin revisar</b>{% endif %}.</div></div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-primary" href="{% url 'convivencia_entrevista' %}"><i class="bi bi-person-lines-fill"></i> Entrevista rápida</a>
+      <a class="btn btn-outline-primary" href="{% url 'convivencia' %}?derivadas=PENDIENTE"><i class="bi bi-inbox"></i> Derivaciones</a>
+      <a class="btn btn-outline-secondary" href="{% url 'convivencia_documentos' %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a>
+    </div>
+  </div>
+  <div class="small text-muted mt-3 mb-1">Activar protocolo (abre la entrevista rápida con el protocolo elegido):</div>
+  <div class="d-flex flex-wrap gap-2">{% for d in protocolos_rapidos %}<a class="btn btn-sm btn-light border" href="{% url 'convivencia_entrevista' %}?protocolo={{ d.protocolo }}">{{ d.corto }}</a>{% endfor %}</div>
+</div>
+{% endif %}
 <div class="row g-4">
+  {% if mis_asignaturas or not acceso_convivencia %}
   <div class="col-lg-6">
     <div class="card p-3 p-lg-4">
       <h5><i class="bi bi-book text-primary"></i> Mis asignaturas</h5>
@@ -34,6 +50,7 @@
     </div>
     {% endif %}
   </div>
+  {% endif %}
   {% if ve_todo %}
   <div class="col-lg-6">
     <div class="card p-3 p-lg-4">

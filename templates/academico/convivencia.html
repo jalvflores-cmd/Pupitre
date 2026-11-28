@@ -3,7 +3,11 @@
 {% block contenido %}
 <div class="p-encabezado">
   <h3>Convivencia escolar <span class="text-muted fs-6">({{ total }} anotaciones)</span></h3>
-  <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if ve_protocolos %}<a class="btn btn-primary btn-sm" href="{% url 'convivencia_entrevista' %}"><i class="bi bi-person-lines-fill"></i> Entrevista rápida</a>{% endif %}
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'convivencia_documentos' %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a>
+    <a class="btn btn-outline-success btn-sm" href="?{{ request.GET.urlencode }}&exportar=excel"><i class="bi bi-file-excel"></i> Exportar</a>
+  </div>
 </div>
 {% if ve_protocolos and pendientes %}
 <div class="alert alert-warning py-2 d-flex justify-content-between align-items-center">
@@ -39,7 +43,7 @@
     <td class="small">{{ a.descripcion|truncatechars:120 }}</td>
     <td class="small">{% if a.derivada %}<span class="badge bg-warning-subtle text-warning-emphasis">Derivada</span>
       {% if ve_protocolos %}<div class="text-muted">{{ a.get_estado_derivacion_display }}</div>{% if a.protocolo %}<div class="text-danger-emphasis">{{ a.get_protocolo_display }}</div>{% endif %}
-      <a href="{% url 'anotacion_derivacion' a.pk %}">Gestionar</a>{% endif %}{% endif %}</td>
+      <a href="{% url 'anotacion_derivacion' a.pk %}">Gestionar</a>{% if not solo_lectura %} · <a href="{% url 'entrevista_crear' a.estudiante_id %}?anotacion={{ a.pk }}">Entrevista</a>{% endif %}{% endif %}{% endif %}</td>
     <td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td></tr>
   {% empty %}<tr><td colspan="7" class="text-muted">Sin anotaciones.</td></tr>{% endfor %}
 </table></div></div>

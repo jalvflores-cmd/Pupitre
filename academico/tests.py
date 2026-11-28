@@ -1407,3 +1407,58 @@ class CurriculumCompletoTests(BaseDatos):
         html = self.client.get(reverse("cursos") + "?anio=2026").content.decode()
         posiciones = [html.index(t) for t in ("4° Básico A", "4° Básico B", "5° Básico A", "5° Básico B")]
         self.assertEqual(posiciones, sorted(posiciones))
+
+
+class DocumentosConvivenciaTests(BaseDatos):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.conv = User.objects.create_user("conv", password="x")
+        Perfil.objects.create(usuario=cls.conv, rol=Perfil.Rol.CONVIVENCIA)
+
+    def test_todos_los_documentos_generan_word(self):
+        from io import BytesIO
+        from docx import Document
+        from . import convivencia_docs as docs
+        from .models import Establecimiento
+        self.assertIn("DESREGULACION", docs.POR_PROTOCOLO)
+        for clave in docs.TODOS:
+            contenido = docs.generar_docx(clave, Establecimiento.actual())
+            texto = "\n".join(p.text for p in Document(BytesIO(contenido)).paragraphs)
+            self.assertIn(docs.TODOS[clave]["titulo"].split(" (")[0][:30], texto, clave)
+        acta = docs.generar_docx("acta-activacion", Establecimiento.actual(), self.est, "Encargada")
+        tabla = Document(BytesIO(acta)).tables[0]
+        self.assertEqual(tabla.cell(1, 1).text, "12.345.678-5")
+
+    def test_convivencia_no_ve_curriculum_y_tiene_acceso_rapido(self):
+        self.client.force_login(self.conv)
+        r = self.client.get(reverse("inicio"))
+        self.assertNotContains(r, "Currículum (OA)")
+        self.assertNotContains(r, "Mis asignaturas")
+        self.assertContains(r, "Entrevista rápida")
+        self.assertContains(r, "Protocolos y normativa")
+        self.client.force_login(self.utp)
+        self.assertContains(self.client.get(reverse("inicio")), "Currículum (OA)")
+
+    def test_vistas_de_documentos_y_entrevista_rapida(self):
+        self.client.force_login(self.conv)
+        r = self.client.get(reverse("convivencia_documentos"))
+        self.assertContains(r, "desregulación emocional")
+        r = self.client.get(reverse("convivencia_documento", args=["desregulacion"]))
+        self.assertContains(r, "PAEC")
+        self.assertContains(r, "?protocolo=DESREGULACION")
+        r = self.client.get(reverse("convivencia_documento_docx", args=["pgce"]))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("wordprocessingml", r["Content-Type"])
+        self.assertEqual(self.client.get(reverse("convivencia_documento", args=["no-existe"])).status_code, 404)
+        r = self.client.get(reverse("convivencia_entrevista") + "?q=pérez&protocolo=DESREGULACION")
+        self.assertContains(r, "Ana")
+        self.assertContains(r, reverse("entrevista_crear", args=[self.est.pk]) + "?protocolo=DESREGULACION")
+        r = self.client.get(reverse("entrevista_crear", args=[self.est.pk]) + "?protocolo=DESREGULACION")
+        self.assertEqual(r.context["form"].initial["tipo"], "PROTOCOLO")
+        # un profesor de asignatura lee los protocolos, pero no usa la entrevista rápida ni descarga datos de otros
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("convivencia_documentos")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("convivencia_entrevista")).status_code, 403)
+        url = reverse("convivencia_documento_docx", args=["acta-activacion"]) + f"?estudiante={self.est.pk}"
+        self.assertEqual(self.client.get(url).status_code, 403)

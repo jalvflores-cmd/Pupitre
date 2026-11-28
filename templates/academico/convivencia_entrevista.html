@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}Entrevista rápida{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-person-lines-fill text-primary"></i> Entrevista rápida</h3>
+    <div class="sub">Busque al estudiante y registre la entrevista, imprima el formato en blanco o descargue el acta de activación con sus datos.</div></div>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'convivencia_documentos' %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a>
+</div>
+<div class="card p-3 mb-4">
+  <form class="row g-2 align-items-end">
+    <div class="col-md-5"><label class="form-label small mb-1">Estudiante (nombre, apellido o RUT)</label>
+      <input name="q" value="{{ q }}" class="form-control" autofocus placeholder="Ej.: Pérez o 21.345.678" minlength="2" required></div>
+    <div class="col-md-5"><label class="form-label small mb-1">Protocolo a activar (opcional)</label>
+      <select name="protocolo" class="form-select"><option value="">Entrevista sin protocolo</option>
+        {% for p in protocolos %}{% if p.protocolo %}<option value="{{ p.protocolo }}" {% if p.protocolo == protocolo %}selected{% endif %}>{{ p.corto }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-search"></i> Buscar</button></div>
+  </form>
+  {% if doc_protocolo %}<div class="small mt-2"><i class="bi bi-list-check"></i> Pasos del protocolo: <a href="{% url 'convivencia_documento' doc_protocolo.clave %}" target="_blank">{{ doc_protocolo.titulo }}</a></div>{% endif %}
+</div>
+{% if q %}
+<div class="card p-2 p-lg-3 mb-4"><div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+  <thead><tr><th>Estudiante</th><th>Curso</th><th>Apoderado(a)</th><th class="text-end">Acciones</th></tr></thead>
+  {% for e in resultados %}
+  <tr><td><a href="{% url 'estudiante_detalle' e.pk %}">{{ e }}</a><div class="small text-muted">{{ e.rut_formateado }}</div></td>
+    <td class="small">{{ e.curso.nombre_corto|default:"—" }}</td>
+    <td class="small">{{ e.apoderado_nombre|default:"—" }}{% if e.apoderado_telefono %}<div class="text-muted">{{ e.apoderado_telefono }}</div>{% endif %}</td>
+    <td class="text-end text-nowrap">
+      {% if not solo_lectura %}<a class="btn btn-sm btn-primary" href="{% url 'entrevista_crear' e.pk %}{% if protocolo %}?protocolo={{ protocolo }}{% endif %}"><i class="bi bi-plus-lg"></i> Registrar entrevista</a>{% endif %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'entrevista_formato_pdf' e.pk %}"><i class="bi bi-printer"></i> Formato en blanco</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'convivencia_documento_docx' 'acta-activacion' %}?estudiante={{ e.pk }}"><i class="bi bi-file-earmark-word"></i> Acta</a>
+    </td></tr>
+  {% empty %}<tr><td colspan="4" class="text-muted">No se encontraron estudiantes activos con «{{ q }}».</td></tr>{% endfor %}
+</table></div></div>
+{% endif %}
+<div class="card p-3">
+  <h6 class="mb-1">Derivaciones abiertas</h6>
+  <div class="small text-muted mb-2"><i class="bi bi-lock"></i> Confidencial · anotaciones derivadas a Convivencia que aún no se cierran</div>
+  {% for a in pendientes %}
+  <div class="small border-bottom py-2 d-flex justify-content-between gap-3">
+    <div><a href="{% url 'estudiante_detalle' a.estudiante_id %}">{{ a.estudiante }}</a> <span class="text-muted">· {{ a.estudiante.curso.nombre_corto }} · {{ a.fecha|date:"d-m-Y" }} · {{ a.get_estado_derivacion_display|default:"Pendiente" }}</span>
+      {% if a.protocolo %}<div class="text-danger-emphasis">{{ a.get_protocolo_display }}</div>{% endif %}
+      <div class="text-muted">{{ a.descripcion|truncatechars:110 }}</div></div>
+    <div class="text-nowrap">{% if not solo_lectura %}<a class="btn btn-sm btn-outline-primary" href="{% url 'entrevista_crear' a.estudiante_id %}?anotacion={{ a.pk }}">Entrevista</a>
+      <a class="btn btn-sm btn-link" href="{% url 'anotacion_derivacion' a.pk %}">Gestionar</a>{% endif %}</div>
+  </div>
+  {% empty %}<p class="small text-muted mb-0">No hay derivaciones abiertas.</p>{% endfor %}
+</div>
+{% endblock %}

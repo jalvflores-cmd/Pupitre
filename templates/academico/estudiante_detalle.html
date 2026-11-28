@@ -13,6 +13,17 @@
     {% if es_gestion %}<a class="btn btn-primary btn-sm" href="{% url 'estudiante_editar' est.pk %}"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
     {% if puede_editar_contacto %}<a class="btn btn-outline-primary btn-sm" href="{% url 'estudiante_contacto' est.pk %}"><i class="bi bi-telephone"></i> Editar contacto</a>{% endif %}
     {% if puede_solicitar %}<a class="btn btn-primary btn-sm" href="{% url 'solicitud_crear' est.pk %}"><i class="bi bi-pencil-square"></i> Solicitar modificación</a>{% endif %}
+    {% if sensibles %}<div class="dropdown">
+      <button class="btn btn-sm {% if es_convivencia %}btn-primary{% else %}btn-outline-primary{% endif %} dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person-lines-fill"></i> Entrevista y formatos</button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        {% if puede_entrevistar %}<li><a class="dropdown-item" href="{% url 'entrevista_crear' est.pk %}"><i class="bi bi-plus-lg"></i> Registrar entrevista</a></li>{% endif %}
+        <li><a class="dropdown-item" href="{% url 'entrevista_formato_pdf' est.pk %}"><i class="bi bi-printer"></i> Formato de entrevista en blanco (PDF)</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header">Formatos en Word con los datos del estudiante</h6></li>
+        {% for f in formatos_convivencia %}<li><a class="dropdown-item" href="{% url 'convivencia_documento_docx' f.clave %}?estudiante={{ est.pk }}"><i class="bi bi-file-earmark-word"></i> {{ f.titulo }}</a></li>{% endfor %}
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'convivencia_documentos' %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a></li>
+      </ul></div>{% endif %}
   </div>
 </div>
 <div class="row g-4">
@@ -96,6 +107,7 @@
         {% if sensibles %}<div class="mt-1 small">
           {% if gestiona_convivencia and not solo_lectura %}<a href="{% url 'anotacion_derivacion' a.pk %}">{% if a.derivada %}Gestionar derivación{% else %}Derivar / activar protocolo{% endif %}</a>{% endif %}
           {% if puede_entrevistar %}{% if gestiona_convivencia and not solo_lectura %} · {% endif %}<a href="{% url 'entrevista_crear' est.pk %}?anotacion={{ a.pk }}">Registrar entrevista</a>{% endif %}
+          {% if a.doc_protocolo %} · <a href="{% url 'convivencia_documento' a.doc_protocolo %}"><i class="bi bi-list-check"></i> Pasos del protocolo</a>{% endif %}
         </div>{% endif %}</td>
       <td class="small">{{ a.asignatura|default:"" }}</td><td class="small">{{ a.autor.get_full_name|default:a.autor.username }}</td>
       <td>{% if gestiona_convivencia or a.autor_id == user.id %}<form method="post" action="{% url 'anotacion_eliminar' a.pk %}" onsubmit="return confirm('¿Eliminar esta anotación?');">{% csrf_token %}<button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>

@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from . import exportacion, importacion
 from .calculos import resumen_curso, usa_conceptos
+from .convivencia_docs import FORMATOS as FORMATOS_CONVIVENCIA, POR_PROTOCOLO, PROTOCOLOS as PROTOCOLOS_CONVIVENCIA
 from .forms import (
     AnotacionForm, ArchivoExcelForm, EstudianteForm, EvaluacionForm, FuncionarioForm, SolicitudCambioForm,
     AgregarAsignaturaCursoForm, ConfiguracionEstablecimientoForm, DerivacionForm, PrimeraConfiguracionForm, EntrevistaForm, RedApoyoForm,
@@ -49,6 +50,12 @@ def inicio(request):
                 .select_related("curso__nivel", "asignatura").annotate(n_eval=Count("evaluaciones"))
                 .order_by("curso__nivel__orden", "curso__letra", "asignatura__orden", "asignatura__nombre"),
                 "mis_jefaturas": Curso.objects.filter(profesor_jefe=user, anio=anio_actual()).select_related("nivel")}
+    if gestiona_convivencia(user) and not es_gestion(user):
+        abiertas = Anotacion.objects.filter(estudiante__in=estudiantes_visibles(user), derivada=True).exclude(
+            estado_derivacion="CERRADA")
+        contexto.update({"acceso_convivencia": True, "derivaciones_abiertas": abiertas.count(),
+                         "derivaciones_pendientes": abiertas.filter(estado_derivacion="PENDIENTE").count(),
+                         "protocolos_rapidos": [d for d in PROTOCOLOS_CONVIVENCIA if d.get("protocolo")]})
     if ve_todo(user):
         contexto.update({
             "n_cursos": Curso.objects.filter(anio=anio_actual()).count(),
@@ -218,6 +225,14 @@ def estudiantes(request):
     })
 
 
+def _con_doc_protocolo(anotaciones):
+    """Asocia a cada anotación con protocolo activado la ficha del protocolo (pasos, plazos y responsables)."""
+    lista = list(anotaciones)
+    for a in lista:
+        a.doc_protocolo = POR_PROTOCOLO.get(a.protocolo, {}).get("clave", "")
+    return lista
+
+
 @login_required
 def estudiante_detalle(request, pk):
     est = get_object_or_404(Estudiante.objects.select_related("curso__nivel", "curso__profesor_jefe"), pk=pk)
@@ -232,7 +247,7 @@ def estudiante_detalle(request, pk):
     return render(request, "academico/estudiante_detalle.html", {
         "est": est, "resumen": resumen, "informes": informes,
         "conceptos": usa_conceptos(est.curso) if est.curso_id else False,
-        "anotaciones": est.anotaciones.select_related("asignatura", "autor"),
+        "anotaciones": _con_doc_protocolo(est.anotaciones.select_related("asignatura", "autor")),
         "puede_solicitar": puede_solicitar_cambio(request.user, est),
         "solicitudes": (est.solicitudes.select_related("solicitante", "revisor")[:10]
                         if es_gestion(request.user) or puede_solicitar_cambio(request.user, est) else []),
@@ -242,6 +257,7 @@ def estudiante_detalle(request, pk):
         "entrevistas": (est.entrevistas.select_related("entrevistador", "anotacion")
                         if ve_datos_sensibles(request.user, est) else []),
         "puede_entrevistar": puede_registrar_entrevista(request.user, est),
+        "formatos_convivencia": FORMATOS_CONVIVENCIA,
         "form_anotacion": AnotacionForm(asignaturas=_asignaturas_para_anotar(request.user, est)),
     })
 
@@ -482,6 +498,8 @@ def entrevista_form(request, est_pk=None, pk=None):
             if a:
                 inicial.update({"anotacion": a, "protocolo": a.protocolo, "motivo": a.descripcion,
                                 "tipo": Entrevista.Tipo.PROTOCOLO if a.protocolo else Entrevista.Tipo.APODERADO})
+        elif request.GET.get("protocolo"):  # desde la ficha de un protocolo o el acceso rápido de Convivencia
+            inicial.update({"protocolo": request.GET["protocolo"][:30], "tipo": Entrevista.Tipo.PROTOCOLO})
     form = EntrevistaForm(request.POST or None, instance=entrevista, initial=inicial, estudiante=est)
     if request.method == "POST" and form.is_valid():
         entrevista = form.save(commit=False)
