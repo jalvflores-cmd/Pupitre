@@ -521,6 +521,7 @@ def curriculum(request):
     return render(request, "academico/curriculum.html", {
         "secciones": secciones, "total": qs.count(), "form": form, "puede": puede, "tiene_propias": bool(propias),
         "asignaturas": ObjetivoAprendizaje._meta.get_field("asignatura").choices, "otras": otras,
-        "grados": GRADOS_CURRICULUM,
+        "grados": [(g, n) for g, n in GRADOS_CURRICULUM
+                   if g == 0 or g >= curriculo.grado_minimo_oficial(Establecimiento.actual())],
         "asig": asig, "grado": grado, "q": q,
     })

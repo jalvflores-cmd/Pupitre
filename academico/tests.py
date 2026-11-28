@@ -1462,3 +1462,23 @@ class DocumentosConvivenciaTests(BaseDatos):
         self.assertEqual(self.client.get(reverse("convivencia_entrevista")).status_code, 403)
         url = reverse("convivencia_documento_docx", args=["acta-activacion"]) + f"?estudiante={self.est.pk}"
         self.assertEqual(self.client.get(url).status_code, 403)
+
+
+class OANivelesDelEstablecimientoTests(TestCase):
+    def test_liceo_solo_ve_media_y_el_nivel_anterior(self):
+        from .curriculo import grado_minimo_oficial
+        from .models import Establecimiento, ObjetivoAprendizaje
+        est = Establecimiento.actual()
+        est.oferta = Establecimiento.Oferta.HC
+        est.save()
+        self.assertEqual(grado_minimo_oficial(est), 8)  # sin cursos: según la oferta
+        Curso.objects.create(nivel=Nivel.objects.create(nombre="I Medio", orden=9), letra="A", anio=2026)
+        grados = set(ObjetivoAprendizaje.disponibles().values_list("grado", flat=True))
+        self.assertEqual(min(grados - {0}), 8)
+        self.assertIn(12, grados)
+        Curso.objects.create(nivel=Nivel.objects.create(nombre="7° Básico", orden=7), letra="A", anio=2026)
+        self.assertEqual(grado_minimo_oficial(est), 6)
+        est.oferta = Establecimiento.Oferta.BASICA
+        est.save()
+        Curso.objects.create(nivel=Nivel.objects.create(nombre="1° Básico", orden=1), letra="A", anio=2026)
+        self.assertEqual(min(set(ObjetivoAprendizaje.disponibles().values_list("grado", flat=True)) - {0}), 1)

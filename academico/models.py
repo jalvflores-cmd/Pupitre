@@ -978,8 +978,16 @@ class ObjetivoAprendizaje(models.Model):
 
     @classmethod
     def disponibles(cls):
+        """OA oficiales de los niveles que imparte el establecimiento (más el anterior, para nivelación) y sus
+        OA propios (todos)."""
+        from .curriculo import grado_minimo_oficial
+
         est = Establecimiento.actual()
-        return cls.objects.filter(models.Q(establecimiento__isnull=True) | models.Q(establecimiento_id=est.pk))
+        oficiales = models.Q(establecimiento__isnull=True)
+        minimo = grado_minimo_oficial(est)
+        if minimo > 1:
+            oficiales &= models.Q(grado=0) | models.Q(grado__gte=minimo)
+        return cls.objects.filter(oficiales | models.Q(establecimiento_id=est.pk))
 
 
 class ResultadoSimce(DeEstablecimiento):

@@ -54,6 +54,27 @@ def grado_de_curso(curso):
     return grado_desde_texto(curso.nivel.nombre) if curso and curso.nivel_id else None
 
 
+def grado_minimo_oficial(est):
+    """Nivel más bajo de OA oficiales que le sirve al establecimiento: uno antes de su primer nivel (nivelación).
+
+    Un liceo con solo enseñanza media (I a IV) ve desde 8° básico; si además tiene 7° y 8°, desde 6° básico.
+    Se calcula con los cursos del establecimiento; sin cursos, según su oferta (liceos: desde 8° básico).
+    Devuelve 1 cuando no hay que ocultar nada.
+    """
+    from .models import Curso, Establecimiento
+
+    if not est or not est.pk:
+        return 1
+    grados = {grado_desde_texto(n) for n in
+              Curso.todos.filter(establecimiento=est).values_list("nivel__nombre", flat=True).distinct()}
+    grados.discard(None)
+    if grados:
+        return max(1, min(grados) - 1)
+    if est.oferta in (Establecimiento.Oferta.HC, Establecimiento.Oferta.TP, Establecimiento.Oferta.POLIVALENTE):
+        return 8
+    return 1
+
+
 def _slug(texto):
     return re.sub(r"[^a-z0-9]+", "_", _sin_tildes(texto)).strip("_")
 
