@@ -1,4 +1,5 @@
 from io import StringIO
+from unittest import mock
 from decimal import Decimal
 from io import BytesIO
 
@@ -1702,3 +1703,34 @@ class ReporteComunidadEscolarTests(BaseDatos):
         a = AccionPME.objects.get(nombre="Plan lector diario")
         self.assertEqual((a.monto_sep, a.avance, a.estado, a.inicio.day, a.responsable), (2500000, 60, "PROCESO", 2, "Jefe técnico"))
         self.assertEqual(AccionPME.objects.get(nombre="Comunidades de aprendizaje docente").dimension, "LIDERAZGO")
+
+
+class PlanesTerritorialesTests(BaseDatos):
+    def test_pel_pal_y_alineamiento_del_pme(self):
+        from .models import (AccionPME, Establecimiento, InstrumentoTerritorial, PlanMejoramiento, Sostenedor)
+        sost = Sostenedor.objects.create(nombre="SLEP de prueba", es_slep=True)
+        est = Establecimiento.actual()
+        est.sostenedor = sost
+        est.save()
+        admin = User.objects.create_user("admin.slep", password="x")
+        Perfil.objects.create(usuario=admin, rol=Perfil.Rol.ADMIN_SOSTENEDOR, sostenedor=sost)
+        self.client.force_login(admin)
+        self.client.post(reverse("red_planes"), {"tipo": "PEL", "anio_inicio": 2025, "anio_fin": 2030,
+                                                 "objetivos": "Asistencia y retención escolar\nInfraestructura de calidad"})
+        self.client.post(reverse("red_planes"), {"tipo": "PAL", "anio_inicio": 2026, "anio_fin": 2026, "objetivos": ""})
+        self.assertEqual(InstrumentoTerritorial.objects.count(), 1)  # el PAL sin objetivos no se guarda
+        plan = PlanMejoramiento.objects.create(anio=2026)
+        AccionPME.objects.create(plan=plan, dimension="CONVIVENCIA", nombre="Plan de asistencia escolar",
+                                 descripcion="Seguimiento semanal de la asistencia")
+        with mock.patch("academico.red.anio_actual", return_value=2026):
+            r = self.client.get(reverse("red_planes"))
+        fila = r.context["filas"][0]
+        self.assertEqual(fila["t"]["planes"][0]["cubiertos"], 1)
+        self.assertIsNotNone(fila["t"]["enep"])
+        self.client.force_login(self.director)
+        r = self.client.get(reverse("pme_revision") + "?anio=2026")
+        self.assertContains(r, "Alineamiento con SLEP de prueba")
+        self.assertContains(r, "Infraestructura de calidad")
+        self.assertTrue(any("Plan Estratégico Local" in t for _, t in r.context["sugerencias"]))
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("red_planes")).status_code, 403)

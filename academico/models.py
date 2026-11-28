@@ -45,6 +45,7 @@ class Sostenedor(models.Model):
     nombre = models.CharField(max_length=200)
     rut = models.CharField("RUT", max_length=15, blank=True)
     activo = models.BooleanField(default=True)
+    es_slep = models.BooleanField("es un Servicio Local de Educación Pública (SLEP)", default=False)
 
     class Meta:
         verbose_name = "sostenedor"
@@ -1235,6 +1236,44 @@ class GastoSEP(models.Model):
         verbose_name = "gasto SEP"
         verbose_name_plural = "gastos SEP"
         ordering = ["-fecha", "-id"]
+
+
+class InstrumentoTerritorial(models.Model):
+    """Planes del sostenedor que orientan los PME: Plan Estratégico Local (PEL) y Plan Anual Local (PAL) de un SLEP,
+    o el plan equivalente de otro sostenedor."""
+
+    class Tipo(models.TextChoices):
+        PEL = "PEL", "Plan Estratégico Local (PEL)"
+        PAL = "PAL", "Plan Anual Local (PAL)"
+
+    sostenedor = models.ForeignKey(Sostenedor, on_delete=models.CASCADE, related_name="instrumentos")
+    tipo = models.CharField(max_length=3, choices=Tipo.choices)
+    anio_inicio = models.PositiveSmallIntegerField("año de inicio", default=anio_actual)
+    anio_fin = models.PositiveSmallIntegerField("año de término", default=anio_actual)
+    objetivos = models.TextField("objetivos, líneas de acción o metas", help_text="Uno por línea.")
+    observaciones = models.TextField(blank=True)
+    archivo_nombre = models.CharField(max_length=200, blank=True, editable=False)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "instrumento territorial"
+        verbose_name_plural = "instrumentos territoriales"
+        ordering = ["tipo", "-anio_inicio"]
+
+    def __str__(self):
+        periodo = self.anio_inicio if self.anio_inicio == self.anio_fin else f"{self.anio_inicio}-{self.anio_fin}"
+        return f"{self.tipo} {periodo}"
+
+    def lista_objetivos(self):
+        return [s.strip(" -•\t") for s in self.objetivos.splitlines() if s.strip(" -•\t")]
+
+    @classmethod
+    def vigentes(cls, sostenedor, anio):
+        """El PEL y el PAL que rigen en un año (el más reciente de cada tipo)."""
+        if not sostenedor:
+            return []
+        qs = cls.objects.filter(sostenedor=sostenedor, anio_inicio__lte=anio, anio_fin__gte=anio)
+        return [x for x in (qs.filter(tipo=t).order_by("-anio_inicio").first() for t in (cls.Tipo.PEL, cls.Tipo.PAL)) if x]
 
 
 class ProyectoEducativo(DeEstablecimiento):

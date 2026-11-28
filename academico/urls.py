@@ -16,6 +16,7 @@ urlpatterns = [
     path("red/", red.red, name="red"),
     path("red/<int:pk>/entrar/", red.entrar, name="red_entrar"),
     path("red/salir/", red.salir, name="red_salir"),
+    path("red/planes/", red.planes, name="red_planes"),
     path("personal/", personal.personal, name="personal"),
     path("horarios/", horarios.horarios, name="horarios"),
     path("asistencia-personal/", asistencia_personal.diaria, name="asistencia_personal"),

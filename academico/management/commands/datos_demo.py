@@ -75,6 +75,7 @@ class Command(BaseCommand):
         self.demo_administrativo(anio)
         self.demo_calendario()
         self.demo_pei(escuela)
+        self.demo_planes_territoriales(escuela)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -608,6 +609,29 @@ class Command(BaseCommand):
                     plan=plan, autor=director, tipo=ComentarioPME.Tipo.SUGERENCIA,
                     texto="Incorporar una acción con las familias (escuela para padres o talleres de lectura en el hogar) "
                           "para dar cuenta del sello de participación.")
+
+    def demo_planes_territoriales(self, escuela):
+        """PEL y PAL de ejemplo del sostenedor de la demo (solo si aún no tiene planes)."""
+        from academico.models import InstrumentoTerritorial
+
+        sost = escuela.sostenedor
+        if not sost or sost.instrumentos.exists():
+            return
+        anio = anio_actual()
+        sost.es_slep = True
+        sost.save(update_fields=["es_slep"])
+        InstrumentoTerritorial.objects.create(
+            sostenedor=sost, tipo="PEL", anio_inicio=anio - 1, anio_fin=anio + 4,
+            objetivos="Mejorar los aprendizajes en lectura y matemática en todos los establecimientos del territorio\n"
+                      "Asegurar trayectorias educativas completas, con foco en la asistencia y la retención\n"
+                      "Fortalecer el liderazgo directivo y el trabajo en redes de mejoramiento\n"
+                      "Promover la participación de las familias y la vinculación con la comunidad local")
+        InstrumentoTerritorial.objects.create(
+            sostenedor=sost, tipo="PAL", anio_inicio=anio, anio_fin=anio,
+            objetivos="Implementar acompañamiento al aula con retroalimentación en todas las escuelas\n"
+                      "Plan territorial de asistencia y reingreso\n"
+                      "Red de UTP del territorio para el análisis de datos de aprendizaje\n"
+                      "Mejoramiento de infraestructura y equipamiento tecnológico")
 
     def demo_calendario(self):
         """Eventos del calendario alrededor de hoy (solo en establecimientos que aún no tienen ninguno)."""

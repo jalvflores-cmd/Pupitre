@@ -30,8 +30,9 @@
     {% endif %}
     {% if de_sostenedor %}
     <div class="titulo">{{ nombre_sostenedor }}</div>
-    <a href="{% url 'red' %}" class="{% if '/red/' in p %}activo{% endif %}"><i class="bi bi-diagram-2"></i> Mis establecimientos</a>
+    <a href="{% url 'red' %}" class="{% if p == '/red/' %}activo{% endif %}"><i class="bi bi-diagram-2"></i> Mis establecimientos</a>
     <a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>
+    <a href="{% url 'red_planes' %}" class="{% if '/red/planes/' in p %}activo{% endif %}"><i class="bi bi-geo-alt"></i> Planes territoriales</a>
     {% if not establecimiento.pk %}<a href="{% url 'asistente' %}" class="{% if p == '/asistente/' %}activo{% endif %}"><i class="bi bi-stars"></i> Asistente{% if n_avisos %}<span class="badge bg-warning">{{ n_avisos }}</span>{% endif %}</a>{% endif %}
     {% if establecimiento.pk %}<form method="post" action="{% url 'red_salir' %}" class="px-2 small">{% csrf_token %}
       <button class="btn btn-sm btn-link text-white-50 p-0 text-start">Está en: <b class="text-white">{{ establecimiento.nombre }}</b> · cambiar</button></form>{% endif %}

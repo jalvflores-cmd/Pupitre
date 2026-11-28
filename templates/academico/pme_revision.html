@@ -54,6 +54,31 @@
       {% endif %}
     </div>
 
+    {% if territorial %}
+    <div class="card p-3 mb-4" id="territorial">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div><h5 class="mb-1"><i class="bi bi-geo-alt text-primary"></i> Alineamiento con {{ territorial.sostenedor.nombre }}</h5>
+          <div class="small text-muted mb-2">{% if territorial.sostenedor.es_slep %}ENEP, Plan Estratégico Local (PEL), Plan Anual Local (PAL) y Modelo de Desarrollo de Capacidades.{% else %}Planes del sostenedor.{% endif %}</div></div>
+        {% if territorial.indice is not None %}<div class="text-end"><div class="fs-4 fw-semibold">{{ territorial.indice }} %</div><div class="small text-muted">alineamiento</div></div>{% endif %}
+      </div>
+      {% for p in territorial.planes %}
+      <h6 class="small fw-semibold mt-2">{{ p.instrumento.get_tipo_display }} {{ p.instrumento }} · {{ p.cubiertos }} de {{ p.total }} objetivos con acciones</h6>
+      <ul class="list-unstyled small mb-2">{% for f in p.filas %}<li class="mb-1">{% if f.elementos %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %} {{ f.texto }}
+        {% if f.elementos %}<div class="text-muted ms-3">{% for e in f.elementos|slice:":3" %}{{ e.titulo|truncatechars:60 }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if f.elementos|length > 3 %} y {{ f.elementos|length|add:"-3" }} más{% endif %}</div>{% endif %}</li>{% endfor %}</ul>
+      {% empty %}<p class="small text-muted">El sostenedor aún no registra un PEL ni un PAL vigentes para {{ anio }}.</p>{% endfor %}
+      {% if territorial.enep %}{% for d in territorial_marcos %}
+      <div class="mb-2 mt-2">
+        <a class="d-flex justify-content-between text-decoration-none text-reset" data-bs-toggle="collapse" href="#t-{{ d.clave }}">
+          <span class="fw-semibold small">{{ d.nombre }}</span><span class="small text-muted">{{ d.cubiertas }} de {{ d.total }} <i class="bi bi-chevron-down"></i></span></a>
+        <div class="progress mt-1" style="height:8px" role="progressbar" aria-label="{{ d.nombre }}" aria-valuenow="{{ d.pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ d.pct }}%"></div></div>
+        <div class="collapse" id="t-{{ d.clave }}"><ul class="list-unstyled small mt-2 mb-0">
+          {% for p in d.practicas %}<li class="mb-1">{% if p.elementos %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-muted"></i>{% endif %} {{ p.texto }}</li>{% endfor %}
+        </ul></div>
+      </div>{% endfor %}{% endif %}
+      <div class="small text-muted mt-2"><i class="bi bi-info-circle"></i> {{ nota_territorial }}</div>
+    </div>
+    {% endif %}
+
     <div class="card p-3 mb-4" id="mbdle">
       <h5 class="mb-1"><i class="bi bi-compass text-primary"></i> Marco para la Buena Dirección y el Liderazgo Escolar</h5>
       <div class="small text-muted mb-3">Prácticas de liderazgo que el PME aborda en cada dimensión del Marco.</div>

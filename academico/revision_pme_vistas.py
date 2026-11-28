@@ -79,9 +79,12 @@ def _analisis(plan):
     coherencia = rv.coherencia_pei(pei, elementos)
     mbdle = rv.cobertura_mbdle(elementos)
     calidad = rv.calidad_acciones(plan)
-    return {"pei": pei, "documento": documento, "elementos": elementos, "coherencia": coherencia, "mbdle": mbdle,
+    est = plan.establecimiento or Establecimiento.actual()
+    territorial = rv.alineamiento_territorial(est.sostenedor if est else None, plan.anio, elementos)
+    return {"pei": pei, "territorial": territorial,
+            "territorial_marcos": [m for m in (territorial["enep"], territorial["mdc"]) if m] if territorial else [], "nota_territorial": rv.NOTA_TERRITORIAL, "documento": documento, "elementos": elementos, "coherencia": coherencia, "mbdle": mbdle,
             "mbdle_cubiertas": sum(d["cubiertas"] for d in mbdle), "mbdle_total": sum(d["total"] for d in mbdle),
-            "calidad": calidad, "sugerencias": rv.sugerencias(pei, plan, coherencia, mbdle, calidad)}
+            "calidad": calidad, "sugerencias": rv.sugerencias(pei, plan, coherencia, mbdle, calidad, territorial)}
 
 
 @login_required
@@ -287,7 +290,7 @@ def revision_ia(request):
     plan, anio = _plan(request)
     exigir(plan is not None)
     a = _analisis(plan)
-    texto, error = rv.revision_ia(a["pei"], plan, a["elementos"])
+    texto, error = rv.revision_ia(a["pei"], plan, a["elementos"], a["territorial"])
     if error:
         messages.error(request, error)
     else:
@@ -332,6 +335,19 @@ def informe_docx(request):
         for p in d["practicas"]:
             doc.add_paragraph(f"{'✓' if p['elementos'] else '○'} {p['texto']}"
                               + (f" — {len(p['elementos'])} elemento(s)" if p["elementos"] else ""), style="List Bullet")
+    t_ = a["territorial"]
+    if t_:
+        doc.add_heading(f"Alineamiento con {t_['sostenedor'].nombre}", level=1)
+        for p in t_["planes"]:
+            doc.add_paragraph(f"{p['instrumento'].get_tipo_display()} ({p['cubiertos']}/{p['total']} objetivos con acciones)").runs[0].bold = True
+            for f in p["filas"]:
+                doc.add_paragraph(f"{'✓' if f['elementos'] else '✗'} {f['texto']}", style="List Bullet")
+        for m in (t_["enep"], t_["mdc"]):
+            if m:
+                doc.add_paragraph(f"{m['nombre']} ({m['cubiertas']}/{m['total']})").runs[0].bold = True
+                for p in m["practicas"]:
+                    doc.add_paragraph(f"{'✓' if p['elementos'] else '○'} {p['texto']}", style="List Bullet")
+        doc.add_paragraph(rv.NOTA_TERRITORIAL).runs[0].italic = True
     doc.add_heading("Sugerencias automáticas", level=1)
     for _, texto in a["sugerencias"]:
         doc.add_paragraph(texto, style="List Bullet")

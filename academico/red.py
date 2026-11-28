@@ -132,3 +132,100 @@ def salir(request):
     exigir(perfil_sostenedor(request.user) is not None)
     request.session.pop("establecimiento_id", None)
     return redirect("red")
+
+
+# --------------------------------------------------------------------------- planes territoriales (SLEP)
+
+class InstrumentoForm(BootstrapMixin, forms.ModelForm):
+    archivo = forms.FileField(label="Archivo (PDF, Word o Excel, opcional)", required=False,
+                              help_text="Si los objetivos están vacíos, Pupitre propone las líneas que parecen objetivos.")
+
+    class Meta:
+        from .models import InstrumentoTerritorial
+        model = InstrumentoTerritorial
+        fields = ["tipo", "anio_inicio", "anio_fin", "objetivos", "observaciones"]
+        widgets = {"objetivos": forms.Textarea(attrs={"rows": 6}), "observaciones": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["objetivos"].required = False
+
+    def clean(self):
+        d = super().clean()
+        if d.get("anio_inicio") and d.get("anio_fin") and d["anio_fin"] < d["anio_inicio"]:
+            self.add_error("anio_fin", "El término no puede ser anterior al inicio.")
+        if not (d.get("objetivos") or "").strip() and not d.get("archivo"):
+            self.add_error("objetivos", "Escriba los objetivos o suba el archivo del plan.")
+        return d
+
+
+def _objetivos_desde_texto(texto):
+    import re
+    lineas = []
+    for l in (x.strip() for x in texto.splitlines()):
+        if re.match(r"^(objetivo|oe\s*\d|l[ií]nea|eje|meta|\d+[.)-]\s+\S)", l, re.I) and 15 < len(l) < 300:
+            lineas.append(re.sub(r"^(\d+[.)-]|oe\s*\d+[.:)-]?)\s*", "", l, flags=re.I))
+    return "\n".join(dict.fromkeys(lineas))[:6000]
+
+
+@login_required
+def planes(request):
+    from . import revision_pme as rv
+    from .models import InstrumentoTerritorial, PlanMejoramiento, ProyectoEducativo
+
+    perfil = perfil_sostenedor(request.user)
+    exigir(perfil is not None)
+    sost = perfil.sostenedor
+    admin = perfil.rol == Perfil.Rol.ADMIN_SOSTENEDOR
+    anio = anio_actual()
+    editar = sost.instrumentos.filter(pk=request.GET.get("editar") or 0).first()
+    form = InstrumentoForm(instance=editar) if admin else None
+    if request.method == "POST":
+        exigir(admin)
+        if request.POST.get("slep") is not None:
+            sost.es_slep = request.POST["slep"] == "1"
+            sost.save(update_fields=["es_slep"])
+            return redirect("red_planes")
+        if request.POST.get("eliminar"):
+            sost.instrumentos.filter(pk=request.POST["eliminar"]).delete()
+            messages.success(request, "Plan eliminado.")
+            return redirect("red_planes")
+        form = InstrumentoForm(request.POST, request.FILES, instance=editar)
+        if form.is_valid():
+            inst = form.save(commit=False)
+            inst.sostenedor = sost
+            archivo = form.cleaned_data.get("archivo")
+            if archivo:
+                try:
+                    texto = rv.extraer_texto(archivo.name, archivo.read())
+                except ValueError as e:
+                    form.add_error("archivo", str(e))
+                    texto = None
+                if texto is not None:
+                    inst.archivo_nombre = archivo.name[:200]
+                    if not inst.objetivos.strip():
+                        inst.objetivos = _objetivos_desde_texto(texto)
+            if not form.errors:
+                if not inst.objetivos.strip():
+                    form.add_error("objetivos", "No se encontraron objetivos en el archivo: escríbalos, uno por línea.")
+                else:
+                    inst.save()
+                    messages.success(request, f"{inst.get_tipo_display()} guardado. Revise que los objetivos estén bien separados.")
+                    return redirect("red_planes")
+    filas = []
+    for est in sost.establecimientos.filter(activo=True).order_by("nombre"):
+        with en_establecimiento(est):
+            plan = PlanMejoramiento.objects.filter(anio=anio).first()
+            pei = ProyectoEducativo.objects.first()
+            fila = {"est": est, "plan": plan, "pei": bool(pei and pei.completo), "n": 0, "t": None}
+            if plan:
+                elementos = rv.elementos_pme(plan, plan.documentos.first())
+                fila["n"] = sum(1 for e in elementos if e["origen"].startswith("Acción"))
+                fila["t"] = rv.alineamiento_territorial(sost, anio, elementos)
+                fila["coherencia"] = rv.coherencia_pei(pei, elementos)["indice"] if pei else None
+            filas.append(fila)
+    return render(request, "academico/red_planes.html", {
+        "sostenedor": sost, "admin": admin, "form": form, "editar": editar, "anio": anio, "filas": filas,
+        "instrumentos": sost.instrumentos.all(), "enep": rv.ENEP[0], "mdc": rv.MDC[0], "nota": rv.NOTA_TERRITORIAL,
+        "vigentes": InstrumentoTerritorial.vigentes(sost, anio),
+    })

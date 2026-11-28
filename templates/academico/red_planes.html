@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titulo %}Planes territoriales{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><h3><i class="bi bi-geo-alt text-primary"></i> Planes territoriales · {{ sostenedor.nombre }}</h3>
+    <div class="sub">{% if sostenedor.es_slep %}ENEP, Plan Estratégico Local (PEL), Plan Anual Local (PAL) y Modelo de Desarrollo de Capacidades, y el alineamiento del PME {{ anio }} de cada establecimiento.{% else %}Planes del sostenedor y el alineamiento del PME {{ anio }} de cada establecimiento.{% endif %}</div></div>
+  {% if admin %}<form method="post">{% csrf_token %}<input type="hidden" name="slep" value="{% if sostenedor.es_slep %}0{% else %}1{% endif %}">
+    <button class="btn btn-sm btn-outline-secondary">{% if sostenedor.es_slep %}<i class="bi bi-check-square"></i> Es un SLEP{% else %}<i class="bi bi-square"></i> Marcar como SLEP{% endif %}</button></form>{% endif %}
+</div>
+
+<div class="card p-3 mb-4">
+  <h5 class="mb-1">Alineamiento del PME {{ anio }} por establecimiento</h5>
+  <div class="small text-muted mb-2">Coherencia con su PEI y alineamiento con los planes del sostenedor{% if sostenedor.es_slep %} y la ENEP{% endif %}. El detalle está en la «Revisión del PME» de cada establecimiento.</div>
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Establecimiento</th><th class="text-center">Acciones PME</th><th class="text-center">PEI</th><th class="text-center">Coherencia PEI</th>
+      {% for v in vigentes %}<th class="text-center">{{ v.tipo }}</th>{% endfor %}{% if sostenedor.es_slep %}<th class="text-center">ENEP</th><th class="text-center">Modelo de capacidades</th>{% endif %}<th class="text-center">Alineamiento</th></tr></thead>
+    {% for f in filas %}
+    <tr><td>{{ f.est.nombre }}</td>
+      <td class="text-center">{% if f.plan %}{{ f.n }}{% else %}<span class="text-muted small">Sin PME</span>{% endif %}</td>
+      <td class="text-center">{% if f.pei %}<i class="bi bi-check-circle-fill text-success" aria-label="Completo"></i>{% else %}<span class="small text-muted">Incompleto</span>{% endif %}</td>
+      <td class="text-center">{% if f.coherencia is not None %}{{ f.coherencia }} %{% else %}—{% endif %}</td>
+      {% for v in vigentes %}<td class="text-center">{% for p in f.t.planes %}{% if p.instrumento.pk == v.pk %}{{ p.pct }} %{% endif %}{% empty %}—{% endfor %}</td>{% endfor %}
+      {% if sostenedor.es_slep %}<td class="text-center">{% if f.t.enep %}{{ f.t.enep.pct }} %{% else %}—{% endif %}</td><td class="text-center">{% if f.t.mdc %}{{ f.t.mdc.pct }} %{% else %}—{% endif %}</td>{% endif %}
+      <td class="text-center fw-semibold{% if f.t.indice is not None and f.t.indice < 50 %} text-danger{% endif %}">{% if f.t.indice is not None %}{{ f.t.indice }} %{% else %}—{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="card p-3 mb-4">
+      <h5 class="mb-2">Planes del sostenedor</h5>
+      {% for i in instrumentos %}
+      <div class="border rounded-3 p-2 mb-2">
+        <div class="d-flex justify-content-between"><b class="small">{{ i.get_tipo_display }} · {{ i.anio_inicio }}{% if i.anio_fin != i.anio_inicio %}–{{ i.anio_fin }}{% endif %}{% if i in vigentes %} <span class="badge bg-success">Vigente</span>{% endif %}</b>
+          {% if admin %}<span class="small"><a href="?editar={{ i.pk }}#form">Editar</a>
+            <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este plan?');">{% csrf_token %}<input type="hidden" name="eliminar" value="{{ i.pk }}"><button class="btn btn-link btn-sm p-0 text-danger ms-2">Eliminar</button></form></span>{% endif %}</div>
+        <ol class="small mb-0 mt-1">{% for o in i.lista_objetivos %}<li>{{ o }}</li>{% endfor %}</ol>
+        {% if i.archivo_nombre %}<div class="small text-muted"><i class="bi bi-paperclip"></i> {{ i.archivo_nombre }}</div>{% endif %}
+      </div>
+      {% empty %}<p class="small text-muted">Aún no hay planes registrados.{% if admin %} Agregue el PEL y el PAL con el formulario.{% endif %}</p>{% endfor %}
+    </div>
+    {% if admin %}
+    <div class="card p-3 mb-4" id="form">
+      <h5 class="mb-2">{% if editar %}Editar {{ editar }}{% else %}Agregar plan{% endif %}</h5>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <div class="row">{% for f in form %}
+          <div class="{% if f.field.widget.attrs.rows %}col-12{% else %}col-md-4{% endif %} mb-2"><label class="form-label small" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}
+            {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}</div>
+        <button class="btn btn-primary btn-sm"><i class="bi bi-check-lg"></i> Guardar</button>{% if editar %} <a class="btn btn-link btn-sm" href="{% url 'red_planes' %}">Cancelar</a>{% endif %}
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-xl-5">
+    {% if sostenedor.es_slep %}
+    <div class="card p-3 mb-4"><h6>{{ enep.nombre }}</h6>
+      <ol class="small mb-0">{% for t, _ in enep.practicas %}<li>{{ t }}</li>{% endfor %}</ol></div>
+    <div class="card p-3 mb-4"><h6>{{ mdc.nombre }}</h6>
+      <ol class="small mb-0">{% for t, _ in mdc.practicas %}<li>{{ t }}</li>{% endfor %}</ol></div>
+    {% endif %}
+    <div class="alert alert-warning small"><i class="bi bi-exclamation-triangle"></i> {{ nota }}</div>
+  </div>
+</div>
+{% endblock %}

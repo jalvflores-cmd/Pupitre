@@ -73,6 +73,44 @@ MBDLE = [
      ]},
 ]
 
+NOTA_TERRITORIAL = ("Los focos de la ENEP y los componentes del Modelo de Desarrollo de Capacidades son una síntesis de "
+                    "trabajo redactada por Pupitre: verifíquelos con los documentos oficiales de la Dirección de "
+                    "Educación Pública antes de citarlos. El PEL y el PAL los registra cada sostenedor.")
+
+# Estrategia Nacional de Educación Pública (ENEP 2020-2028), síntesis por focos.
+ENEP = [
+    {"clave": "enep", "nombre": "Estrategia Nacional de Educación Pública (ENEP)", "practicas": [
+        ("Aprendizajes integrales y de calidad para todos los estudiantes.",
+         ["aprendizaje", "calidad", "habilidades", "lectura", "matematic", "integral", "socioemocional"]),
+        ("Trayectorias educativas completas: asistencia, retención y transiciones entre niveles.",
+         ["trayectoria", "asistencia", "retencion", "desercion", "transicion", "egreso", "reingreso"]),
+        ("Liderazgo y desarrollo profesional de directivos, docentes y asistentes de la educación.",
+         ["liderazgo", "desarrollo profesional", "capacit", "acompan", "retroaliment", "formacion docente"]),
+        ("Trabajo colaborativo y en red entre establecimientos del territorio.",
+         ["colaborat", "redes", "red de", "comunidad de aprendizaje", "comunidades profesionales", "pasant"]),
+        ("Participación de las comunidades educativas y vinculación con el territorio.",
+         ["participacion", "familia", "apoderad", "consejo escolar", "territorio", "comunidad local", "vinculacion"]),
+        ("Condiciones para el aprendizaje: recursos, infraestructura y bienestar.",
+         ["recurso", "infraestruct", "equipamiento", "bienestar", "convivencia", "espacio"]),
+    ]},
+]
+
+# Modelo de Desarrollo de Capacidades (Dirección de Educación Pública), síntesis por componentes.
+MDC = [
+    {"clave": "mdc", "nombre": "Modelo de Desarrollo de Capacidades", "practicas": [
+        ("Liderazgo directivo y técnico-pedagógico centrado en la mejora.",
+         ["liderazgo", "equipo directivo", "ele", "utp", "gestion pedagogica"]),
+        ("Desarrollo profesional situado: acompañamiento y retroalimentación en aula.",
+         ["acompan", "retroaliment", "observacion de clase", "desarrollo profesional", "modelamiento"]),
+        ("Trabajo colaborativo docente y redes de mejoramiento entre escuelas.",
+         ["colaborat", "redes", "red de", "comunidad de aprendizaje", "reflexion pedagogica", "codocencia"]),
+        ("Uso de datos y ciclos de mejora (diagnóstico, monitoreo y evaluación).",
+         ["datos", "diagnost", "monitore", "seguimiento", "analisis de resultados", "dia ", "evaluacion"]),
+        ("Apoyo técnico-pedagógico del sostenedor a los establecimientos.",
+         ["sostenedor", "slep", "asesoria", "apoyo tecnico", "ate"]),
+    ]},
+]
+
 _STOP = set("""a al algo ante antes con contra cual cuales cuando de del desde donde dos e el ella ellas ellos en entre
 era es esa ese eso esta este esto estos estas fin hacia hasta la las le les lo los mas me mediante mi muy ni no nos o
 otra otro para pero por porque que se segun ser si sin sobre su sus tambien tanto te todo todos toda todas tras un una
@@ -167,9 +205,9 @@ def coherencia_pei(pei, elementos):
             "indice": round(sum(partes) / len(partes)) if partes else None}
 
 
-def cobertura_mbdle(elementos):
+def cobertura_mbdle(elementos, marco=None):
     resultado = []
-    for dim in MBDLE:
+    for dim in marco or MBDLE:
         practicas = []
         for texto, claves in dim["practicas"]:
             hits = [e for e in elementos if any(_contiene(normalizar(e["texto"]) + " ", c) for c in claves)]
@@ -179,6 +217,35 @@ def cobertura_mbdle(elementos):
                           "cubiertas": cubiertas, "total": len(practicas),
                           "pct": round(100 * cubiertas / len(practicas))})
     return resultado
+
+
+def alinear_textos(componentes, elementos):
+    """[(etiqueta, texto)] de un plan (PEL, PAL) → qué elementos del PME abordan cada uno."""
+    textos = [(e, raices(e["texto"])) for e in elementos]
+    filas = []
+    for etiqueta, texto in componentes:
+        r = raices(texto)
+        filas.append({"tipo": etiqueta, "texto": texto, "elementos": [e for e, re_ in textos if r & re_]})
+    cubiertos = sum(1 for f in filas if f["elementos"])
+    return {"filas": filas, "cubiertos": cubiertos, "total": len(filas),
+            "pct": round(100 * cubiertos / len(filas)) if filas else None}
+
+
+def alineamiento_territorial(sostenedor, anio, elementos):
+    """Alineamiento del PME con el PEL y el PAL del sostenedor, la ENEP y el Modelo de Desarrollo de Capacidades."""
+    from .models import InstrumentoTerritorial
+    if not sostenedor or not (sostenedor.es_slep or sostenedor.instrumentos.exists()):
+        return None
+    planes = []
+    for inst in InstrumentoTerritorial.vigentes(sostenedor, anio):
+        a = alinear_textos([(inst.tipo, o) for o in inst.lista_objetivos()], elementos)
+        a["instrumento"] = inst
+        planes.append(a)
+    enep = cobertura_mbdle(elementos, ENEP)[0]
+    mdc = cobertura_mbdle(elementos, MDC)[0]
+    partes = [p["pct"] for p in planes if p["pct"] is not None] + ([enep["pct"]] if sostenedor.es_slep else [])
+    return {"planes": planes, "enep": enep if sostenedor.es_slep else None, "mdc": mdc if sostenedor.es_slep else None,
+            "indice": round(sum(partes) / len(partes)) if partes else None, "sostenedor": sostenedor}
 
 
 def calidad_acciones(plan):
@@ -199,9 +266,20 @@ def calidad_acciones(plan):
     return filas
 
 
-def sugerencias(pei, plan, coherencia, mbdle, calidad):
+def sugerencias(pei, plan, coherencia, mbdle, calidad, territorial=None):
     """Sugerencias automáticas: [(nivel, texto)]."""
     s = []
+    if territorial:
+        for p in territorial["planes"]:
+            faltan = [f["texto"] for f in p["filas"] if not f["elementos"]]
+            if faltan:
+                s.append(("warning", f"{p['instrumento'].get_tipo_display()}: {len(faltan)} de {p['total']} objetivos no "
+                                     f"tienen acciones en el PME ({'; '.join(faltan[:4])}{'…' if len(faltan) > 4 else ''})."))
+        for marco in (territorial["enep"], territorial["mdc"]):
+            if marco:
+                faltan = [x["texto"].rstrip(".").lower() for x in marco["practicas"] if not x["elementos"]]
+                if faltan:
+                    s.append(("info", f"{marco['nombre']}: sin acciones en {'; '.join(faltan)}."))
     if not pei or not pei.completo:
         s.append(("warning", "Complete la visión, la misión y los sellos del PEI para medir la coherencia del PME con el proyecto del establecimiento."))
     for f in coherencia["filas"]:
@@ -599,8 +677,14 @@ SISTEMA_IA = (
     "estén en el texto. Si citas normativa, indica que debe verificarse.")
 
 
-def texto_para_ia(pei, plan, elementos):
+def texto_para_ia(pei, plan, elementos, territorial=None):
     partes = [f"PME {plan.anio}."]
+    if territorial:
+        for p in territorial["planes"]:
+            partes.append(f"{p['instrumento'].get_tipo_display()} del sostenedor: " + "; ".join(f["texto"] for f in p["filas"]))
+        if territorial["enep"]:
+            partes.append("El sostenedor es un SLEP: considera también la Estrategia Nacional de Educación Pública y el "
+                          "Modelo de Desarrollo de Capacidades de la Dirección de Educación Pública.")
     if pei:
         partes += [f"Visión: {pei.vision}", f"Misión: {pei.mision}", "Sellos: " + "; ".join(pei.lista_sellos()),
                    f"Valores y perfil: {pei.valores}", "Objetivos del PEI: " + "; ".join(pei.lista_objetivos())]
@@ -610,7 +694,7 @@ def texto_para_ia(pei, plan, elementos):
     return "\n".join(partes)[:60000]
 
 
-def revision_ia(pei, plan, elementos):
+def revision_ia(pei, plan, elementos, territorial=None):
     """Devuelve (texto, error). Solo envía el PEI y el contenido del PME, sin datos de estudiantes."""
     from .asistente import consultar_ia
-    return consultar_ia(SISTEMA_IA, texto_para_ia(pei, plan, elementos), "El servicio no pudo revisar este PME.")
+    return consultar_ia(SISTEMA_IA, texto_para_ia(pei, plan, elementos, territorial), "El servicio no pudo revisar este PME.")
