@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block titulo %}Revisión del PME {{ anio }}{% endblock %}
+{% block contenido %}
+<div class="p-encabezado">
+  <div><div class="miga"><a href="{% url 'pme' %}?anio={{ anio }}">PME / SEP</a></div>
+    <h3><i class="bi bi-clipboard-check text-primary"></i> Revisión del PME {{ anio }}</h3>
+    <div class="sub">Coherencia con el PEI, relación con el Marco para la Buena Dirección y el Liderazgo Escolar, y comentarios del equipo.</div></div>
+  <div class="d-flex gap-2 flex-wrap align-items-start">
+    <form method="get"><select name="anio" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Año">{% for a in anios %}<option value="{{ a }}"{% if a == anio %} selected{% endif %}>{{ a }}</option>{% endfor %}</select></form>
+    {% if plan %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'pme_revision_informe' %}?anio={{ anio }}"><i class="bi bi-file-earmark-word"></i> Informe en Word</a>
+    {% if ia %}<form method="post" action="{% url 'pme_revision_ia' %}" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').innerHTML='Revisando… (hasta 1 minuto)';">{% csrf_token %}<input type="hidden" name="anio" value="{{ anio }}">
+      <button class="btn btn-sm btn-primary"><i class="bi bi-stars"></i> Revisión con IA</button></form>{% endif %}{% endif %}
+  </div>
+</div>
+{% if not plan %}<div class="card p-4 text-muted">No hay PME registrado para {{ anio }}.</div>{% else %}
+
+{% if not pei or not pei.completo %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center gap-3">
+  <span><i class="bi bi-exclamation-triangle"></i> Para medir la coherencia, registre la visión, la misión y los sellos del PEI (puede subir el archivo del PEI y Pupitre los busca).</span>
+  <a class="btn btn-sm btn-warning text-nowrap" href="{% url 'pme_pei' %}?anio={{ anio }}">Completar PEI</a>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{% if coherencia.indice is not None %}{{ coherencia.indice }} %{% else %}—{% endif %}</div><div class="small text-muted">índice de coherencia PEI–PME (promedio de los dos indicadores siguientes)</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ coherencia.sellos_cubiertos }} / {{ coherencia.sellos_total }}</div><div class="small text-muted">sellos del PEI presentes en el PME</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ coherencia.acciones_vinculadas }} / {{ coherencia.acciones_total }}</div><div class="small text-muted">acciones vinculadas a los sellos, la misión o la visión</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card p-3 h-100"><div class="fs-3 fw-semibold">{{ mbdle_cubiertas }} / {{ mbdle_total }}</div><div class="small text-muted">prácticas del Marco para la Buena Dirección abordadas</div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="card p-3 mb-4">
+      <h5 class="mb-2"><i class="bi bi-lightbulb text-warning"></i> Sugerencias para fortalecer el PME</h5>
+      {% for nivel, texto in sugerencias %}
+      <div class="small border-start border-3 border-{{ nivel }} ps-2 py-1 mb-2">{{ texto }}</div>
+      {% empty %}<p class="small text-muted mb-0">Sin observaciones automáticas: el PME aborda los sellos del PEI, las cuatro dimensiones y las prácticas del Marco.</p>{% endfor %}
+    </div>
+
+    <div class="card p-3 mb-4" id="coherencia">
+      <h5 class="mb-1"><i class="bi bi-diagram-3 text-primary"></i> Coherencia con el PEI</h5>
+      <div class="small text-muted mb-2">Cada sello y objetivo del PEI con las acciones y objetivos del PME que lo abordan (por coincidencia de palabras clave: revise que el vínculo sea real).</div>
+      <div class="table-responsive"><table class="table table-sm align-top mb-0">
+        <thead><tr><th style="width:35%">Sello / objetivo del PEI</th><th>Lo abordan</th></tr></thead>
+        {% for f in coherencia.filas %}
+        <tr><td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ f.tipo }}</span> {{ f.texto }}</td>
+          <td class="small">{% for e, comunes in f.elementos %}<div>{% if e.accion %}<a href="{% url 'pme_accion_editar' e.accion.pk %}">{{ e.titulo }}</a>{% else %}{{ e.titulo }}{% endif %} <span class="text-muted">· {{ e.origen }}</span></div>
+            {% empty %}<span class="text-danger"><i class="bi bi-x-circle"></i> Ninguna acción lo aborda</span>{% endfor %}</td></tr>
+        {% empty %}<tr><td colspan="2" class="text-muted small">Aún no hay sellos ni objetivos del PEI registrados.</td></tr>{% endfor %}
+      </table></div>
+      {% if coherencia.sin_vinculo %}
+      <div class="small mt-3"><b>Acciones sin vínculo visible con el PEI:</b>
+        {% for e in coherencia.sin_vinculo %}{% if e.accion %}<a href="{% url 'pme_accion_editar' e.accion.pk %}">{{ e.titulo }}</a>{% else %}{{ e.titulo }}{% endif %}{% if not forloop.last %} · {% endif %}{% endfor %}</div>
+      {% endif %}
+    </div>
+
+    <div class="card p-3 mb-4" id="mbdle">
+      <h5 class="mb-1"><i class="bi bi-compass text-primary"></i> Marco para la Buena Dirección y el Liderazgo Escolar</h5>
+      <div class="small text-muted mb-3">Prácticas de liderazgo que el PME aborda en cada dimensión del Marco.</div>
+      {% for d in mbdle %}
+      <div class="mb-3">
+        <a class="d-flex justify-content-between text-decoration-none text-reset" data-bs-toggle="collapse" href="#m-{{ d.clave }}">
+          <span class="fw-semibold small">{{ d.nombre }}</span><span class="small text-muted">{{ d.cubiertas }} de {{ d.total }} prácticas <i class="bi bi-chevron-down"></i></span></a>
+        <div class="progress mt-1" style="height:8px" role="progressbar" aria-label="{{ d.nombre }}" aria-valuenow="{{ d.pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ d.pct }}%"></div></div>
+        <div class="collapse" id="m-{{ d.clave }}"><ul class="list-unstyled small mt-2 mb-0">
+          {% for p in d.practicas %}<li class="mb-1">{% if p.elementos %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-muted"></i>{% endif %} {{ p.texto }}
+            {% if p.elementos %}<div class="text-muted ms-3">{% for e in p.elementos|slice:":4" %}{{ e.titulo|truncatechars:70 }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if p.elementos|length > 4 %} y {{ p.elementos|length|add:"-4" }} más{% endif %}</div>{% endif %}</li>{% endfor %}
+        </ul></div>
+      </div>
+      {% endfor %}
+      <div class="small text-muted"><i class="bi bi-info-circle"></i> {{ nota_mbdle }}</div>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <h5 class="mb-1"><i class="bi bi-list-check text-primary"></i> Calidad de la formulación de las acciones</h5>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Acción</th><th>Dimensión</th><th>Observaciones</th></tr></thead>
+        {% for c in calidad %}
+        <tr><td class="small"><a href="{% url 'pme_accion_editar' c.accion.pk %}">{{ c.accion.nombre }}</a></td><td class="small text-nowrap">{{ c.accion.get_dimension_display }}</td>
+          <td class="small">{% for f in c.faltas %}<span class="badge bg-warning-subtle text-warning-emphasis me-1">{{ f }}</span>{% empty %}<span class="text-success"><i class="bi bi-check-lg"></i> Completa</span>{% endfor %}</td></tr>
+        {% empty %}<tr><td colspan="3" class="text-muted small">Sin acciones registradas.</td></tr>{% endfor %}
+      </table></div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card p-3 mb-4" id="pei">
+      <div class="d-flex justify-content-between align-items-start"><h5 class="mb-2"><i class="bi bi-flag text-primary"></i> PEI</h5>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'pme_pei' %}?anio={{ anio }}">{% if editar %}Editar{% else %}Ver{% endif %}</a></div>
+      {% if pei %}
+        {% if pei.vision %}<div class="small"><b>Visión:</b> {{ pei.vision|truncatechars:220 }}</div>{% endif %}
+        {% if pei.mision %}<div class="small mt-2"><b>Misión:</b> {{ pei.mision|truncatechars:220 }}</div>{% endif %}
+        <div class="mt-2 d-flex flex-wrap gap-1">{% for s in pei.lista_sellos %}<span class="badge bg-primary-subtle text-primary-emphasis text-wrap text-start">{{ s }}</span>{% endfor %}</div>
+        {% if pei.archivo_nombre %}<div class="small text-muted mt-2"><i class="bi bi-paperclip"></i> Leído desde {{ pei.archivo_nombre }}</div>{% endif %}
+      {% else %}<p class="small text-muted mb-0">Sin PEI registrado.</p>{% endif %}
+    </div>
+
+    <div class="card p-3 mb-4" id="archivo">
+      <h5 class="mb-1"><i class="bi bi-file-earmark-arrow-up text-primary"></i> Archivo del PME</h5>
+      <div class="small text-muted mb-2">Suba el PME descargado de Comunidad Escolar (PDF, Excel o Word). Pupitre lee sus objetivos, metas y acciones y los incluye en la revisión.</div>
+      {% if editar %}
+      <form method="post" action="{% url 'pme_documento_subir' %}" enctype="multipart/form-data" class="d-flex gap-2 mb-3">{% csrf_token %}
+        <input type="hidden" name="anio" value="{{ anio }}">
+        <input type="file" name="archivo" class="form-control form-control-sm" accept=".pdf,.xlsx,.xls,.docx,.txt" required aria-label="Archivo del PME">
+        <button class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-upload"></i> Subir</button>
+      </form>{% endif %}
+      {% for d in documentos %}
+      <div class="border rounded-3 p-2 mb-2 small">
+        <div class="d-flex justify-content-between gap-2"><b class="text-break">{{ d.nombre }}</b><span class="text-muted text-nowrap">{{ d.subido|date:"d-m-Y" }}</span></div>
+        <div class="text-muted">{{ d.datos.objetivos|length }} objetivo(s) · {{ d.datos.metas|length }} meta(s) · {{ d.datos.acciones|length }} acción(es){% if forloop.first %} · <span class="text-success">en uso</span>{% endif %}</div>
+        <div class="d-flex gap-2 mt-1 flex-wrap">
+          <a href="{% url 'pme_documento_descargar' d.pk %}"><i class="bi bi-download"></i> Descargar</a>
+          {% if editar and d.datos.acciones %}<form method="post" action="{% url 'pme_documento_importar' d.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-link btn-sm p-0 small"><i class="bi bi-box-arrow-in-down"></i> Agregar sus acciones al PME</button></form>{% endif %}
+          {% if editar %}<form method="post" action="{% url 'pme_documento_eliminar' d.pk %}" class="d-inline" onsubmit="return confirm('¿Eliminar este archivo?');">{% csrf_token %}<button class="btn btn-link btn-sm p-0 small text-danger">Eliminar</button></form>{% endif %}
+        </div>
+      </div>
+      {% empty %}<p class="small text-muted mb-0">Sin archivos. La revisión usa las acciones registradas en Pupitre.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4" id="comentarios">
+  <h5 class="mb-1"><i class="bi bi-chat-square-text text-primary"></i> Comentarios y sugerencias</h5>
+  <div class="small text-muted mb-3">Para enriquecer el proyecto del establecimiento: comentarios generales o sobre una acción. Quien edita el PME los marca como incorporados.</div>
+  <form method="post" class="row g-2 mb-3">{% csrf_token %}
+    <div class="col-md-3">{{ form.tipo }}</div>
+    <div class="col-md-9">{{ form.accion }}</div>
+    <div class="col-12">{{ form.texto }}{% for e in form.texto.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+    <div class="col-12"><button class="btn btn-sm btn-primary"><i class="bi bi-send"></i> Agregar comentario</button></div>
+  </form>
+  {% for c in comentarios %}
+  <div class="border rounded-3 p-2 mb-2{% if c.resuelto %} opacity-75{% endif %}">
+    <div class="d-flex justify-content-between gap-2 small">
+      <span><span class="badge {% if c.tipo == 'FORTALEZA' %}bg-success-subtle text-success-emphasis{% elif c.tipo == 'IA' %}bg-info-subtle text-info-emphasis{% elif c.tipo == 'SUGERENCIA' %}bg-warning-subtle text-warning-emphasis{% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">{% if c.tipo == 'IA' %}<i class="bi bi-stars"></i> {% endif %}{{ c.get_tipo_display }}</span>
+        {% if c.accion %}<span class="text-muted">sobre</span> <a href="{% url 'pme_accion_editar' c.accion.pk %}">{{ c.accion.nombre|truncatechars:60 }}</a>{% endif %}
+        <span class="text-muted">· {{ c.autor.get_full_name|default:c.autor.username }} · {{ c.creado|date:"d-m-Y H:i" }}</span>
+        {% if c.resuelto %}<span class="badge bg-success">Incorporado</span>{% endif %}</span>
+      {% if editar or c.autor_id == user.id %}<span class="text-nowrap">
+        <form method="post" action="{% url 'pme_comentario_accion' c.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-link btn-sm p-0">{% if c.resuelto %}Reabrir{% else %}Marcar incorporado{% endif %}</button></form>
+        <form method="post" action="{% url 'pme_comentario_accion' c.pk %}" class="d-inline" onsubmit="return confirm('¿Eliminar este comentario?');">{% csrf_token %}<input type="hidden" name="eliminar" value="1"><button class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Eliminar"><i class="bi bi-trash"></i></button></form>
+      </span>{% endif %}
+    </div>
+    <div class="small mt-1">{{ c.texto|linebreaksbr }}</div>
+  </div>
+  {% empty %}<p class="small text-muted mb-0">Aún no hay comentarios.</p>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

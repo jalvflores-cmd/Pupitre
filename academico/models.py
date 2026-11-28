@@ -1237,6 +1237,81 @@ class GastoSEP(models.Model):
         ordering = ["-fecha", "-id"]
 
 
+class ProyectoEducativo(DeEstablecimiento):
+    """Lo esencial del PEI, para revisar la coherencia del PME con el proyecto del establecimiento."""
+
+    vision = models.TextField("visión", blank=True)
+    mision = models.TextField("misión", blank=True)
+    sellos = models.TextField("sellos educativos", blank=True, help_text="Uno por línea.")
+    valores = models.TextField("valores, competencias y perfil del estudiante", blank=True)
+    objetivos = models.TextField("objetivos estratégicos del PEI", blank=True, help_text="Uno por línea.")
+    archivo_nombre = models.CharField("archivo del PEI", max_length=200, blank=True, editable=False)
+    texto_archivo = models.TextField(blank=True, editable=False)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "proyecto educativo institucional"
+        verbose_name_plural = "proyectos educativos institucionales"
+
+    def lista_sellos(self):
+        return [s.strip(" -•\t") for s in self.sellos.splitlines() if s.strip(" -•\t")]
+
+    def lista_objetivos(self):
+        return [s.strip(" -•\t") for s in self.objetivos.splitlines() if s.strip(" -•\t")]
+
+    @property
+    def completo(self):
+        return bool(self.mision.strip() and self.vision.strip() and self.lista_sellos())
+
+
+class DocumentoPME(models.Model):
+    """Archivo del PME (por ejemplo, el que se descarga de la plataforma Comunidad Escolar) y lo que se leyó de él."""
+    objects = PorEstablecimientoManager.por("plan__establecimiento")
+    todos = models.Manager()
+
+    plan = models.ForeignKey(PlanMejoramiento, on_delete=models.CASCADE, related_name="documentos")
+    nombre = models.CharField(max_length=200)
+    contenido = models.BinaryField(editable=False)
+    texto = models.TextField(blank=True, editable=False)
+    datos = models.JSONField(default=dict, editable=False)
+    subido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False)
+    subido = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "archivo del PME"
+        verbose_name_plural = "archivos del PME"
+        ordering = ["-subido"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class ComentarioPME(models.Model):
+    """Comentarios y sugerencias para enriquecer el PME, generales o sobre una acción."""
+    objects = PorEstablecimientoManager.por("plan__establecimiento")
+    todos = models.Manager()
+
+    class Tipo(models.TextChoices):
+        SUGERENCIA = "SUGERENCIA", "Sugerencia"
+        COMENTARIO = "COMENTARIO", "Comentario"
+        FORTALEZA = "FORTALEZA", "Fortaleza"
+        IA = "IA", "Revisión con IA"
+
+    plan = models.ForeignKey(PlanMejoramiento, on_delete=models.CASCADE, related_name="comentarios")
+    accion = models.ForeignKey(AccionPME, on_delete=models.CASCADE, null=True, blank=True, related_name="comentarios",
+                               verbose_name="acción (opcional)")
+    tipo = models.CharField(max_length=12, choices=Tipo.choices, default=Tipo.SUGERENCIA)
+    texto = models.TextField()
+    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False)
+    creado = models.DateTimeField(auto_now_add=True)
+    resuelto = models.BooleanField("incorporado / resuelto", default=False)
+
+    class Meta:
+        verbose_name = "comentario del PME"
+        verbose_name_plural = "comentarios del PME"
+        ordering = ["resuelto", "-creado"]
+
+
 class EventoCalendario(DeEstablecimiento):
     """Evento del calendario del establecimiento (reuniones, consejos, plazos, actividades) o recordatorio propio."""
 

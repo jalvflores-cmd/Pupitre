@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import (alertas, convivencia_vistas, asistencia_personal, asistente, calendario, horarios, libro, personal, sep, plataforma, red,
+from . import (alertas, convivencia_vistas, revision_pme_vistas, asistencia_personal, asistente, calendario, horarios, libro, personal, sep, plataforma, red,
                resultados, views)
 
 urlpatterns = [
@@ -21,6 +21,15 @@ urlpatterns = [
     path("asistencia-personal/", asistencia_personal.diaria, name="asistencia_personal"),
     path("asistencia-personal/mes/", asistencia_personal.mensual, name="asistencia_personal_mes"),
     path("pme/", sep.pme, name="pme"),
+    path("pme/revision/", revision_pme_vistas.revision, name="pme_revision"),
+    path("pme/revision/pei/", revision_pme_vistas.pei_form, name="pme_pei"),
+    path("pme/revision/archivo/", revision_pme_vistas.documento_subir, name="pme_documento_subir"),
+    path("pme/revision/archivo/<int:pk>/importar/", revision_pme_vistas.documento_importar, name="pme_documento_importar"),
+    path("pme/revision/archivo/<int:pk>/descargar/", revision_pme_vistas.documento_descargar, name="pme_documento_descargar"),
+    path("pme/revision/archivo/<int:pk>/eliminar/", revision_pme_vistas.documento_eliminar, name="pme_documento_eliminar"),
+    path("pme/revision/comentarios/<int:pk>/", revision_pme_vistas.comentario_accion, name="pme_comentario_accion"),
+    path("pme/revision/ia/", revision_pme_vistas.revision_ia, name="pme_revision_ia"),
+    path("pme/revision/informe.docx", revision_pme_vistas.informe_docx, name="pme_revision_informe"),
     path("calendario/", calendario.calendario_vista, name="calendario"),
     path("calendario/<int:pk>/eliminar/", calendario.evento_eliminar, name="evento_eliminar"),
     path("asistente/", asistente.asistente, name="asistente"),

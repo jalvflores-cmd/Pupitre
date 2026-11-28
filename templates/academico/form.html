@@ -4,7 +4,7 @@
 <div class="row justify-content-center"><div class="col-lg-8"><div class="card p-4">
   <h4 class="mb-3">{{ titulo }}</h4>
   {% if ayuda %}<div class="alert alert-info py-2 small">{{ ayuda }}</div>{% endif %}
-  <form method="post">{% csrf_token %}
+  <form method="post"{% if multipart %} enctype="multipart/form-data"{% endif %}>{% csrf_token %}
     {{ form.non_field_errors }}
     <div class="row">
     {% for f in form %}
@@ -20,7 +20,7 @@
     {% endfor %}
     </div>
     <button class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ boton|default:"Guardar" }}</button>
-    {% if volver.1 %}<a class="btn btn-link" href="{% url volver.0 volver.1 %}">Cancelar</a>{% else %}<a class="btn btn-link" href="{% url volver.0 %}">Cancelar</a>{% endif %}
+    {% if volver_url %}<a class="btn btn-link" href="{{ volver_url }}">Volver</a>{% elif volver.1 %}<a class="btn btn-link" href="{% url volver.0 volver.1 %}">Cancelar</a>{% else %}<a class="btn btn-link" href="{% url volver.0 %}">Cancelar</a>{% endif %}
   </form>
   {% if eliminar_red %}
   <form method="post" class="mt-3 text-end" onsubmit="return confirm('¿Eliminar este registro?');">{% csrf_token %}

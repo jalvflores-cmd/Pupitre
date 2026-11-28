@@ -1482,3 +1482,102 @@ class OANivelesDelEstablecimientoTests(TestCase):
         est.save()
         Curso.objects.create(nivel=Nivel.objects.create(nombre="1° Básico", orden=1), letra="A", anio=2026)
         self.assertEqual(min(set(ObjetivoAprendizaje.disponibles().values_list("grado", flat=True)) - {0}), 1)
+
+
+class RevisionPMETests(BaseDatos):
+    @staticmethod
+    def _docx_pme():
+        from io import BytesIO
+        from docx import Document
+        d = Document()
+        d.add_paragraph("Dimensión: Gestión Pedagógica")
+        d.add_paragraph("Objetivo Estratégico: Instalar la evaluación formativa en todas las asignaturas.")
+        t = d.add_table(rows=0, cols=2)
+        for k, v in [("Nombre de la acción", "Talleres de lectura con familias"),
+                     ("Descripción", "Talleres mensuales con apoderados para fomentar la lectura en el hogar."),
+                     ("Fecha Inicio", "01/04/2026"), ("Fecha Término", "30/10/2026"),
+                     ("Responsable", "Jefe(a) de UTP"), ("Monto SEP", "$800.000")]:
+            fila = t.add_row().cells
+            fila[0].text, fila[1].text = k, v
+        salida = BytesIO()
+        d.save(salida)
+        return salida.getvalue()
+
+    def test_lectura_del_archivo_y_coherencia(self):
+        from openpyxl import Workbook
+        from io import BytesIO
+        from . import revision_pme as rv
+        datos = rv.analizar_pme(rv.extraer_texto("pme.docx", self._docx_pme()))
+        self.assertEqual(len(datos["objetivos"]), 1)
+        accion = datos["acciones"][0]
+        self.assertEqual((accion["nombre"], accion["dimension"], accion["inicio"]),
+                         ("Talleres de lectura con familias", "PEDAGOGICA", "01/04/2026"))
+        wb = Workbook()
+        wb.active.append(["Dimensión", "Nombre Acción", "Descripción", "Responsable"])
+        wb.active.append(["Liderazgo", "Cuenta pública participativa", "Presentar avances del PME", "Director(a)"])
+        salida = BytesIO()
+        wb.save(salida)
+        datos = rv.analizar_pme(rv.extraer_texto("pme.xlsx", salida.getvalue()))
+        self.assertEqual(datos["acciones"][0]["dimension"], "LIDERAZGO")
+        with self.assertRaises(ValueError):
+            rv.extraer_texto("foto.png", b"x")
+        self.assertEqual(rv.leer_pei("VISIÓN\nSer una escuela lectora.\nSellos\n- Lectura\n- Medio ambiente\n")["sellos"],
+                         "Lectura\nMedio ambiente")
+
+    def test_revision_comentarios_importacion_e_informe(self):
+        from .models import AccionPME, ComentarioPME, DocumentoPME, PlanMejoramiento, ProyectoEducativo
+        plan = PlanMejoramiento.objects.create(anio=2026)
+        AccionPME.objects.create(plan=plan, dimension="PEDAGOGICA", nombre="Plan lector en todos los cursos",
+                                 descripcion="Lectura diaria de 15 minutos")
+        ProyectoEducativo.objects.create(mision="Formar lectores", vision="Escuela lectora",
+                                         sellos="Lectura y pensamiento crítico\nCuidado del medio ambiente")
+        self.client.force_login(self.director)
+        r = self.client.get(reverse("pme_revision") + "?anio=2026")
+        self.assertEqual(r.context["coherencia"]["sellos_cubiertos"], 1)
+        self.assertContains(r, "Cuidado del medio ambiente")
+        self.assertContains(r, "Ninguna acción lo aborda")
+        self.assertContains(r, "Desarrollando las capacidades profesionales")
+        # archivo del PME
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.post(reverse("pme_documento_subir"), {"anio": "2026", "archivo": SimpleUploadedFile(
+            "pme.docx", self._docx_pme())})
+        doc = DocumentoPME.objects.get()
+        self.assertEqual(len(doc.datos["acciones"]), 1)
+        self.client.post(reverse("pme_documento_importar", args=[doc.pk]))
+        nueva = AccionPME.objects.get(nombre="Talleres de lectura con familias")
+        self.assertEqual((nueva.monto_sep, nueva.inicio.month), (800000, 4))
+        self.client.post(reverse("pme_documento_importar", args=[doc.pk]))  # no duplica
+        self.assertEqual(AccionPME.objects.count(), 2)
+        # comentarios: cualquier perfil que ve el PME comenta; solo el autor o gestión los cierra
+        self.client.post(reverse("pme_revision") + "?anio=2026", {"tipo": "SUGERENCIA", "texto": "Agregar huerto escolar."})
+        c = ComentarioPME.objects.get()
+        self.client.force_login(self.utp)
+        self.client.post(reverse("pme_comentario_accion", args=[c.pk]))
+        c.refresh_from_db()
+        self.assertTrue(c.resuelto)
+        r = self.client.get(reverse("pme_revision_informe") + "?anio=2026")
+        self.assertIn("wordprocessingml", r["Content-Type"])
+        # un profesor no accede
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("pme_revision")).status_code, 403)
+
+    def test_revision_con_ia_opcional(self):
+        import os
+        from unittest import mock
+        from .models import ComentarioPME, Establecimiento, PlanMejoramiento, ProyectoEducativo
+        PlanMejoramiento.objects.create(anio=2026, objetivo_general="Mejorar la lectura")
+        ProyectoEducativo.objects.create(sellos="Lectura")
+        self.client.force_login(self.director)
+        self.assertEqual(self.client.post(reverse("pme_revision_ia"), {"anio": "2026"}).status_code, 403)
+        est = Establecimiento.actual()
+        est.asistente_ia = True
+        est.save()
+        respuesta = mock.Mock(stop_reason="end_turn", content=[mock.Mock(type="text", text="1) Fortalezas: foco lector.")])
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-prueba"}), mock.patch("anthropic.Anthropic") as cliente:
+            cliente.return_value.beta.messages.create.return_value = respuesta
+            self.assertContains(self.client.get(reverse("pme_revision") + "?anio=2026"), "Revisión con IA")
+            self.client.post(reverse("pme_revision_ia"), {"anio": "2026"})
+            enviado = cliente.return_value.beta.messages.create.call_args.kwargs["messages"][0]["content"]
+            self.assertIn("Sellos: Lectura", enviado)
+            self.assertNotIn("Pérez", enviado)
+        self.assertEqual(ComentarioPME.objects.get().tipo, "IA")

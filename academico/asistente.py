@@ -300,19 +300,18 @@ SISTEMA_IA = (
     "estén en los avisos ni pidas datos personales de estudiantes.")
 
 
-def sugerencias_ia(user, avisos, hoy=None):
-    """Pide a Claude sugerencias a partir de los avisos. Devuelve (texto, error)."""
-    hoy = hoy or timezone.localdate()
+def consultar_ia(sistema, contenido, error_rechazo="La IA no pudo responder.", max_tokens=16000):
+    """Llama a Claude con un prompt de sistema y un texto. Devuelve (texto, error)."""
     try:
         import anthropic
     except ImportError:
         return "", "Falta instalar la librería «anthropic» en el servidor."
-    client = anthropic.Anthropic(timeout=60.0)
+    client = anthropic.Anthropic(timeout=120.0)
     try:
         respuesta = client.beta.messages.create(
-            model=MODELO_IA, max_tokens=16000, betas=["server-side-fallback-2026-07-01"], fallbacks="default",
-            output_config={"effort": "low"}, system=SISTEMA_IA,
-            messages=[{"role": "user", "content": _texto_para_ia(user, avisos, hoy)}])
+            model=MODELO_IA, max_tokens=max_tokens, betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+            output_config={"effort": "low"}, system=sistema,
+            messages=[{"role": "user", "content": contenido}])
     except anthropic.AuthenticationError:
         return "", "La clave de la IA no es válida. Revise ANTHROPIC_API_KEY en el servidor."
     except anthropic.RateLimitError:
@@ -323,9 +322,14 @@ def sugerencias_ia(user, avisos, hoy=None):
         log.warning("Error de la API de IA: %s", e)
         return "", "El servicio de IA respondió con un error. Intente más tarde."
     if respuesta.stop_reason == "refusal":
-        return "", "La IA no pudo generar sugerencias para estos avisos."
-    texto = "\n".join(b.text for b in respuesta.content if b.type == "text").strip()
-    return texto, ""
+        return "", error_rechazo
+    return "\n".join(b.text for b in respuesta.content if b.type == "text").strip(), ""
+
+
+def sugerencias_ia(user, avisos, hoy=None):
+    """Pide a Claude sugerencias a partir de los avisos. Devuelve (texto, error)."""
+    hoy = hoy or timezone.localdate()
+    return consultar_ia(SISTEMA_IA, _texto_para_ia(user, avisos, hoy), "La IA no pudo generar sugerencias para estos avisos.")
 
 
 # ---------------------------------------------------------------- vistas

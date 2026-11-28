@@ -74,6 +74,7 @@ class Command(BaseCommand):
         self.demo_horarios(anio)
         self.demo_administrativo(anio)
         self.demo_calendario()
+        self.demo_pei(escuela)
         self.stdout.write(self.style.SUCCESS(
             "Datos de demostración listos (contraseña de todos los usuarios: demo1234)."))
 
@@ -583,6 +584,30 @@ class Command(BaseCommand):
                                                     categoria=rnd.choice(["RECURSOS", "EQUIPAMIENTO", "CAPACITACION", "PERSONAL"]),
                                                     detalle=f"{nombre[:60]} – compra {i + 1}", proveedor="Proveedor demo SpA",
                                                     documento=f"Factura {1000 + rnd.randint(1, 8999)}", monto=900_000)
+
+    def demo_pei(self, escuela):
+        """PEI de ejemplo y un comentario en la revisión del PME (solo si la escuela aún no tiene PEI)."""
+        from academico.models import ComentarioPME, PlanMejoramiento, ProyectoEducativo
+
+        with en_establecimiento(escuela):
+            if ProyectoEducativo.objects.exists():
+                return
+            ProyectoEducativo.objects.create(
+                vision="Ser una escuela inclusiva reconocida en la comuna por formar estudiantes lectores, críticos y "
+                       "respetuosos, que convivan en armonía con su entorno.",
+                mision="Entregar una educación integral de calidad que desarrolle las habilidades académicas y "
+                       "socioemocionales de cada estudiante, con la participación activa de las familias.",
+                sellos="Lectura y pensamiento crítico\nConvivencia respetuosa y buen trato\nParticipación de las familias\n"
+                       "Cuidado del medio ambiente",
+                valores="Respeto, responsabilidad, solidaridad y perseverancia.",
+                objetivos="Mejorar los aprendizajes en lectura y matemática\nFortalecer la convivencia escolar")
+            plan = PlanMejoramiento.objects.order_by("-anio").first()
+            director = User.objects.filter(username="director").first()
+            if plan and not plan.comentarios.exists():
+                ComentarioPME.objects.create(
+                    plan=plan, autor=director, tipo=ComentarioPME.Tipo.SUGERENCIA,
+                    texto="Incorporar una acción con las familias (escuela para padres o talleres de lectura en el hogar) "
+                          "para dar cuenta del sello de participación.")
 
     def demo_calendario(self):
         """Eventos del calendario alrededor de hoy (solo en establecimientos que aún no tienen ninguno)."""

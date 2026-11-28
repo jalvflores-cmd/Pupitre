@@ -54,7 +54,8 @@
     {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if ve_administrativo and mod_asistencia_personal %}<a href="{% url 'asistencia_personal' %}" class="{% if '/asistencia-personal/' in p %}activo{% endif %}"><i class="bi bi-person-check"></i> Asistencia del personal</a>{% endif %}
-    {% if ve_administrativo and mod_sep %}<a href="{% url 'pme' %}" class="{% if '/pme/' in p %}activo{% endif %}"><i class="bi bi-clipboard-data"></i> PME / SEP</a>{% endif %}
+    {% if ve_administrativo and mod_sep %}<a href="{% url 'pme' %}" class="{% if '/pme/' in p and '/pme/revision/' not in p %}activo{% endif %}"><i class="bi bi-clipboard-data"></i> PME / SEP</a>
+    <a href="{% url 'pme_revision' %}" class="{% if '/pme/revision/' in p %}activo{% endif %}"><i class="bi bi-clipboard-check"></i> Revisión del PME</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}
     {% if not de_sostenedor %}<a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>{% endif %}{% endif %}
     {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
