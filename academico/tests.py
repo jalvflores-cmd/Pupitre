@@ -1581,3 +1581,124 @@ class RevisionPMETests(BaseDatos):
             self.assertIn("Sellos: Lectura", enviado)
             self.assertNotIn("Pérez", enviado)
         self.assertEqual(ComentarioPME.objects.get().tipo, "IA")
+
+
+# Reporte de Comunidad Escolar: misma estructura que el archivo real, con contenido inventado.
+REPORTE_CE = """Reporte
+Fase Estratégica
+Fecha de Creación: 10/01/2026 10:00 hrs.
+Nombre Establecimiento: ESCUELA DE PRUEBA
+RBD: 9999
+Análisis PEI
+Síntesis de los componentes del PEI
+Visión Ser una escuela que forma lectores críticos
+y ciudadanos responsables.
+Misión Entregar una educación de calidad con participación de las familias.
+Sello 1 Lectura y pensamiento crítico
+Sello 2 Cuidado del medio ambiente
+Valores y Competencias
+VALORES: respeto, responsabilidad.
+Vinculación PEI con el Modelo de la Gestión Escolar
+Planificación Estratégica
+Objetivos y Metas
+Dimensiones Objetivo Estratégico Meta Estratégica
+Gestión Pedagógica
+Mejorar la comprensión lectora de todos
+los estudiantes.
+El 80% de los estudiantes mejora su
+nivel lector.
+Liderazgo
+Fortalecer el trabajo colaborativo docente.
+El 90% de los docentes participa en comunidades de aprendizaje.
+Estrategias
+Estrategias de mejoramiento
+Reporte
+Planificación Anual
+Fecha de Creación: 10/01/2026 10:01 hrs.
+Planificación Anual
+Acciones
+Dimension Gestión Pedagógica
+Objetivo Estratégico Mejorar la comprensión lectora de todos
+los estudiantes.
+Estrategia Plan lector institucional.
+Subdimensiones * Gestión del currículum
+Acción Plan lector diario.
+Descripcion
+Todos los cursos leen 15 minutos al inicio de la jornada
+con textos seleccionados por el CRA.
+Fecha Inicio 02/3/2026
+Fecha Termino 30/11/2026
+Programa Asociado SEP
+Responsable Jefe técnico.
+Recursos Necesarios Ejecución Libros y material de lectura.
+Ate No
+Tic CRA
+Plan(es)
+Plan de Apoyo a la Inclusión-
+Medios de Verificación
+Registro de lectura por curso.-
+-
+Monto Subvención General $0
+Monto SEP $2.500.000
+Monto PIE $0
+Monto Total $2.500.000
+Dimension Liderazgo
+Objetivo Estratégico Fortalecer el trabajo colaborativo docente.
+Estrategia Comunidades de aprendizaje.
+Subdimensiones * Liderazgo del director
+Acción Comunidades de aprendizaje docente
+Descripcion
+Reuniones quincenales de reflexión pedagógica.
+Fecha Inicio 04/3/2026
+Fecha Termino 27/11/2026
+Programa Asociado SEP
+Responsable Director
+Medios de Verificación
+Actas.-
+Monto SEP $0
+Monto Total $0
+Reporte
+Implementación y Monitoreo
+Fecha de Creación: 10/01/2026 10:02 hrs.
+Acciones
+Dimension Gestión Pedagógica
+Estrategia Plan lector institucional.
+Acción Plan lector diario.
+Descripcion
+Todos los cursos leen 15 minutos al inicio de la jornada.
+Nivel de ejecución Implementado (60%)
+Fecha Inicio 02/3/2026
+Monto Total $2.500.000
+"""
+
+
+class ReporteComunidadEscolarTests(BaseDatos):
+    def test_lee_pei_objetivos_metas_y_acciones(self):
+        from . import revision_pme as rv
+        d = rv.analizar_pme(REPORTE_CE)
+        self.assertEqual(d["formato"], "Comunidad Escolar")
+        self.assertEqual(d["pei"]["sellos"], "Lectura y pensamiento crítico\nCuidado del medio ambiente")
+        self.assertIn("ciudadanos responsables", d["pei"]["vision"])
+        self.assertEqual([o["dimension"] for o in d["objetivos"]], ["PEDAGOGICA", "LIDERAZGO"])
+        self.assertTrue(d["metas"][0]["texto"].startswith("El 80%"))
+        self.assertEqual(len(d["acciones"]), 2)  # la acción repetida en Implementación se fusiona
+        a = d["acciones"][0]
+        self.assertEqual((a["nombre"], a["monto"], a["nivel"], a["responsable"]),
+                         ("Plan lector diario", "$2.500.000", "Implementado (60%)", "Jefe técnico."))
+        self.assertEqual(rv.nivel_ejecucion(a["nivel"]), ("PROCESO", 60))
+
+    def test_subir_importar_y_usar_pei(self):
+        from .models import AccionPME, DocumentoPME, PlanMejoramiento, ProyectoEducativo
+        PlanMejoramiento.objects.create(anio=2026)
+        self.client.force_login(self.director)
+        self.client.post(reverse("pme_documento_subir"), {"anio": "2026", "archivo": SimpleUploadedFile(
+            "pme.txt", REPORTE_CE.encode())})
+        doc = DocumentoPME.objects.get()
+        self.assertContains(self.client.get(reverse("pme_revision") + "?anio=2026"), "Reporte de Comunidad Escolar")
+        self.client.post(reverse("pme_documento_pei", args=[doc.pk]))
+        self.assertEqual(ProyectoEducativo.objects.get().lista_sellos(),
+                         ["Lectura y pensamiento crítico", "Cuidado del medio ambiente"])
+        self.client.post(reverse("pme_documento_importar", args=[doc.pk]))
+        a = AccionPME.objects.get(nombre="Plan lector diario")
+        self.assertEqual((a.monto_sep, a.avance, a.estado, a.inicio.day, a.responsable), (2500000, 60, "PROCESO", 2, "Jefe técnico"))
+        self.assertEqual(AccionPME.objects.get(nombre="Comunidades de aprendizaje docente").dimension, "LIDERAZGO")

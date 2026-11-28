@@ -25,6 +25,7 @@ urlpatterns = [
     path("pme/revision/pei/", revision_pme_vistas.pei_form, name="pme_pei"),
     path("pme/revision/archivo/", revision_pme_vistas.documento_subir, name="pme_documento_subir"),
     path("pme/revision/archivo/<int:pk>/importar/", revision_pme_vistas.documento_importar, name="pme_documento_importar"),
+    path("pme/revision/archivo/<int:pk>/pei/", revision_pme_vistas.documento_usar_pei, name="pme_documento_pei"),
     path("pme/revision/archivo/<int:pk>/descargar/", revision_pme_vistas.documento_descargar, name="pme_documento_descargar"),
     path("pme/revision/archivo/<int:pk>/eliminar/", revision_pme_vistas.documento_eliminar, name="pme_documento_eliminar"),
     path("pme/revision/comentarios/<int:pk>/", revision_pme_vistas.comentario_accion, name="pme_comentario_accion"),

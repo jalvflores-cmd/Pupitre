@@ -186,7 +186,7 @@ def documento_subir(request):
 
 
 def _fecha(texto):
-    m = re.search(r"(\d{1,2})[/-](\d{1,2})[/-](\d{4})", texto or "")
+    m = re.search(r"(\d{1,2})\s*[/-]\s*(\d{1,2})\s*[/-]\s*(\d{4})", texto or "")
     if m:
         try:
             return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
@@ -213,16 +213,36 @@ def documento_importar(request, pk):
         if not nombre or rv.normalizar(nombre) in existentes:
             continue
         monto = int(re.sub(r"\D", "", a.get("monto", "")) or 0) if re.search(r"\d", a.get("monto", "")) else 0
+        estado = rv.nivel_ejecucion(a.get("nivel", ""))
+        dimension = a.get("dimension") if a.get("dimension") in dict(DIMENSIONES_PME) else "PEDAGOGICA"
         AccionPME.objects.create(
-            plan=doc.plan, dimension=a.get("dimension") or "PEDAGOGICA", nombre=nombre,
-            descripcion=a.get("descripcion", ""), responsable=a.get("responsable", "")[:120],
+            plan=doc.plan, dimension=dimension, nombre=nombre,
+            descripcion=a.get("descripcion", ""), responsable=a.get("responsable", "").rstrip(".")[:120],
             inicio=_fecha(a.get("inicio")), termino=_fecha(a.get("termino")), monto_sep=min(monto, 10**12),
-            medios_verificacion=a.get("medios", ""))
+            medios_verificacion=a.get("medios", ""),
+            **({"estado": estado[0], "avance": estado[1]} if estado else {}))
         existentes.add(rv.normalizar(nombre))
         n += 1
     messages.success(request, f"Se agregaron {n} acción(es) al PME {doc.plan.anio}." if n else
                      "No hay acciones nuevas para agregar: todas ya están en el PME.")
     return _volver(doc.plan.anio, "archivo")
+
+
+@login_required
+@require_POST
+def documento_usar_pei(request, pk):
+    """Completa el PEI con la síntesis que trae el reporte de Comunidad Escolar."""
+    exigir(puede_editar(request.user))
+    doc = get_object_or_404(DocumentoPME, pk=pk)
+    leido = (doc.datos or {}).get("pei") or {}
+    pei = _pei() or ProyectoEducativo()
+    for campo, valor in leido.items():
+        if campo in ("vision", "mision", "sellos", "valores") and valor:
+            setattr(pei, campo, valor)
+    pei.archivo_nombre = doc.nombre[:200]
+    pei.save()
+    messages.success(request, "El PEI se completó con la síntesis del archivo. Revíselo y agregue los objetivos si corresponde.")
+    return _volver(doc.plan.anio, "pei")
 
 
 @login_required

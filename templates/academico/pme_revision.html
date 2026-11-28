@@ -107,9 +107,11 @@
       {% for d in documentos %}
       <div class="border rounded-3 p-2 mb-2 small">
         <div class="d-flex justify-content-between gap-2"><b class="text-break">{{ d.nombre }}</b><span class="text-muted text-nowrap">{{ d.subido|date:"d-m-Y" }}</span></div>
+        {% if d.datos.formato %}<div><span class="badge bg-success-subtle text-success-emphasis">Reporte de {{ d.datos.formato }}</span></div>{% endif %}
         <div class="text-muted">{{ d.datos.objetivos|length }} objetivo(s) · {{ d.datos.metas|length }} meta(s) · {{ d.datos.acciones|length }} acción(es){% if forloop.first %} · <span class="text-success">en uso</span>{% endif %}</div>
         <div class="d-flex gap-2 mt-1 flex-wrap">
           <a href="{% url 'pme_documento_descargar' d.pk %}"><i class="bi bi-download"></i> Descargar</a>
+          {% if editar and d.datos.pei %}<form method="post" action="{% url 'pme_documento_pei' d.pk %}" class="d-inline"{% if pei and pei.completo %} onsubmit="return confirm('¿Reemplazar la visión, misión, sellos y valores registrados por los del archivo?');"{% endif %}>{% csrf_token %}<button class="btn btn-link btn-sm p-0 small"><i class="bi bi-flag"></i> Usar su PEI</button></form>{% endif %}
           {% if editar and d.datos.acciones %}<form method="post" action="{% url 'pme_documento_importar' d.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-link btn-sm p-0 small"><i class="bi bi-box-arrow-in-down"></i> Agregar sus acciones al PME</button></form>{% endif %}
           {% if editar %}<form method="post" action="{% url 'pme_documento_eliminar' d.pk %}" class="d-inline" onsubmit="return confirm('¿Eliminar este archivo?');">{% csrf_token %}<button class="btn btn-link btn-sm p-0 small text-danger">Eliminar</button></form>{% endif %}
         </div>

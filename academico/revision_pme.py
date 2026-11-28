@@ -322,8 +322,167 @@ def _dimension(texto):
     return ""
 
 
+# ---------------------------------------------------------------- formato del reporte de Comunidad Escolar
+
+_CE_ETIQUETAS = [  # (inicio de la línea normalizada, campo); el valor es el resto de la línea
+    ("dimension ", "dimension"), ("objetivo estrategico", "objetivo"), ("estrategia", "estrategia"),
+    ("subdimensiones", "subdimension"), ("subdimension", "subdimension"), ("accion ", "nombre"),
+    ("descripcion", "descripcion"), ("nivel de ejecucion", "nivel"), ("justificacion de nivel", "justificacion"),
+    ("fecha inicio", "inicio"), ("fecha termino", "termino"), ("programa asociado", "programa"),
+    ("responsable", "responsable"), ("recursos necesarios ejecucion", "recursos"), ("ate ", "ate"), ("tic ", "tic"),
+    ("plan es", "planes"), ("medios de verificacion", "medios"), ("monto sep", "monto"), ("monto total", "monto_total"),
+    ("monto ", None),
+]
+
+
+def es_comunidad_escolar(texto):
+    return bool(re.search(r"^Planificaci[oó]n Anual", texto, re.M) and re.search(r"^Monto Total", texto, re.M)
+                and re.search(r"^Acci[oó]n ", texto, re.M))
+
+
+def _ce_pei(lineas):
+    """Síntesis del PEI del reporte: Visión, Misión, Sello N, Valores y Competencias."""
+    pei, actual = {}, None
+    try:
+        inicio = next(i for i, l in enumerate(lineas) if normalizar(l).startswith("sintesis de los componentes del pei"))
+    except StopIteration:
+        return {}
+    for linea in lineas[inicio + 1:]:
+        n = normalizar(linea)
+        if n.startswith("vinculacion pei"):
+            break
+        if n.startswith("vision "):
+            actual, pei["vision"] = "vision", linea.split(None, 1)[1]
+        elif n.startswith("mision "):
+            actual, pei["mision"] = "mision", linea.split(None, 1)[1]
+        elif re.match(r"^sello \d+ ", n):
+            pei.setdefault("sellos", []).append(linea.split(None, 2)[2].strip())
+            actual = "sello"
+        elif n.startswith("valores y competencias"):
+            actual, pei["valores"] = "valores", ""
+        elif actual == "sello":
+            pei["sellos"][-1] += " " + linea.strip()
+        elif actual:
+            pei[actual] = f"{pei[actual]} {linea.strip()}".strip()
+    if "sellos" in pei:
+        pei["sellos"] = "\n".join(pei["sellos"])
+    return {k: v[:3000] for k, v in pei.items() if v}
+
+
+def _ce_objetivos_metas(lineas):
+    """Tabla «Objetivos y Metas»: por dimensión, el objetivo (hasta la primera línea que termina en punto) y la meta."""
+    dims = {"gestion pedagogica": "PEDAGOGICA", "liderazgo": "LIDERAZGO", "convivencia escolar": "CONVIVENCIA",
+            "gestion de recursos": "RECURSOS", "area de resultados": "RESULTADOS"}
+    try:
+        inicio = next(i for i, l in enumerate(lineas) if normalizar(l) == "objetivos y metas")
+    except StopIteration:
+        return [], []
+    bloques, actual = [], None
+    for linea in lineas[inicio + 1:]:
+        n = normalizar(linea)
+        if n.startswith("estrategias"):
+            break
+        if n in dims:
+            actual = [dims[n], []]
+            bloques.append(actual)
+        elif actual is not None:
+            actual[1].append(linea.strip())
+    objetivos, metas = [], []
+    for dim, ls in bloques:
+        corte = next((i for i, l in enumerate(ls) if l.endswith(".")), len(ls) - 1) + 1
+        objetivo, meta = " ".join(ls[:corte]).strip(), " ".join(ls[corte:]).strip()
+        etiqueta = "" if dim == "RESULTADOS" else dim
+        prefijo = "Área de resultados: " if dim == "RESULTADOS" else ""
+        if objetivo:
+            objetivos.append({"dimension": etiqueta, "texto": prefijo + objetivo})
+        if meta:
+            metas.append({"dimension": etiqueta, "texto": prefijo + meta})
+    return objetivos, metas
+
+
+def _ce_acciones(lineas):
+    """Bloques de acciones de «Planificación Anual» y de «Implementación y Monitoreo» (este aporta el nivel de
+    ejecución). Las acciones repetidas se fusionan por nombre."""
+    acciones, bloque, campo = {}, None, None
+
+    def cerrar():
+        if bloque and bloque.get("nombre"):
+            clave = normalizar(bloque["nombre"])
+            previa = acciones.setdefault(clave, {})
+            for k, v in bloque.items():
+                if v and not previa.get(k):
+                    previa[k] = v
+
+    en_acciones = False
+    for linea in lineas:
+        n = normalizar(linea)
+        if n == "acciones":
+            en_acciones = True
+            continue
+        if n in ("reporte",) or n.startswith("fecha de creacion") or n.startswith("nombre establecimiento"):
+            en_acciones = False if n == "reporte" else en_acciones
+            continue
+        if not en_acciones:
+            continue
+        etiqueta = next(((e, c) for e, c in _CE_ETIQUETAS if (n + " ").startswith(e)), None)
+        if etiqueta:
+            e, c = etiqueta
+            valor = " ".join(linea.split()[len(e.split()):]).strip(" -")
+            if e == "plan es":
+                valor = ""
+            if c == "dimension":
+                cerrar()
+                bloque, campo = {"dimension": _dimension(valor)}, None
+                continue
+            if bloque is None:
+                continue
+            if c:
+                bloque[c] = valor
+            # campos de una sola línea: lo que sigue no se les agrega
+            campo = None if c in (None, "inicio", "termino", "programa", "ate", "tic", "nivel", "monto",
+                                  "monto_total", "responsable") else c
+            continue
+        if bloque is not None and campo:
+            bloque[campo] = f"{bloque.get(campo, '')} {linea.strip()}".strip()
+    cerrar()
+    lista = []
+    for a in acciones.values():
+        for k in ("nombre", "descripcion", "medios", "planes", "recursos"):
+            if a.get(k):
+                a[k] = re.sub(r"\s*-\s*$", "", re.sub(r"-\s+(?=[A-ZÁÉÍÓÚ])", "; ", a[k])).strip()
+        a["nombre"] = a["nombre"].rstrip(" .")[:200]
+        lista.append(a)
+    return lista
+
+
+def _analizar_comunidad_escolar(texto):
+    lineas = [l.strip() for l in texto.splitlines() if l.strip()]
+    objetivos, metas = _ce_objetivos_metas(lineas)
+    acciones = _ce_acciones(lineas)
+    if not objetivos:  # sin la tabla, se toman los objetivos que acompañan a cada acción
+        vistos = set()
+        for a in acciones:
+            if a.get("objetivo") and normalizar(a["objetivo"]) not in vistos:
+                vistos.add(normalizar(a["objetivo"]))
+                objetivos.append({"dimension": a.get("dimension", ""), "texto": a["objetivo"]})
+    return {"formato": "Comunidad Escolar", "pei": _ce_pei(lineas), "objetivos": objetivos, "metas": metas,
+            "acciones": acciones}
+
+
+def nivel_ejecucion(texto):
+    """«Implementado (100%)» → (estado, avance) para AccionPME."""
+    m = re.search(r"(\d{1,3})\s*%", texto or "")
+    if not m:
+        return None
+    avance = min(int(m.group(1)), 100)
+    return ("EJECUTADA" if avance >= 100 else "PROCESO" if avance > 0 else "NO"), avance
+
+
 def analizar_pme(texto):
-    """Busca objetivos, metas y acciones en el texto del PME (formato de Comunidad Escolar u otros parecidos)."""
+    """Busca objetivos, metas y acciones en el texto del PME. Reconoce el reporte de Comunidad Escolar; para otros
+    formatos usa una lectura general por etiquetas («Nombre de la acción: …»)."""
+    if es_comunidad_escolar(texto):
+        return _analizar_comunidad_escolar(texto)
     objetivos, metas, acciones = [], [], []
     actual, campo, dimension, modo_fila = None, None, "", False
     for linea in (l.strip() for l in texto.splitlines()):
@@ -396,6 +555,10 @@ def analizar_pme(texto):
 
 def leer_pei(texto):
     """Intenta ubicar visión, misión y sellos en el texto de un PEI. Devuelve solo lo que encuentra."""
+    if "sintesis de los componentes del pei" in normalizar(texto):
+        pei = _ce_pei([l.strip() for l in texto.splitlines() if l.strip()])
+        if pei:
+            return pei
     secciones = {"vision": r"^vision\b", "mision": r"^mision\b", "sellos": r"^sellos?( educativos?)?\b",
                  "valores": r"^(valores|perfil del estudiante|perfil de egreso|competencias)\b"}
     encontrado, actual = {}, None
