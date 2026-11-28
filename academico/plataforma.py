@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import BootstrapMixin
-from .models import MODULOS, MODULOS_DISPONIBLES, Curso, Establecimiento, Estudiante, Perfil, Sostenedor
+from .models import MODULOS, MODULOS_DISPONIBLES, ROLES_CON_PERMISOS, Curso, Establecimiento, Estudiante, Perfil, Sostenedor
 from .permisos import es_superadmin
 from .tenencia import en_establecimiento
 
@@ -40,6 +40,23 @@ class EstablecimientoForm(BootstrapMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["modulos"].widget.attrs.pop("class", None)
         self.fields["sostenedor"].empty_label = "Sin sostenedor (establecimiento independiente)"
+        roles = [(r, Perfil.Rol(r).label) for r in ROLES_CON_PERMISOS]
+        actuales = self.instance.permisos_roles if self.instance.pk else {}
+        for codigo, nombre, _ in MODULOS_DISPONIBLES:  # matriz de permisos: qué cargos usan cada módulo
+            self.fields[f"perm_{codigo}"] = forms.MultipleChoiceField(
+                label=nombre.split(" (")[0], required=False, choices=roles, widget=forms.CheckboxSelectMultiple,
+                initial=(actuales or {}).get(codigo, ROLES_CON_PERMISOS))
+
+    def matriz(self):
+        return [self[f"perm_{c}"] for c, _, _ in MODULOS_DISPONIBLES]
+
+    def save(self, commit=True):
+        est = super().save(commit=False)
+        est.permisos_roles = {c: self.cleaned_data[f"perm_{c}"] for c, _, _ in MODULOS_DISPONIBLES
+                              if set(self.cleaned_data[f"perm_{c}"]) != set(ROLES_CON_PERMISOS)}
+        if commit:
+            est.save()
+        return est
 
 
 class NuevoAdministradorForm(BootstrapMixin, forms.Form):
@@ -119,13 +136,20 @@ class SostenedorForm(BootstrapMixin, forms.ModelForm):
         label="Establecimientos del sostenedor", required=False, widget=forms.CheckboxSelectMultiple,
         queryset=Establecimiento.objects.order_by("nombre"))
 
+    modulos = forms.MultipleChoiceField(
+        label="Módulos que pueden usar sus establecimientos", required=False, widget=forms.CheckboxSelectMultiple,
+        choices=[(c, n) for c, n, _ in MODULOS_DISPONIBLES])
+
     class Meta:
         model = Sostenedor
-        fields = ["nombre", "rut", "activo"]
+        fields = ["nombre", "rut", "activo", "es_slep", "modulos"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["establecimientos"].widget.attrs.pop("class", None)
+        self.fields["modulos"].widget.attrs.pop("class", None)
+        if not self.instance.pk:
+            self.fields["modulos"].initial = [c for c, _, _ in MODULOS_DISPONIBLES]
         if self.instance.pk:
             self.fields["establecimientos"].initial = list(self.instance.establecimientos.all())
 

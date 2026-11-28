@@ -7,10 +7,13 @@ from . import tenencia
 LIBRES_SUPERADMIN = ("/plataforma/", "/red/", "/personal/", "/asistente/", "/static/", "/salir/", "/ingresar/", "/clave/", "/admin/", "/logo.png")
 # Rutas de cada módulo (si el establecimiento no tiene el módulo, no se puede entrar)
 RUTAS_MODULO = {
+    "protocolos": ("/convivencia/documentos/",),
     "convivencia": ("/convivencia/", "/anotaciones/", "/entrevistas/", "/redes/"),
     "funcionarios": ("/funcionarios/",),
     "asistencia_personal": ("/asistencia-personal/",),
+    "revision_pme": ("/pme/revision/",),
     "sep": ("/pme/",),
+    "asistente": ("/asistente/", "/calendario/"),
 }
 
 
@@ -72,11 +75,18 @@ class EstablecimientoMiddleware:
                     "texto": "El acceso de este establecimiento está suspendido. Contacte al administrador de la plataforma."},
                     status=403)
             if est is not None:
+                from .permisos import rol_de
                 for modulo, prefijos in RUTAS_MODULO.items():
                     if ruta.startswith(prefijos) and not est.tiene_modulo(modulo):
                         return render(request, "academico/aviso.html", {
                             "titulo": "Módulo no habilitado",
                             "texto": "Este módulo no está activo para su establecimiento."}, status=403)
+                    if ruta.startswith(prefijos) and request.user.is_authenticated \
+                            and not est.rol_puede(modulo, rol_de(request.user)):
+                        return render(request, "academico/aviso.html", {
+                            "titulo": "Sin acceso a este módulo",
+                            "texto": "Su cargo no tiene habilitado este módulo. Consulte al administrador de la plataforma."},
+                            status=403)
         token = tenencia.fijar(est)
         try:
             return self.get_response(request)

@@ -11,7 +11,7 @@
 <div class="card p-3 mb-4">
   <h5 class="mb-1">Alineamiento del PME {{ anio }} por establecimiento</h5>
   <div class="small text-muted mb-2">Coherencia con su PEI y alineamiento con los planes del sostenedor{% if sostenedor.es_slep %} y la ENEP{% endif %}. El detalle está en la «Revisión del PME» de cada establecimiento.</div>
-  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0 text-nowrap">
     <thead><tr><th>Establecimiento</th><th class="text-center">Acciones PME</th><th class="text-center">PEI</th><th class="text-center">Coherencia PEI</th>
       {% for v in vigentes %}<th class="text-center">{{ v.tipo }}</th>{% endfor %}{% if sostenedor.es_slep %}<th class="text-center">ENEP</th><th class="text-center">Modelo de capacidades</th>{% endif %}<th class="text-center">Alineamiento</th></tr></thead>
     {% for f in filas %}

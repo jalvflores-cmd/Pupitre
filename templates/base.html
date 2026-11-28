@@ -46,17 +46,17 @@
     <a href="{% url 'horarios' %}" class="{% if '/horarios/' in p %}activo{% endif %}"><i class="bi bi-calendar-week"></i> Horarios</a>
     <a href="{% url 'estudiantes' %}" class="{% if '/estudiantes/' in p %}activo{% endif %}"><i class="bi bi-people"></i> Estudiantes</a>
     {% if mod_convivencia %}<a href="{% url 'convivencia' %}" class="{% if p == '/convivencia/' or '/convivencia/entrevista' in p %}activo{% endif %}"><i class="bi bi-journal-text"></i> Convivencia</a>
-    <a href="{% url 'convivencia_documentos' %}" class="{% if '/convivencia/documentos/' in p %}activo{% endif %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a>{% endif %}
+    {% endif %}{% if mod_protocolos %}<a href="{% url 'convivencia_documentos' %}" class="{% if '/convivencia/documentos/' in p %}activo{% endif %}"><i class="bi bi-folder2-open"></i> Protocolos y normativa</a>{% endif %}
     {% if ve_todo %}<a href="{% url 'resultados' %}" class="{% if '/resultados/' in p %}activo{% endif %}"><i class="bi bi-bar-chart-line"></i> Resultados</a>{% endif %}
     <a href="{% url 'informes' %}" class="{% if '/informes/' in p %}activo{% endif %}"><i class="bi bi-file-earmark-text"></i> Informes</a>
     <div class="titulo">Gestión</div>
-    <a href="{% url 'asistente' %}" class="{% if p == '/asistente/' %}activo{% endif %}"><i class="bi bi-stars"></i> Asistente{% if n_avisos %}<span class="badge bg-warning">{{ n_avisos }}</span>{% endif %}</a>
-    <a href="{% url 'calendario' %}" class="{% if '/calendario/' in p %}activo{% endif %}"><i class="bi bi-calendar3"></i> Calendario</a>
+    {% if mod_asistente %}<a href="{% url 'asistente' %}" class="{% if p == '/asistente/' %}activo{% endif %}"><i class="bi bi-stars"></i> Asistente{% if n_avisos %}<span class="badge bg-warning">{{ n_avisos }}</span>{% endif %}</a>
+    <a href="{% url 'calendario' %}" class="{% if '/calendario/' in p %}activo{% endif %}"><i class="bi bi-calendar3"></i> Calendario</a>{% endif %}
     {% if ve_alertas %}<a href="{% url 'alertas' %}" class="{% if '/alertas/' in p %}activo{% endif %}"><i class="bi bi-bell"></i> Alertas</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}<a href="{% url 'funcionarios' %}" class="{% if '/funcionarios/' in p %}activo{% endif %}"><i class="bi bi-person-vcard"></i> Funcionarios</a>{% endif %}
     {% if ve_administrativo and mod_asistencia_personal %}<a href="{% url 'asistencia_personal' %}" class="{% if '/asistencia-personal/' in p %}activo{% endif %}"><i class="bi bi-person-check"></i> Asistencia del personal</a>{% endif %}
     {% if ve_administrativo and mod_sep %}<a href="{% url 'pme' %}" class="{% if '/pme/' in p and '/pme/revision/' not in p %}activo{% endif %}"><i class="bi bi-clipboard-data"></i> PME / SEP</a>
-    <a href="{% url 'pme_revision' %}" class="{% if '/pme/revision/' in p %}activo{% endif %}"><i class="bi bi-clipboard-check"></i> Revisión del PME</a>{% endif %}
+    {% endif %}{% if ve_administrativo and mod_revision_pme %}<a href="{% url 'pme_revision' %}" class="{% if '/pme/revision/' in p %}activo{% endif %}"><i class="bi bi-clipboard-check"></i> Revisión del PME</a>{% endif %}
     {% if ve_funcionarios and mod_funcionarios %}
     {% if not de_sostenedor %}<a href="{% url 'personal' %}" class="{% if '/personal/' in p %}activo{% endif %}"><i class="bi bi-person-badge"></i> Gestión de personal</a>{% endif %}{% endif %}
     {% if respaldos_disponibles %}<a href="{% url 'respaldos' %}" class="{% if '/respaldos/' in p %}activo{% endif %}"><i class="bi bi-shield-check"></i> Respaldos</a>{% endif %}
@@ -81,7 +81,7 @@
   <div class="p-barra">
     <button class="btn btn-sm btn-outline-primary p-movil" onclick="document.getElementById('sidebar').classList.toggle('abierto')"><i class="bi bi-list"></i></button>
     <span class="fecha">{% now "l j \d\e F \d\e Y" %}</span>
-    <div class="dropdown ms-auto">
+    <div class="dropdown ms-auto{% if asistente_off %} invisible{% endif %}">
       <button class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Avisos del asistente">
         <i class="bi bi-bell"></i>{% if n_avisos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ n_avisos }}</span>{% endif %}
       </button>
@@ -133,7 +133,7 @@
   </div>
   <div class="modal-footer border-0 pt-0"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button><a class="btn btn-primary btn-sm" href="{% url 'asistente' %}">Ver todos los avisos</a></div>
 </div></div></div>
-<script>document.addEventListener("DOMContentLoaded", function () { new bootstrap.Modal(document.getElementById("modalAsistente")).show(); });</script>
+{% if not asistente_off %}<script>document.addEventListener("DOMContentLoaded", function () { new bootstrap.Modal(document.getElementById("modalAsistente")).show(); });</script>{% endif %}
 {% endif %}
 {% else %}
   {% block publico %}{% endblock %}

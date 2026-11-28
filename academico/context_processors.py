@@ -49,10 +49,9 @@ def rol(request):
         est = Establecimiento(nombre=perfil.sostenedor.nombre)
     extra = {"es_superadmin": superadmin, "de_sostenedor": de_sostenedor,
              "nombre_sostenedor": perfil.sostenedor.nombre if de_sostenedor else "",
-             "mod_convivencia": est.tiene_modulo("convivencia") if est.pk else True,
-             "mod_funcionarios": est.tiene_modulo("funcionarios") if est.pk else True,
-             "mod_asistencia_personal": est.tiene_modulo("asistencia_personal") if est.pk else True,
-             "mod_sep": est.tiene_modulo("sep") if est.pk else True,
+             **{f"mod_{m}": (est.tiene_modulo(m) and est.rol_puede(m, rol_de(request.user))) if est.pk else True
+                for m in ("convivencia", "funcionarios", "asistencia_personal", "sep", "revision_pme", "protocolos",
+                          "asistente")},
              "ve_administrativo": _ve_administrativo(request.user)}
     gestion = es_gestion(request.user)
     if gestion:
@@ -87,6 +86,10 @@ def _asistente(request):
 
     if not hasattr(request, "session"):
         return {}
+    est = getattr(request, "establecimiento", None)
+    if est is not None and est.pk and not (est.tiene_modulo("asistente")
+                                           and est.rol_puede("asistente", rol_de(request.user))):
+        return {"asistente_off": True}
     avisos = avisos_de(request)
     hoy = timezone.localdate().isoformat()
     popup = bool(avisos) and request.method == "GET" and request.path != "/asistente/" \

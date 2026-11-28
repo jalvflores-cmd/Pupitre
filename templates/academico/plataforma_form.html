@@ -8,16 +8,24 @@
   <form method="post">{% csrf_token %}
     {{ form.non_field_errors }}
     <div class="row g-3">
-      {% for f in form %}
+      {% for f in form %}{% if f.name|slice:":5" != "perm_" %}
       <div class="{% if f.name == 'modulos' or f.name == 'establecimientos' %}col-12{% else %}col-md-6{% endif %}">
-        {% if f.name == "activo" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{% if es_sostenedor %}Sostenedor activo{% else %}Establecimiento activo{% endif %} (sus usuarios pueden ingresar)</label></div>
+        {% if f.name == "activo" or f.name == "es_slep" %}<div class="form-check mt-md-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{% if f.name == "es_slep" %}{{ f.label|capfirst }}{% elif es_sostenedor %}Sostenedor activo (sus usuarios pueden ingresar){% else %}Establecimiento activo (sus usuarios pueden ingresar){% endif %}</label></div>
         {% elif f.name == "modulos" or f.name == "establecimientos" %}<label class="form-label">{{ f.label }}</label>
           <div class="d-flex flex-wrap gap-3">{% for c in f %}<div class="form-check">{{ c.tag }} <label class="form-check-label" for="{{ c.id_for_label }}">{{ c.choice_label }}</label></div>{% endfor %}</div>
         {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} *{% endif %}</label>{{ f }}{% endif %}
         {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
       </div>
-      {% endfor %}
+      {% endif %}{% endfor %}
     </div>
+    {% if not es_sostenedor %}
+    <h5 class="mt-4 mb-1">Permisos por cargo</h5>
+    <p class="small text-muted">Marque qué cargos del establecimiento pueden usar cada módulo activo. Los módulos que el sostenedor no permite quedan desactivados aunque estén marcados. Los cargos del sostenedor y el superadministrador no se restringen.</p>
+    <div class="table-responsive"><table class="table table-sm align-middle">
+      <thead><tr><th>Módulo</th>{% for c in form.matriz.0 %}<th class="text-center small">{{ c.choice_label }}</th>{% endfor %}</tr></thead>
+      {% for campo in form.matriz %}<tr><td class="small" style="min-width:12rem">{{ campo.label }}</td>{% for c in campo %}<td class="text-center">{{ c.tag }}</td>{% endfor %}</tr>{% endfor %}
+    </table></div>
+    {% endif %}
     {% if admin_form %}
     <h5 class="mt-4 mb-1">Primera cuenta del {% if es_sostenedor %}sostenedor{% else %}establecimiento{% endif %}</h5>
     <p class="small text-muted">{% if es_sostenedor %}Con esta cuenta el sostenedor crea los usuarios de sus establecimientos.{% else %}Con esta cuenta el establecimiento crea sus demás usuarios y configura su logo y datos. Se recomienda que cada establecimiento tenga un(a) administrador(a) de plataforma.{% endif %}</p>

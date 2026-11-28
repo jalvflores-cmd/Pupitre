@@ -1734,3 +1734,36 @@ class PlanesTerritorialesTests(BaseDatos):
         self.assertTrue(any("Plan Estratégico Local" in t for _, t in r.context["sugerencias"]))
         self.client.force_login(self.profe_mat)
         self.assertEqual(self.client.get(reverse("red_planes")).status_code, 403)
+
+
+class PermisosPorEstablecimientoTests(BaseDatos):
+    def test_superadmin_define_modulos_y_cargos(self):
+        from .models import Establecimiento, Sostenedor
+        sa = User.objects.create_user("sa", password="x")
+        Perfil.objects.create(usuario=sa, rol="SUPERADMIN")
+        conv = User.objects.create_user("conv", password="x")
+        Perfil.objects.create(usuario=conv, rol=Perfil.Rol.CONVIVENCIA)
+        est = Establecimiento.actual()
+        self.client.force_login(sa)
+        datos = {"nombre": est.nombre, "oferta": est.oferta, "activo": "on",
+                 "modulos": ["curricular", "convivencia", "protocolos", "asistente", "sep", "revision_pme"]}
+        for c in ("curricular", "convivencia", "funcionarios", "asistencia_personal", "sep", "revision_pme", "asistente"):
+            datos[f"perm_{c}"] = ["ADMIN", "DIRECTOR", "UTP", "INSPECTOR", "CONVIVENCIA", "PROFESOR"]
+        datos["perm_protocolos"] = ["DIRECTOR", "CONVIVENCIA"]  # el profesor no ve los protocolos
+        datos["perm_asistente"] = ["DIRECTOR", "UTP"]
+        r = self.client.post(reverse("plataforma_editar", args=[est.pk]), datos)
+        self.assertEqual(r.status_code, 302)
+        est.refresh_from_db()
+        self.assertEqual(est.permisos_roles, {"protocolos": ["DIRECTOR", "CONVIVENCIA"], "asistente": ["DIRECTOR", "UTP"]})
+        self.client.force_login(conv)
+        self.assertEqual(self.client.get(reverse("convivencia_documentos")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("calendario")).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("inicio")), 'href="/calendario/"')
+        self.client.force_login(self.profe_mat)
+        self.assertEqual(self.client.get(reverse("convivencia_documentos")).status_code, 403)
+        # el sostenedor puede quitar un módulo a todos sus establecimientos
+        sost = Sostenedor.objects.create(nombre="Red", modulos=["curricular", "convivencia"])
+        est.sostenedor = sost
+        est.save()
+        self.client.force_login(self.director)
+        self.assertEqual(self.client.get(reverse("pme")).status_code, 403)

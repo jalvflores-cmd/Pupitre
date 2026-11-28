@@ -26,6 +26,9 @@ MODULOS = [
     ("funcionarios", "Funcionarios", True),
     ("asistencia_personal", "Asistencia del personal", True),
     ("sep", "Gestión PME / SEP", True),
+    ("revision_pme", "Revisión del PME (PEI, Marco para la Buena Dirección, planes territoriales)", True),
+    ("protocolos", "Protocolos y normativa de convivencia", True),
+    ("asistente", "Asistente y calendario", True),
     ("inventario", "Inventario y recursos", False),
 ]
 MODULOS_DISPONIBLES = [m for m in MODULOS if m[2]]
@@ -33,6 +36,10 @@ MODULOS_DISPONIBLES = [m for m in MODULOS if m[2]]
 
 def modulos_por_defecto():
     return [m[0] for m in MODULOS_DISPONIBLES]
+
+
+# Cargos de un establecimiento a los que el superadministrador puede habilitar o quitar cada módulo.
+ROLES_CON_PERMISOS = ["ADMIN", "DIRECTOR", "UTP", "INSPECTOR", "CONVIVENCIA", "PROFESOR"]
 
 
 class Sostenedor(models.Model):
@@ -46,6 +53,7 @@ class Sostenedor(models.Model):
     rut = models.CharField("RUT", max_length=15, blank=True)
     activo = models.BooleanField(default=True)
     es_slep = models.BooleanField("es un Servicio Local de Educación Pública (SLEP)", default=False)
+    modulos = models.JSONField("módulos que pueden usar sus establecimientos", default=modulos_por_defecto, blank=True)
 
     class Meta:
         verbose_name = "sostenedor"
@@ -73,6 +81,8 @@ class Establecimiento(models.Model):
     oferta = models.CharField("tipo de establecimiento", max_length=20, choices=Oferta.choices, default=Oferta.BASICA)
     activo = models.BooleanField(default=True)
     modulos = models.JSONField("módulos activos", default=modulos_por_defecto, blank=True)
+    permisos_roles = models.JSONField("cargos con acceso a cada módulo", default=dict, blank=True,
+                                      help_text="{módulo: [cargos]}. Un módulo sin entrada queda para todos los cargos.")
     rbd = models.CharField("RBD", max_length=20, blank=True)
     direccion = models.CharField("dirección", max_length=200, blank=True)
     comuna = models.CharField(max_length=100, blank=True)
@@ -133,7 +143,18 @@ class Establecimiento(models.Model):
         return cls.objects.order_by("pk").first() or cls(nombre="Establecimiento educacional")
 
     def tiene_modulo(self, codigo):
-        return codigo in (self.modulos or [])
+        """Activo en el establecimiento y permitido por su sostenedor."""
+        if codigo not in (self.modulos or []):
+            return False
+        sost = self.sostenedor if self.sostenedor_id else None
+        return sost is None or codigo in (sost.modulos or [])
+
+    def rol_puede(self, codigo, rol):
+        """¿El cargo puede usar el módulo? Los cargos del sostenedor y el superadministrador no se restringen."""
+        if rol not in ROLES_CON_PERMISOS:
+            return True
+        roles = (self.permisos_roles or {}).get(codigo)
+        return roles is None or rol in roles
 
 
 class Perfil(models.Model):
