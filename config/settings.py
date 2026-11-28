@@ -110,6 +110,9 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
         "timeout": 20, "transaction_mode": "IMMEDIATE",
         "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
     })
+else:
+    # Si la base no responde, falla en segundos en vez de quedar esperando (p. ej. durante un despliegue).
+    DATABASES["default"].setdefault("OPTIONS", {}).setdefault("connect_timeout", 15)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
